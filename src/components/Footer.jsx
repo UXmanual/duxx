@@ -63,8 +63,11 @@ const Footer = () => {
               <span className="relative flex h-2 w-2">
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-theme-accent"></span>
               </span>
-              <p className="text-theme-text-primary text-xs font-bold font-mono">Build v{pkg.version}</p>
+              <p className="text-theme-text-primary text-[10px] font-black font-mono">Build v{pkg.version}</p>
             </div>
+            <p className="text-theme-text-secondary text-[9px] font-bold opacity-50 uppercase tracking-tighter">
+              Last Deployed: 2026-03-12 14:28 KST
+            </p>
           </div>
         </div>
       </div>
