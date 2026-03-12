@@ -2,8 +2,8 @@ import React, { useEffect, useRef, useState } from 'react';
 
 /**
  * [Page] 메인 페이지 (지도 엔진)
- * @version 2.3.0
- * @description 모든 지도 라벨을 프리텐다드(Pretendard) 폰트로 직접 렌더링하도록 커스터마이징된 버전입니다.
+ * @version 2.4.0
+ * @description 모든 지도 라벨을 배경색 없이 프리텐다드(Pretendard) 폰트로 직접 렌더링하도록 최적화된 버전입니다.
  */
 const Main = () => {
   const mapRef = useRef(null);
@@ -42,7 +42,7 @@ const Main = () => {
         maxBoundsViscosity: 1.0
       }).setView([37.5665, 126.9780], 13);
 
-      // 전체 지명을 제거한 No-Labels 타일 사용 (우리가 직접 텍스트를 적기 위함)
+      // NO-LABELS 타일을 사용하여 수동으로 지명 제어
       const tileUrl = nightMode 
         ? 'https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png'
         : 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}{r}.png';
@@ -50,36 +50,46 @@ const Main = () => {
       tileLayerRef.current = L.tileLayer(tileUrl, { maxZoom: 19, noWrap: false }).addTo(mapInstance.current);
       mapRef.current.classList.add('map-loaded');
 
-      // 커스텀 라벨 통합 생성 함수
       const createCustomLabel = (lat, lng, text, options = {}) => {
-        const { size = 14, weight = 800, opacity = 1, letterSpacing = '0.15em' } = options;
+        const { size = 13, weight = 700 } = options;
         const marker = L.marker([lat, lng], {
           icon: L.divIcon({
             className: `custom-map-label ${nightMode ? 'label-night' : 'label-day'}`,
-            html: `<span style="font-size: ${size}px; font-weight: ${weight}; letter-spacing: ${letterSpacing}; opacity: ${opacity};">${text}</span>`,
-            iconSize: [160, 40],
-            iconAnchor: [80, 20]
+            html: `<span>${text}</span>`,
+            iconSize: [200, 40],
+            iconAnchor: [100, 20]
           }),
           interactive: false,
           zIndexOffset: options.zIndex || 1000
         }).addTo(mapInstance.current);
+        
+        // 초기 폰트 스타일 강제 적용
+        const el = marker.getElement();
+        if (el) {
+          const span = el.querySelector('span');
+          if (span) {
+            span.style.fontSize = `${size}px`;
+            span.style.fontWeight = weight;
+          }
+        }
+        
         return marker;
       };
 
-      // 주요 지명 데이터셋 (프리텐다드 폰트로 직접 렌더링)
+      // 프리텐다드 폰트로 렌더링할 주요 지명
       labelsRef.current = [
-        // 주요 해역
-        createCustomLabel(37.5, 131.5, '동해', { size: 14, weight: 900 }),
-        createCustomLabel(36.0, 124.0, '서해', { size: 14, weight: 900 }),
+        // 국가
+        createCustomLabel(35.9, 127.7, '대한민국', { size: 16, weight: 800, zIndex: 2000 }),
+        createCustomLabel(36.2, 138.2, '일본', { size: 16, weight: 800, zIndex: 2000 }),
         
-        // 국가 (줌아웃 시에도 유지될 주요 포인트)
-        createCustomLabel(35.9, 127.7, '대한민국', { size: 18, weight: 900, zIndex: 2000 }),
-        createCustomLabel(36.2, 138.2, '일본', { size: 18, weight: 900, zIndex: 2000 }),
+        // 해역
+        createCustomLabel(37.5, 131.5, '동해', { size: 13, weight: 700 }),
+        createCustomLabel(36.0, 124.0, '서해', { size: 13, weight: 700 }),
         
-        // 주요 도시 (확대 시 더 명확해짐)
-        createCustomLabel(37.5665, 126.9780, '서울', { size: 12, weight: 700 }),
-        createCustomLabel(35.1796, 129.0756, '부산', { size: 12, weight: 700 }),
-        createCustomLabel(35.6895, 139.6917, '도쿄', { size: 12, weight: 700 })
+        // 도시
+        createCustomLabel(37.5665, 126.9780, '서울', { size: 12, weight: 600 }),
+        createCustomLabel(35.1796, 129.0756, '부산', { size: 12, weight: 600 }),
+        createCustomLabel(35.6895, 139.6917, '도쿄', { size: 12, weight: 600 })
       ];
 
       mapInstance.current.on('zoomend', () => {
@@ -90,23 +100,22 @@ const Main = () => {
           const span = el.querySelector('span');
           if (!span) return;
 
-          // 지명 성격에 따른 동적 가시성 제어
           const text = span.innerText;
           const isCountry = ['대한민국', '일본'].includes(text);
           const isCity = ['서울', '부산', '도쿄'].includes(text);
 
           if (isCountry) {
-            span.style.opacity = zoom >= 3 ? '1' : '0.5';
-            span.style.fontSize = `${18 * Math.min(1.3, zoom / 8)}px`;
+            span.style.opacity = zoom >= 3 ? '1' : '0.4';
+            span.style.transform = `scale(${Math.min(1.4, Math.max(0.8, zoom / 8))})`;
           } else if (isCity) {
             span.style.opacity = zoom >= 7 ? '1' : '0';
           } else {
-            // 해역 자막 (동해, 서해)
+            // 해역 (동해, 서해)
             if (zoom < 5 || zoom > 12) {
               span.style.opacity = '0';
             } else {
-              span.style.opacity = '1';
-              span.style.fontSize = `${14 * Math.min(1.4, zoom / 10)}px`;
+              span.style.opacity = '0.7';
+              span.style.transform = `scale(${Math.min(1.2, zoom / 10)})`;
             }
           }
         });
@@ -114,6 +123,20 @@ const Main = () => {
       
       mapInstance.current.fire('zoomend');
     }
+
+    const interval = setInterval(() => {
+      const currentNightState = checkDayNight();
+      if (currentNightState !== isNight) {
+        setIsNight(currentNightState);
+        const newUrl = currentNightState 
+          ? 'https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png'
+          : 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}{r}.png';
+        
+        if (tileLayerRef.current) {
+          tileLayerRef.current.setUrl(newUrl);
+        }
+      }
+    }, 60000);
 
     return () => {
       clearInterval(interval);
@@ -125,17 +148,12 @@ const Main = () => {
     };
   }, [isNight]);
 
-
   return (
     <div className={`w-full h-screen relative transition-colors duration-1000 overflow-hidden ${isNight ? 'bg-[#0a0c10]' : 'bg-[#f4f7f9]'}`}>
-      {/* 1. Map Canvas Layer */}
       <div 
         ref={mapRef} 
         className="absolute inset-0 z-0 transition-opacity duration-1000 opacity-0 [&.map-loaded]:opacity-100"
       />
-
-
-      {/* 3. Global Depth Overlay */}
       <div className={`absolute inset-0 pointer-events-none z-10 transition-opacity duration-1000 ${isNight ? 'bg-black/20' : 'bg-amber-500/5'}`} />
     </div>
   );
