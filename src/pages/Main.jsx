@@ -43,7 +43,7 @@ const Main = () => {
     <div className="pt-40 pb-48 max-w-6xl mx-auto px-6">
       <div className="mb-24 text-center">
         <div className="inline-block px-5 py-2 mb-8 rounded-full bg-theme-badge-bg border border-theme-border text-theme-badge-text text-[11px] font-black tracking-[0.2em] uppercase shadow-sm">
-          Unified PascalCase v1.2.5
+          Unified PascalCase v1.2.6
         </div>
         <h1 className="text-5xl md:text-7xl font-black text-theme-text-primary tracking-tighter mb-6 leading-tight">
           System <span className="text-theme-accent">Unification</span>
