@@ -2,8 +2,8 @@ import React, { useEffect, useRef, useState } from 'react';
 
 /**
  * [Page] 메인 페이지 (지도 엔진)
- * @version 2.1.0
- * @description 시간(KST)을 감지하여 지도의 테마를 자동으로 전환하며, 지도의 가로 무한 반복 및 한국 해역 명칭(동해, 서해) 커스텀 라벨이 적용된 버전입니다.
+ * @version 2.1.1
+ * @description 시간(KST)을 감지하여 지도의 테마를 자동으로 전환하며, 기존 텍스트가 제거된 'No-Labels' 타일과 커스텀 라벨이 적용된 버전입니다.
  */
 const Main = () => {
   const mapRef = useRef(null);
@@ -40,10 +40,10 @@ const Main = () => {
         maxBoundsViscosity: 1.0
       }).setView([37.5665, 126.9780], 13);
 
-      // 초기 타일 설정
+      // 초기 타일 설정 (기존 텍스트 라벨이 없는 nolabels 버전 사용)
       const tileUrl = nightMode 
-        ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
-        : 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
+        ? 'https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png'
+        : 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}{r}.png';
 
       tileLayerRef.current = L.tileLayer(tileUrl, { maxZoom: 19, noWrap: false }).addTo(mapInstance.current);
       mapRef.current.classList.add('map-loaded');
@@ -88,8 +88,8 @@ const Main = () => {
       if (currentNightState !== isNight) {
         setIsNight(currentNightState);
         const newUrl = currentNightState 
-          ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
-          : 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
+          ? 'https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png'
+          : 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}{r}.png';
         
         if (tileLayerRef.current) {
           tileLayerRef.current.setUrl(newUrl);
