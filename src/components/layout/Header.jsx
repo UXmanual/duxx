@@ -1,0 +1,71 @@
+import React, { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
+import { Cpu, Menu, Sparkles } from 'lucide-react';
+import { Link, useLocation } from 'react-router-dom';
+
+/**
+ * 전역 헤더 컴포넌트
+ * @description 사이트의 내비게이션을 담당하며 스크롤 상태에 따라 디자인이 변함
+ */
+const Header = () => {
+  const [isScrolled, setIsScrolled] = useState(false);
+  const location = useLocation();
+
+  useEffect(() => {
+    const handleScroll = () => setIsScrolled(window.scrollY > 20);
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const navItems = [
+    { name: 'Home', path: '/' },
+    { name: 'Showcase', path: '/showcase' },
+    { name: 'Solutions', path: '/solutions' },
+    { name: 'About', path: '/about' },
+  ];
+
+  return (
+    <nav className={`
+      fixed top-0 w-full z-[100] transition-all duration-500 border-b
+      ${isScrolled 
+        ? 'py-4 bg-slate-950/80 backdrop-blur-xl border-white/10 shadow-2xl shadow-black/50' 
+        : 'py-6 bg-transparent border-transparent'}
+    `}>
+      <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
+        <Link to="/" className="flex items-center gap-3 group">
+          <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg group-hover:rotate-12 transition-transform duration-300">
+            <Cpu className="text-white w-6 h-6" />
+          </div>
+          <span className="text-2xl font-black text-white tracking-tighter">DUXX</span>
+        </Link>
+        
+        <div className="hidden md:flex items-center gap-10">
+          {navItems.map((item) => (
+            <Link 
+              key={item.name} 
+              to={item.path}
+              className={`text-sm font-semibold transition-all transform hover:-translate-y-0.5 ${
+                location.pathname === item.path ? 'text-indigo-400' : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              {item.name}
+            </Link>
+          ))}
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className="px-5 py-2.5 bg-white/5 border border-white/10 rounded-xl text-sm font-bold text-white backdrop-blur-md hover:bg-white/10 transition-colors"
+          >
+            Sign In
+          </motion.button>
+        </div>
+        
+        <button className="md:hidden text-white">
+          <Menu className="w-6 h-6" />
+        </button>
+      </div>
+    </nav>
+  );
+};
+
+export default Header;
