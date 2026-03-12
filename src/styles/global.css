@@ -27,3 +27,33 @@ body {
   border: 2px solid var(--theme-scrollbar-track);
   border-radius: 10px;
 }
+
+/* Custom Map Text Overlay */
+.custom-map-label {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.custom-map-label span {
+  display: block;
+  font-family: 'Pretendard', sans-serif;
+  font-weight: 900;
+  font-size: 14px;
+  letter-spacing: 0.2em;
+  white-space: nowrap;
+  text-align: center;
+  transition: all 0.5s ease;
+  pointer-events: none;
+}
+
+/* Day/Night Styles for Map Text */
+.label-night span {
+  color: rgba(255, 255, 255, 0.8);
+  text-shadow: 0 0 8px rgba(0, 0, 0, 1), 0 0 3px rgba(0, 0, 0, 1);
+}
+
+.label-day span {
+  color: rgba(15, 23, 42, 0.7);
+  text-shadow: 0 0 8px rgba(255, 255, 255, 1), 0 0 3px rgba(255, 255, 255, 1);
+}

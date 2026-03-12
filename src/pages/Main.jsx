@@ -2,13 +2,14 @@ import React, { useEffect, useRef, useState } from 'react';
 
 /**
  * [Page] 메인 페이지 (지도 엔진)
- * @version 2.0.0
- * @description 시간(KST)을 감지하여 지도의 테마를 자동으로 전환하며, 지도의 가로 무한 반복 및 세로 범위 제한이 적용된 버전입니다.
+ * @version 2.1.0
+ * @description 시간(KST)을 감지하여 지도의 테마를 자동으로 전환하며, 지도의 가로 무한 반복 및 한국 해역 명칭(동해, 서해) 커스텀 라벨이 적용된 버전입니다.
  */
 const Main = () => {
   const mapRef = useRef(null);
   const mapInstance = useRef(null);
   const tileLayerRef = useRef(null);
+  const labelsRef = useRef([]);
   const [isNight, setIsNight] = useState(false);
 
   useEffect(() => {
@@ -33,8 +34,8 @@ const Main = () => {
       mapInstance.current = L.map(mapRef.current, {
         zoomControl: false,
         attributionControl: false,
-        minZoom: 3, // 최소 줌 상향 (가로 비율이 깨지지 않고 꽉 차보이도록 조정)
-        worldCopyJump: true, // 가로 무한 스크롤 시 좌표 보정
+        minZoom: 3, 
+        worldCopyJump: true,
         maxBounds: bounds,
         maxBoundsViscosity: 1.0
       }).setView([37.5665, 126.9780], 13);
@@ -44,14 +45,44 @@ const Main = () => {
         ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
         : 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
 
-      tileLayerRef.current = L.tileLayer(tileUrl, { 
-        maxZoom: 19,
-        noWrap: false, // 가로 반복 허용 (잘림 방지)
-      }).addTo(mapInstance.current);
+      tileLayerRef.current = L.tileLayer(tileUrl, { maxZoom: 19, noWrap: false }).addTo(mapInstance.current);
       mapRef.current.classList.add('map-loaded');
+
+      // 해역 커스텀 라벨 추가 (동해, 서해)
+      const createCustomLabel = (lat, lng, text) => {
+        const marker = L.marker([lat, lng], {
+          icon: L.divIcon({
+            className: `custom-map-label ${nightMode ? 'label-night' : 'label-day'}`,
+            html: `<span>${text}</span>`,
+            iconSize: [100, 30],
+            iconAnchor: [50, 15]
+          }),
+          interactive: false,
+          zIndexOffset: 1000
+        }).addTo(mapInstance.current);
+        return marker;
+      };
+
+      labelsRef.current = [
+        createCustomLabel(38.0, 131.5, '동해'),
+        createCustomLabel(36.0, 124.0, '서해')
+      ];
     }
 
-    // 시간 변화 감지 및 타일 전환 로직
+    // 테마 변경 시 라벨 스타일 업데이트
+    if (labelsRef.current.length > 0) {
+      labelsRef.current.forEach(marker => {
+        const currentIcon = marker.getIcon();
+        const text = currentIcon.options.html.match(/<span>(.*?)<\/span>/)[1];
+        marker.setIcon(L.divIcon({
+          ...currentIcon.options,
+          className: `custom-map-label ${isNight ? 'label-night' : 'label-day'}`,
+          html: `<span>${text}</span>`
+        }));
+      });
+    }
+
+    // 시간 변화 감지 및 타일 전환 로직 (기존 로직 유지)
     const interval = setInterval(() => {
       const currentNightState = checkDayNight();
       if (currentNightState !== isNight) {
@@ -64,13 +95,14 @@ const Main = () => {
           tileLayerRef.current.setUrl(newUrl);
         }
       }
-    }, 60000); // 1분마다 체크
+    }, 60000);
 
     return () => {
       clearInterval(interval);
       if (mapInstance.current) {
         mapInstance.current.remove();
         mapInstance.current = null;
+        labelsRef.current = [];
       }
     };
   }, [isNight]);
