@@ -2,8 +2,8 @@ import React, { useEffect, useRef, useState } from 'react';
 
 /**
  * [Page] 메인 페이지 (지도 엔진)
- * @version 1.9.2
- * @description 시간(KST)을 감지하여 지도의 테마를 자동으로 전환하며, 사용자 요청에 따라 줌 제한 및 타일 반복 방지 로직이 적용된 버전입니다.
+ * @version 1.9.3
+ * @description 시간(KST)을 감지하여 지도의 테마를 자동으로 전환하며, 지도의 가로 무한 반복 및 세로 범위 제한이 적용된 버전입니다.
  */
 const Main = () => {
   const mapRef = useRef(null);
@@ -25,17 +25,18 @@ const Main = () => {
     setIsNight(nightMode);
 
     if (!mapInstance.current) {
-      // 지도 경계 설정 (남북 범위를 제한하여 화면 밖으로 나가지 않도록 함)
-      const southWest = L.latLng(-85, -180);
-      const northEast = L.latLng(85, 180);
+      // 세로(위도)는 제한하되, 가로(경도)는 무한히 반복될 수 있도록 설정
+      const southWest = L.latLng(-85, -1000);
+      const northEast = L.latLng(85, 1000);
       const bounds = L.latLngBounds(southWest, northEast);
 
       mapInstance.current = L.map(mapRef.current, {
         zoomControl: false,
         attributionControl: false,
-        minZoom: 2, // 최소 줌 레벨 제한 (화면 높이보다 작아지지 않도록)
-        maxBounds: bounds, // 지도 이동 범위 제한
-        maxBoundsViscosity: 1.0 // 경계 밖으로 나가지 못하도록 점성 설정
+        minZoom: 3, // 최소 줌 상향 (가로 비율이 깨지지 않고 꽉 차보이도록 조정)
+        worldCopyJump: true, // 가로 무한 스크롤 시 좌표 보정
+        maxBounds: bounds,
+        maxBoundsViscosity: 1.0
       }).setView([37.5665, 126.9780], 13);
 
       // 초기 타일 설정
@@ -45,8 +46,7 @@ const Main = () => {
 
       tileLayerRef.current = L.tileLayer(tileUrl, { 
         maxZoom: 19,
-        noWrap: true, // 지도 우측/좌측으로 무한 반복 방지
-        bounds: bounds
+        noWrap: false, // 가로 반복 허용 (잘림 방지)
       }).addTo(mapInstance.current);
       mapRef.current.classList.add('map-loaded');
     }
