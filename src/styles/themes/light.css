@@ -1,0 +1,11 @@
+:root, .theme-light {
+  --theme-bg: #f8fafc;        /* slate-50 */
+  --theme-text-primary: #0f172a;  /* slate-900 */
+  --theme-text-secondary: #64748b; /* slate-500 */
+  --theme-border: #e2e8f0;    /* slate-200 */
+  --theme-card-bg: #ffffff;
+  --theme-accent: #4f46e5;    /* indigo-600 */
+  --theme-mesh-1: rgba(79, 70, 229, 0.05);
+  --theme-mesh-2: rgba(59, 130, 246, 0.05);
+  --theme-mesh-3: rgba(168, 85, 247, 0.05);
+}

@@ -7,6 +7,12 @@ export default {
   theme: {
     extend: {
       colors: {
+        'theme-bg': 'var(--theme-bg)',
+        'theme-text': 'var(--theme-text-primary)',
+        'theme-text-muted': 'var(--theme-text-secondary)',
+        'theme-border': 'var(--theme-border)',
+        'theme-card': 'var(--theme-card-bg)',
+        'theme-accent': 'var(--theme-accent)',
         premium: {
           dark: '#0f172a',
           gold: '#fbbf24',

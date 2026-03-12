@@ -2,6 +2,10 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Theme Imports */
+@import './themes/light.css';
+@import './themes/dark.css';
+
 :root {
   font-family: 'Inter', system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
