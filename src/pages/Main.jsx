@@ -43,7 +43,7 @@ const Main = () => {
     <div className="pt-40 pb-48 max-w-6xl mx-auto px-6">
       <div className="mb-24 text-center">
         <div className="inline-block px-5 py-2 mb-8 rounded-full bg-theme-badge-bg border border-theme-border text-theme-badge-text text-[11px] font-black tracking-[0.2em] uppercase shadow-sm">
-          Architecture Visualization v1.2.0
+          Architecture Visualization v1.2.4
         </div>
         <h1 className="text-5xl md:text-7xl font-black text-theme-text-primary tracking-tighter mb-6 leading-tight">
           Visual <span className="text-theme-accent">Blueprint</span>
@@ -96,7 +96,7 @@ const Main = () => {
 
               <TreeBranch name="Routes.jsx" description="[The Map] 경로에 따라 어떤 파일을 보여줄지 결정" />
               <TreeBranch name="App.jsx" description="라우터와 컨텍스트를 조립하는 루트 루트" />
-              <TreeBranch name="Index.jsx" description="[The Entry] 프로젝트가 시작되는 핵심 입구" isLast={true} />
+              <TreeBranch name="main.jsx" description="[The Entry] 프로젝트가 시작되는 핵심 입구" isLast={true} />
             </TreeBranch>
           </div>
         </div>
