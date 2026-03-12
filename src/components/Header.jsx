@@ -47,6 +47,7 @@ const Header = () => {
                     repeat: Infinity, 
                     ease: "linear" 
                   }}
+                  className="text-[#FDB813]"
                 >
                   <Sun className="w-6 h-6" fill="currentColor" />
                 </motion.div>
@@ -61,6 +62,7 @@ const Header = () => {
                     repeat: Infinity, 
                     ease: "easeInOut" 
                   }}
+                  className="text-[#F6E05E]"
                 >
                   <Moon className="w-6 h-6" fill="currentColor" />
                 </motion.div>
