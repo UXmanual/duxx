@@ -21,7 +21,7 @@ const Footer = () => {
             </p>
             <span className="w-px h-3 bg-theme-text-secondary opacity-30" />
             <p className="text-theme-text-secondary text-[14px] font-bold tracking-[0]">
-              Last Deployed: 16:48 KST
+              Last Deployed: 16:55 KST
             </p>
           </div>
         </div>
