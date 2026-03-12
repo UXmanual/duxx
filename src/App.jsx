@@ -1,6 +1,6 @@
 import React from 'react';
 import { BrowserRouter } from 'react-router-dom';
-import AppRoutes from './routes';
+import AppRoutes from './Routes';
 
 /**
  * 프로젝트의 루트 컴포넌트

@@ -46,9 +46,14 @@ const Home = () => {
               details={["DirectoryItem: 아키텍처 리스트 UI"]}
             />
             <DirectoryItem 
-              name="src/index.jsx" 
+              name="src/Index.jsx" 
               description="[Sequence Control] 앱의 진입점이며 스타일 로딩 및 앱 래핑 순서를 결정합니다." 
               details={["ThemeProvider: 앱 전체 로직 감싸기"]}
+            />
+            <DirectoryItem 
+              name="src/Routes.jsx" 
+              description="[Navigation Control] URL 경로와 컴포넌트 간의 매핑을 정의합니다." 
+              details={["AppRoutes: 라우팅 시스템의 핵심"]}
             />
           </div>
         </section>
