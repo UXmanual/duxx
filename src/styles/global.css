@@ -2,18 +2,21 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Theme Imports */
+/* Theme Definitions */
 @import './themes/light.css';
 @import './themes/dark.css';
 
+/* Core Typography & Base */
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@200;300;400;500;600;700;800&display=swap');
 
 :root {
   font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
   line-height: 1.5;
   font-weight: 400;
-  color-scheme: light;
   background-color: var(--theme-bg);
+  color: var(--theme-text-primary);
+  /* color-scheme is automatically handled by browsers when variables are correct, 
+     but can be toggled in specific theme files if needed */
 }
 
 body {
@@ -22,34 +25,45 @@ body {
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  background-color: var(--theme-bg);
 }
 
-/* Premium Light Scrollbar */
+/* Common Layout Elements: Custom Scrollbar Root */
 ::-webkit-scrollbar {
   width: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--theme-bg);
+  background: var(--theme-scrollbar-track);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border: 2px solid var(--theme-bg);
+  background: var(--theme-scrollbar-thumb);
+  border: 2px solid var(--theme-scrollbar-track);
   border-radius: 10px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: var(--theme-scrollbar-thumb-hover);
 }
 
-/* Grainy Canvas Texture */
+/* Shared UI Utilities */
 .grainy-bg::after {
   content: "";
   position: fixed;
   top: 0; left: 0; width: 100%; height: 100%;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
-  opacity: 0.04;
+  opacity: var(--theme-grain-opacity);
   pointer-events: none;
   z-index: 100;
+}
+
+/* Common Animations */
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.animate-spin-slow {
+  animation: spin-slow 12s linear infinite;
 }
