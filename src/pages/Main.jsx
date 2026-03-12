@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { GoogleMap, useJsApiLoader } from '@react-google-maps/api';
+import { useTheme } from '../context/ThemeContext';
 
 /**
  * [Page] 메인 페이지 (구글 맵 엔진)
- * @version 3.1.0
- * @description Google Maps JavaScript SDK를 사용하여 구축된 인터랙티브 지도입니다. 
- * 아이프레임(iframe) 방식이 아닌 SDK 방식이므로 더 빠른 렌더링과 정교한 커스텀 스타일링을 제공합니다.
- * 줌 아웃 시 화면이 잘리는 현상을 방지하기 위해 최소 줌(minZoom)과 이동 제한(restriction)을 적용했습니다.
+ * @version 3.2.0
+ * @description Google Maps JS SDK를 사용하며, 전역 테마(ThemeProvider)와 연동되어 실시간으로 다크/라이트 모드가 전환됩니다.
  */
 
 const containerStyle = {
@@ -114,7 +113,7 @@ const darkMapStyles = [
 ];
 
 const Main = () => {
-  const [isNight, setIsNight] = useState(false);
+  const { isDark } = useTheme();
   
   const { isLoaded } = useJsApiLoader({
     id: 'google-map-script',
@@ -122,19 +121,8 @@ const Main = () => {
     language: 'ko'
   });
 
-  useEffect(() => {
-    const checkDayNight = () => {
-      const hour = new Date().getHours();
-      return hour < 7 || hour >= 19;
-    };
-    
-    setIsNight(checkDayNight());
-    const interval = setInterval(() => setIsNight(checkDayNight()), 60000);
-    return () => clearInterval(interval);
-  }, []);
-
   return (
-    <div className="w-full h-screen relative overflow-hidden bg-[#0a0c10]">
+    <div className={`w-full h-screen relative overflow-hidden transition-colors duration-1000 ${isDark ? 'bg-[#0a0c10]' : 'bg-[#f4f7f9]'}`}>
       {isLoaded ? (
         <GoogleMap
           mapContainerStyle={containerStyle}
@@ -142,22 +130,22 @@ const Main = () => {
           zoom={13}
           options={{
             disableDefaultUI: true,
-            minZoom: 3, // 너무 멀리 줌아웃되어 화면이 잘리는 현상 방지
+            minZoom: 3,
             maxZoom: 18,
-            restriction: mapBoundsRestriction, // 세로(위아래) 한계선 설정
-            styles: isNight ? darkMapStyles : [],
+            restriction: mapBoundsRestriction,
+            styles: isDark ? darkMapStyles : [],
             gestureHandling: 'greedy',
-            backgroundColor: isNight ? '#0a1016' : '#f4f7f9'
+            backgroundColor: isDark ? '#0a1016' : '#f4f7f9'
           }}
         />
       ) : (
-        <div className="w-full h-full flex items-center justify-center text-white/10 font-black text-6xl animate-pulse tracking-tighter">
+        <div className="w-full h-full flex items-center justify-center text-white/5 font-black text-6xl animate-pulse tracking-tighter">
           DUXX ENGINE
         </div>
       )}
       
       {/* Global Depth Overlay */}
-      <div className={`absolute inset-0 pointer-events-none z-10 transition-opacity duration-1000 ${isNight ? 'bg-black/10' : 'bg-transparent'}`} />
+      <div className={`absolute inset-0 pointer-events-none z-10 transition-opacity duration-1000 ${isDark ? 'bg-black/10' : 'bg-transparent'}`} />
     </div>
   );
 };
