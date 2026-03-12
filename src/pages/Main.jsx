@@ -3,19 +3,32 @@ import { GoogleMap, useJsApiLoader } from '@react-google-maps/api';
 
 /**
  * [Page] 메인 페이지 (구글 맵 엔진)
- * @version 3.0.0
- * @description Leaflet 엔진을 제거하고 Google Maps JavaScript API로 전면 교체한 버전입니다.
- * 시간(KST) 및 시스템 테마를 감지하여 다크 모드를 지원하며, 언어 설정을 프로젝트 기본값(ko)으로 고정합니다.
+ * @version 3.1.0
+ * @description Google Maps JavaScript SDK를 사용하여 구축된 인터랙티브 지도입니다. 
+ * 아이프레임(iframe) 방식이 아닌 SDK 방식이므로 더 빠른 렌더링과 정교한 커스텀 스타일링을 제공합니다.
+ * 줌 아웃 시 화면이 잘리는 현상을 방지하기 위해 최소 줌(minZoom)과 이동 제한(restriction)을 적용했습니다.
  */
 
 const containerStyle = {
   width: '100%',
-  height: '100vh'
+  height: '100vh',
+  backgroundColor: '#0a0c10'
 };
 
 const center = {
   lat: 37.5665,
   lng: 126.9780
+};
+
+// 위아래 화면 잘림 방지를 위한 이동 제한 구역 (Latitude 제한)
+const mapBoundsRestriction = {
+  latLngBounds: {
+    north: 85,
+    south: -85,
+    west: -180,
+    east: 180
+  },
+  strictBounds: false
 };
 
 // 구글 맵 커스텀 스타일 (다크 모드용)
@@ -106,7 +119,7 @@ const Main = () => {
   const { isLoaded } = useJsApiLoader({
     id: 'google-map-script',
     googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
-    language: 'ko' // 한국어 고정 (동해 표기 보장)
+    language: 'ko'
   });
 
   useEffect(() => {
@@ -129,12 +142,17 @@ const Main = () => {
           zoom={13}
           options={{
             disableDefaultUI: true,
-            styles: isNight ? darkMapStyles : []
+            minZoom: 3, // 너무 멀리 줌아웃되어 화면이 잘리는 현상 방지
+            maxZoom: 18,
+            restriction: mapBoundsRestriction, // 세로(위아래) 한계선 설정
+            styles: isNight ? darkMapStyles : [],
+            gestureHandling: 'greedy',
+            backgroundColor: isNight ? '#0a1016' : '#f4f7f9'
           }}
         />
       ) : (
-        <div className="w-full h-full flex items-center justify-center text-white/20 font-black text-4xl animate-pulse">
-          LOADING MAP...
+        <div className="w-full h-full flex items-center justify-center text-white/10 font-black text-6xl animate-pulse tracking-tighter">
+          DUXX ENGINE
         </div>
       )}
       
