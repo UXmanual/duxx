@@ -1,16 +1,12 @@
 :root {
-  /* Core Colors - Default Light Mode */
-  --theme-bg: #ffffff;
-  --theme-text-primary: #020617;
+  --theme-bg: #f8fafc;
+  --theme-text-primary: #0f172a;
   --theme-text-secondary: #64748b;
-  --theme-border: #f1f5f9;
-  --theme-card-bg: #f8fafc;
+  --theme-border: #e2e8f0;
+  --theme-card-bg: #ffffff;
   --theme-accent: #2563eb;
-  
   --theme-badge-bg: #eff6ff;
   --theme-badge-text: #2563eb;
-  
-  --theme-scrollbar-track: #ffffff;
-  --theme-scrollbar-thumb: #e2e8f0;
-  --theme-scrollbar-thumb-hover: #cbd5e1;
+  --theme-scrollbar-track: #f8fafc;
+  --theme-scrollbar-thumb: #cbd5e1;
 }

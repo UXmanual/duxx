@@ -4,50 +4,20 @@
 
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@200;300;400;500;600;700;800&display=swap');
 
-/* 통합 테마 시스템 (Root Variables) */
-:root {
-  /* LIGHT THEME (Default) */
-  --theme-bg: #f8fafc;           /* Light Slate Background */
-  --theme-text-primary: #0f172a;  /* Dark Slate Text */
-  --theme-text-secondary: #64748b;
-  --theme-border: #e2e8f0;
-  --theme-card-bg: #ffffff;
-  --theme-accent: #2563eb;
-  --theme-badge-bg: #eff6ff;
-  --theme-badge-text: #2563eb;
-  --theme-scrollbar-track: #f8fafc;
-  --theme-scrollbar-thumb: #cbd5e1;
-}
-
-.dark {
-  /* DARK THEME Overrides */
-  --theme-bg: #020617;
-  --theme-text-primary: #f8fafc;
-  --theme-text-secondary: #94a3b8;
-  --theme-border: #1e293b;
-  --theme-card-bg: #0f172a;
-  --theme-accent: #60a5fa;
-  --theme-badge-bg: #1e293b;
-  --theme-badge-text: #60a5fa;
-  --theme-scrollbar-track: #020617;
-  --theme-scrollbar-thumb: #334155;
-}
-
-/* Global Styles using Variables */
+/* Basic Structural Styles */
 :root {
   font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
   background-color: var(--theme-bg);
   color: var(--theme-text-primary);
-  transition: background-color 0.2s ease;
+  transition: background-color 0.2s ease, color 0.1s ease;
 }
 
 body {
   margin: 0;
-  background-color: var(--theme-bg);
-  color: var(--theme-text-primary);
+  min-height: 100vh;
 }
 
-/* Custom Scrollbar */
+/* Custom Scrollbar Structure */
 ::-webkit-scrollbar { width: 8px; }
 ::-webkit-scrollbar-track { background: var(--theme-scrollbar-track); }
 ::-webkit-scrollbar-thumb { 
