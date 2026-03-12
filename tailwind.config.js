@@ -8,25 +8,25 @@ export default {
     extend: {
       colors: {
         'theme-bg': 'var(--theme-bg)',
-        'theme-text': 'var(--theme-text-primary)',
-        'theme-text-muted': 'var(--theme-text-secondary)',
+        'theme-text': {
+          primary: 'var(--theme-text-primary)',
+          secondary: 'var(--theme-text-secondary)',
+        },
         'theme-border': 'var(--theme-border)',
         'theme-card': 'var(--theme-card-bg)',
         'theme-accent': 'var(--theme-accent)',
-        premium: {
-          dark: '#0f172a',
-          gold: '#fbbf24',
-          accent: '#6366f1'
+        'theme-badge': {
+          bg: 'var(--theme-badge-bg)',
+          text: 'var(--theme-badge-text)',
+        },
+        'theme-scrollbar': {
+          track: 'var(--theme-scrollbar-track)',
+          thumb: 'var(--theme-scrollbar-thumb)',
+          'thumb-hover': 'var(--theme-scrollbar-thumb-hover)',
         }
       },
-      animation: {
-        'fade-in': 'fadeIn 0.5s ease-out forwards',
-      },
-      keyframes: {
-        fadeIn: {
-          '0%': { opacity: '0', transform: 'translateY(10px)' },
-          '100%': { opacity: '1', transform: 'translateY(0)' },
-        },
+      fontFamily: {
+        sans: ['Plus Jakarta Sans', 'sans-serif'],
       },
     },
   },
