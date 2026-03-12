@@ -4,9 +4,9 @@ import { useTheme } from '../context/ThemeContext';
 
 /**
  * [Page] 메인 페이지 (구글 맵 엔진)
- * @version 3.5.0
- * @description 프리미엄 다크 모드 스타일이 적용된 구글 맵 엔진입니다.
- * 단순한 흑백 처리가 아닌, 깊이감 있는 네이비와 차콜 톤을 사용하여 고급스러운 야간 시인성을 제공합니다.
+ * @version 3.6.0
+ * @description 프리미엄 다크 모드가 적용된 구글 맵입니다. 
+ * 접속 시 브라우저 Geolocation API를 사용하여 사용자의 현위치를 자동으로 감지하고 기본 줌(Zoom 14)을 제공합니다.
  */
 
 const containerStyle = {
@@ -15,9 +15,9 @@ const containerStyle = {
   backgroundColor: '#0a1016'
 };
 
-const center = {
-  lat: 36.5,
-  lng: 127.5
+const defaultCenter = {
+  lat: 37.5665,
+  lng: 126.9780
 };
 
 const mapBoundsRestriction = {
@@ -149,21 +149,39 @@ const darkMapStyles = [
 
 const Main = () => {
   const { isDark } = useTheme();
+  const [mapCenter, setMapCenter] = useState(defaultCenter);
+  const [mapZoom, setMapZoom] = useState(7);
   
   const { isLoaded } = useJsApiLoader({
     id: 'google-map-script',
     googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
     language: 'ko',
-    region: 'KR' // 한국 지역 설정 (동해 명칭 및 독도 표기 최적화)
+    region: 'KR'
   });
+
+  // 현위치 감지 로직
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          setMapCenter({ lat: latitude, lng: longitude });
+          setMapZoom(14); // 현위치 발견 시 기본줌
+        },
+        () => {
+          console.warn("Geolocation access denied or failed. Using default center.");
+        }
+      );
+    }
+  }, []);
 
   return (
     <div className={`w-full h-screen relative overflow-hidden transition-colors duration-1000 ${isDark ? 'bg-[#0a0c10]' : 'bg-[#f4f7f9]'}`}>
       {isLoaded ? (
         <GoogleMap
           mapContainerStyle={containerStyle}
-          center={center}
-          zoom={7}
+          center={mapCenter}
+          zoom={mapZoom}
           options={{
             disableDefaultUI: true,
             minZoom: 3,
