@@ -66,7 +66,7 @@ const Footer = () => {
               <p className="text-theme-text-primary text-[10px] font-black font-mono">Build v{pkg.version}</p>
             </div>
             <p className="text-theme-text-secondary text-[9px] font-bold opacity-50 uppercase tracking-tighter">
-              Last Deployed: 2026-03-12 15:04 KST
+              Last Deployed: 2026-03-12 15:26 KST
             </p>
           </div>
         </div>
