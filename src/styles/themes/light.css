@@ -11,7 +11,7 @@
   --theme-mesh-1: rgba(59, 130, 246, 0.08);
   --theme-mesh-2: rgba(99, 102, 241, 0.05);
   --theme-mesh-3: rgba(16, 185, 129, 0.03);
-  --theme-grain-opacity: 0.04;
+  --theme-grain-opacity: 0;
 
   /* Scrollbar */
   --theme-scrollbar-track: #fdfdfe;

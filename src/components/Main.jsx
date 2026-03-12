@@ -9,7 +9,7 @@ import Footer from './Footer';
  */
 const Main = () => {
   return (
-    <div className="min-h-screen bg-theme-bg text-theme-text font-sans antialiased grainy-bg">
+    <div className="min-h-screen bg-theme-bg text-theme-text font-sans antialiased">
       <Header />
       <main className="relative z-10">
         <Outlet />
