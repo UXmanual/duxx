@@ -18,7 +18,7 @@ export default {
         'theme-badge-text': 'var(--theme-badge-text)',
       },
       fontFamily: {
-        sans: ['Plus Jakarta Sans', 'sans-serif'],
+        sans: ['Pretendard', '-apple-system', 'BlinkMacSystemFont', 'system-ui', 'Roboto', 'sans-serif'],
       },
     },
   },

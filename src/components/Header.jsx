@@ -9,7 +9,6 @@ const Header = () => {
     <header className="fixed top-0 left-0 right-0 z-50 transition-all duration-500 backdrop-blur-md bg-theme-bg/30">
       <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-theme-accent rounded-full animate-pulse shadow-lg shadow-theme-accent/20" />
           <span className="font-black text-xl tracking-tighter uppercase">DUXX</span>
         </div>
         
