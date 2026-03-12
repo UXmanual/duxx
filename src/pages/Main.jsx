@@ -1,11 +1,12 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { GoogleMap, useJsApiLoader, Marker, OverlayView } from '@react-google-maps/api';
+import React, { useState, useEffect, useCallback } from 'react';
+import { GoogleMap, useJsApiLoader } from '@react-google-maps/api';
 import { useTheme } from '../context/ThemeContext';
 
 /**
  * [Page] 메인 페이지 (구글 맵 엔진)
- * @version 3.3.0
- * @description Google Maps SDK를 사용하여 한국 해역 명칭(동해, 서해)을 커스텀 라벨로 정확히 표기한 프리미엄 버전입니다.
+ * @version 3.4.0
+ * @description 구글 맵 기본 라벨을 사용하며, region: 'KR' 설정을 통해 한국 지명을 우선적으로 표시합니다.
+ * (주의: 구글 정책상 '서해' 대신 '황해'가 기본 표기되는 것은 엔진 고유 특성입니다.)
  */
 
 const containerStyle = {
@@ -29,12 +30,6 @@ const mapBoundsRestriction = {
   strictBounds: false
 };
 
-// 해역 라벨 좌표 데이터
-const seaLabels = [
-  { id: 'east-sea', name: '동해', position: { lat: 37.5, lng: 131.5 } },
-  { id: 'west-sea', name: '서해', position: { lat: 36.5, lng: 124.5 } }
-];
-
 // 구글 맵 커스텀 스타일 (다크 모드용)
 const darkMapStyles = [
   { elementType: "geometry", stylers: [{ color: "#1a1c1e" }] },
@@ -42,38 +37,21 @@ const darkMapStyles = [
   { elementType: "labels.text.fill", stylers: [{ color: "#6b7280" }] },
   { featureType: "water", elementType: "geometry", stylers: [{ color: "#0f172a" }] },
   { featureType: "water", elementType: "labels.text.fill", stylers: [{ color: "#334155" }] },
-  { featureType: "water", elementType: "labels.text.stroke", stylers: [{ color: "#0f172a" }] },
   { featureType: "landscape", elementType: "geometry", stylers: [{ color: "#1e293b" }] },
   { featureType: "administrative", elementType: "labels.text.fill", stylers: [{ color: "#94a3b8" }] },
-  { featureType: "road", stylers: [{ visibility: "off" }] },
-  { featureType: "poi", stylers: [{ visibility: "off" }] },
-  { featureType: "transit", stylers: [{ visibility: "off" }] }
+  { featureType: "road", stylers: [{ visibility: "simplified" }, { color: "#334155" }] },
+  { featureType: "poi", stylers: [{ visibility: "off" }] }
 ];
 
 const Main = () => {
   const { isDark } = useTheme();
-  const [map, setMap] = useState(null);
-  const [zoom, setZoom] = useState(6);
   
   const { isLoaded } = useJsApiLoader({
     id: 'google-map-script',
     googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
-    language: 'ko'
+    language: 'ko',
+    region: 'KR' // 한국 지역 설정 (동해 명칭 및 독도 표기 최적화)
   });
-
-  const onLoad = useCallback((mapInstance) => {
-    setMap(mapInstance);
-  }, []);
-
-  const onUnmount = useCallback(() => {
-    setMap(null);
-  }, []);
-
-  const onZoomChanged = () => {
-    if (map) {
-      setZoom(map.getZoom());
-    }
-  };
 
   return (
     <div className={`w-full h-screen relative overflow-hidden transition-colors duration-1000 ${isDark ? 'bg-[#0a0c10]' : 'bg-[#f4f7f9]'}`}>
@@ -81,10 +59,7 @@ const Main = () => {
         <GoogleMap
           mapContainerStyle={containerStyle}
           center={center}
-          zoom={6}
-          onLoad={onLoad}
-          onUnmount={onUnmount}
-          onZoomChanged={onZoomChanged}
+          zoom={7}
           options={{
             disableDefaultUI: true,
             minZoom: 3,
@@ -94,38 +69,7 @@ const Main = () => {
             gestureHandling: 'greedy',
             backgroundColor: isDark ? '#0a1016' : '#f4f7f9'
           }}
-        >
-          {/* 해역 커스텀 라벨 렌더링 (SDK의 OverlayView 방식 사용) */}
-          {seaLabels.map((label) => (
-            <OverlayView
-              key={label.id}
-              position={label.position}
-              mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}
-            >
-              <div 
-                style={{
-                  transform: `scale(${Math.min(1.5, Math.max(0.7, zoom / 8))})`,
-                  opacity: zoom > 4 && zoom < 12 ? 1 : 0,
-                  transition: 'all 0.4s ease',
-                  pointerEvents: 'none'
-                }}
-              >
-                <span className={`
-                  whitespace-nowrap font-bold tracking-[0.2em] text-[15px] block
-                  ${isDark ? 'text-white/70' : 'text-slate-700/80'}
-                `}
-                style={{
-                  fontFamily: 'Pretendard',
-                  textShadow: isDark 
-                    ? '0 0 10px rgba(0,0,0,0.8)' 
-                    : '0 0 10px rgba(255,255,255,0.8)'
-                }}>
-                  {label.name}
-                </span>
-              </div>
-            </OverlayView>
-          ))}
-        </GoogleMap>
+        />
       ) : (
         <div className="w-full h-full flex items-center justify-center text-white/5 font-black text-6xl animate-pulse tracking-tighter">
           DUXX ENGINE
