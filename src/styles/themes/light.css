@@ -1,21 +1,16 @@
-:root, .theme-light {
-  /* Core Colors - High Contrast for Readability */
+:root {
+  /* Core Colors - Default Light Mode */
   --theme-bg: #ffffff;
-  --theme-text-primary: #020617;   /* Extremely dark blue/black for max contrast */
-  --theme-text-secondary: #475569; /* Slate-600 */
-  --theme-border: #e2e8f0;         /* Slate-200 */
+  --theme-text-primary: #020617;
+  --theme-text-secondary: #64748b;
+  --theme-border: #f1f5f9;
   --theme-card-bg: #f8fafc;
-  --theme-accent: #2563eb;         /* Blue-600 */
+  --theme-accent: #2563eb;
   
-  /* Feature Elements */
-  --theme-badge-bg: #f1f5f9;
-  --theme-badge-text: #0f172a;
+  --theme-badge-bg: #eff6ff;
+  --theme-badge-text: #2563eb;
   
-  /* Grain & Mesh (Disabled for clean look) */
-  --theme-grain-opacity: 0;
-  
-  /* Scrollbar */
   --theme-scrollbar-track: #ffffff;
-  --theme-scrollbar-thumb: #cbd5e1;
-  --theme-scrollbar-thumb-hover: #94a3b8;
+  --theme-scrollbar-thumb: #e2e8f0;
+  --theme-scrollbar-thumb-hover: #cbd5e1;
 }

@@ -2,33 +2,26 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Theme Definitions */
+/* Theme Imports - Core variables */
 @import './themes/light.css';
 @import './themes/dark.css';
 
-/* Core Typography & Base */
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@200;300;400;500;600;700;800&display=swap');
 
 :root {
   font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
   background-color: var(--theme-bg);
   color: var(--theme-text-primary);
-  /* color-scheme is automatically handled by browsers when variables are correct, 
-     but can be toggled in specific theme files if needed */
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 body {
   margin: 0;
-  min-width: 320px;
   min-height: 100vh;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
   background-color: var(--theme-bg);
 }
 
-/* Common Layout Elements: Custom Scrollbar Root */
+/* Scrollbar controlled by theme variables */
 ::-webkit-scrollbar {
   width: 8px;
 }
@@ -45,14 +38,4 @@ body {
 
 ::-webkit-scrollbar-thumb:hover {
   background: var(--theme-scrollbar-thumb-hover);
-}
-
-/* Common Animations */
-@keyframes spin-slow {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-
-.animate-spin-slow {
-  animation: spin-slow 12s linear infinite;
 }

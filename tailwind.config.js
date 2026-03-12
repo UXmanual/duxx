@@ -1,5 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 export default {
+  darkMode: 'class', // 클래스 기반 다크모드 활성화
   content: [
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
@@ -18,11 +19,6 @@ export default {
         'theme-badge': {
           bg: 'var(--theme-badge-bg)',
           text: 'var(--theme-badge-text)',
-        },
-        'theme-scrollbar': {
-          track: 'var(--theme-scrollbar-track)',
-          thumb: 'var(--theme-scrollbar-thumb)',
-          'thumb-hover': 'var(--theme-scrollbar-thumb-hover)',
         }
       },
       fontFamily: {
