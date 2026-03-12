@@ -1,46 +1,31 @@
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { Sun, Moon } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
-import navData from '../data/navigation.json';
+import { Sun, Moon } from 'lucide-react';
 
-/**
- * 순수 UI 헤더 컴포넌트
- * @description 테마 전환 '로직'은 context에 위임하고, '이벤트'만 전달합니다.
- */
 const Header = () => {
-  const location = useLocation();
-  const { navItems } = navData;
-  const { isDark, toggleTheme } = useTheme();
+  const { isDarkMode, toggleTheme } = useTheme();
 
   return (
-    <nav className="fixed top-0 w-full z-[100] bg-theme-bg/80 backdrop-blur-md border-b border-theme-border py-4">
-      <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
-        <div className="flex-1 flex justify-center gap-10">
-          {navItems.map((item) => (
-            <Link 
-              key={item.name} 
-              to={item.path}
-              className={`text-sm font-bold tracking-tight transition-colors ${
-                location.pathname === item.path 
-                  ? 'text-theme-accent' 
-                  : 'text-theme-text-secondary hover:text-theme-text-primary'
-              }`}
-            >
-              {item.name}
-            </Link>
-          ))}
+    <header className="fixed top-0 left-0 right-0 z-50 transition-all duration-500 backdrop-blur-md bg-theme-bg/30 border-b border-theme-border/20">
+      <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 bg-theme-accent rounded-full animate-pulse shadow-lg shadow-theme-accent/20" />
+          <span className="font-black text-xl tracking-tighter uppercase">DUXX</span>
         </div>
-
-        <button
+        
+        <button 
           onClick={toggleTheme}
-          className="p-2 rounded-xl bg-theme-bg border border-theme-border text-theme-text-primary hover:shadow-md transition-all active:scale-95"
+          className="p-3 rounded-2xl bg-theme-card/50 hover:bg-theme-accent hover:text-white transition-all duration-300 border border-theme-border/50 group"
           aria-label="Toggle Theme"
         >
-          {isDark ? <Sun className="w-5 h-5 text-yellow-500" /> : <Moon className="w-5 h-5 text-indigo-600" />}
+          {isDarkMode ? (
+            <Sun className="w-5 h-5 group-hover:rotate-90 transition-transform duration-500" />
+          ) : (
+            <Moon className="w-5 h-5 group-hover:-rotate-12 transition-transform duration-500" />
+          )}
         </button>
       </div>
-    </nav>
+    </header>
   );
 };
 
