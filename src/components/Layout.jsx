@@ -4,10 +4,10 @@ import Header from './Header';
 import Footer from './Footer';
 
 /**
- * 단순화된 메인 레이아웃
- * @description selection 배경색까지 테마 변수를 사용하도록 수정했습니다.
+ * 전역 레이아웃 (껍데기)
+ * @description 헤더, 푸터와 같은 공통 틀을 정의하며 대소문자 규칙을 준수합니다.
  */
-const Main = () => {
+const Layout = () => {
   return (
     <div className="min-h-screen bg-theme-bg text-theme-text-primary font-sans antialiased">
       <Header />
@@ -19,4 +19,4 @@ const Main = () => {
   );
 };
 
-export default Main;
+export default Layout;
