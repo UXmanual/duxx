@@ -9,7 +9,7 @@ const Footer = () => {
   return (
     <footer className="fixed bottom-0 left-0 right-0 z-50 pointer-events-none">
       <div className="w-full px-10 py-8">
-        <div className="flex flex-col items-start gap-1 p-5 rounded-[32px] inline-block pointer-events-auto">
+        <div className="flex flex-col items-start gap-1 py-5 inline-block pointer-events-auto">
           {/* Copyright: font-size 14px, letter-spacing 0 */}
           <p className="text-theme-text-primary font-black text-[14px] tracking-[0] opacity-80">
             ©DUXX
@@ -21,7 +21,7 @@ const Footer = () => {
             </p>
             <span className="w-px h-3 bg-theme-text-secondary opacity-30" />
             <p className="text-theme-text-secondary text-[14px] font-bold tracking-[0]">
-              Last Deployed: 17:53 KST
+              Last Deployed: 17:58 KST
             </p>
           </div>
         </div>

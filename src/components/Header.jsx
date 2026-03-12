@@ -40,12 +40,12 @@ const Header = () => {
               {isDark ? (
                 <motion.div
                   animate={{ 
-                    y: [0, -3, 0],
+                    rotate: 360
                   }}
                   transition={{ 
-                    duration: 3, 
+                    duration: 10, 
                     repeat: Infinity, 
-                    ease: "easeInOut" 
+                    ease: "linear" 
                   }}
                 >
                   <Sun className="w-6 h-6" fill="currentColor" />
@@ -53,8 +53,8 @@ const Header = () => {
               ) : (
                 <motion.div
                   animate={{ 
-                    rotate: [0, 10, 0],
-                    y: [0, -2, 0]
+                    y: [0, -3, 0],
+                    rotate: [0, 10, 0]
                   }}
                   transition={{ 
                     duration: 4, 
