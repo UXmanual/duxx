@@ -7,62 +7,68 @@ import pkg from '../../package.json';
  */
 const Footer = () => {
   return (
-    <footer className="relative z-10 border-t border-theme-border py-20 bg-theme-bg">
+    <footer className="relative z-10 border-t border-theme-border/50 py-32 bg-white/50 backdrop-blur-sm">
       <div className="max-w-7xl mx-auto px-6">
-        <div className="flex flex-col md:flex-row justify-between items-start gap-12">
-          <div className="max-w-xs">
-            <div className="flex items-center gap-2 mb-6">
-              <Cpu className="text-theme-accent w-6 h-6" />
-              <span className="text-xl font-black text-theme-text tracking-tighter">DUXX</span>
+        <div className="flex flex-col lg:flex-row justify-between items-start gap-20">
+          <div className="max-w-sm">
+            <div className="flex items-center gap-3 mb-8">
+              <div className="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center">
+                <Cpu className="text-white w-5 h-5" />
+              </div>
+              <span className="text-2xl font-black text-slate-950 tracking-tighter">DUXX</span>
             </div>
-            <p className="text-theme-text-muted text-sm leading-relaxed">
-              최고의 기술력과 디자인으로 디지털 경험을 재정의합니다. 
-              DUXX Project는 창의성과 성능의 조화를 추구합니다.
+            <p className="text-slate-500 text-lg leading-relaxed font-medium">
+              We define the intersection of spatial data and high-end design. 
+              Engineering reality into digital excellence.
             </p>
           </div>
           
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-16">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-20">
             <div>
-              <h4 className="text-theme-text font-bold mb-6">Platform</h4>
-              <ul className="space-y-3 text-theme-text-muted text-sm font-medium">
-                <li className="hover:text-theme-accent cursor-pointer hover:translate-x-1 transition-all">Overview</li>
-                <li className="hover:text-theme-accent cursor-pointer hover:translate-x-1 transition-all">Features</li>
-                <li className="hover:text-theme-accent cursor-pointer hover:translate-x-1 transition-all">Integrations</li>
+              <h4 className="text-slate-950 font-bold mb-8 uppercase tracking-widest text-xs">Platform</h4>
+              <ul className="space-y-4 text-slate-500 text-sm font-semibold">
+                <li className="hover:text-blue-600 cursor-pointer transition-colors">Mapping Engine</li>
+                <li className="hover:text-blue-600 cursor-pointer transition-colors">Data Analysis</li>
+                <li className="hover:text-blue-600 cursor-pointer transition-colors">Developer API</li>
               </ul>
             </div>
             <div>
-              <h4 className="text-theme-text font-bold mb-6">Resources</h4>
-              <ul className="space-y-3 text-theme-text-muted text-sm font-medium">
-                <li className="hover:text-theme-accent cursor-pointer hover:translate-x-1 transition-all">Documentation</li>
-                <li className="hover:text-theme-accent cursor-pointer hover:translate-x-1 transition-all">Help Center</li>
-                <li className="hover:text-theme-accent cursor-pointer hover:translate-x-1 transition-all">Status</li>
+              <h4 className="text-slate-950 font-bold mb-8 uppercase tracking-widest text-xs">Resources</h4>
+              <ul className="space-y-4 text-slate-500 text-sm font-semibold">
+                <li className="hover:text-blue-600 cursor-pointer transition-colors">Documentation</li>
+                <li className="hover:text-blue-600 cursor-pointer transition-colors">Help Center</li>
+                <li className="hover:text-blue-600 cursor-pointer transition-colors">Status</li>
               </ul>
             </div>
             <div className="col-span-2 md:col-span-1">
-              <h4 className="text-theme-text font-bold mb-6">Connect</h4>
+              <h4 className="text-slate-950 font-bold mb-8 uppercase tracking-widest text-xs">Connect</h4>
               <div className="flex gap-4">
-                <div className="w-10 h-10 rounded-full bg-theme-bg border border-theme-border flex items-center justify-center hover:opacity-80 cursor-pointer transition-colors">
-                  <Github className="w-5 h-5 text-theme-text-muted" />
+                <div className="w-12 h-12 rounded-2xl bg-white border border-slate-200 flex items-center justify-center hover:shadow-lg transition-all cursor-pointer">
+                  <Github className="w-5 h-5 text-slate-900" />
                 </div>
-                <div className="w-10 h-10 rounded-full bg-theme-bg border border-theme-border flex items-center justify-center hover:opacity-80 cursor-pointer transition-colors">
-                  <Globe className="w-5 h-5 text-theme-text-muted" />
+                <div className="w-12 h-12 rounded-2xl bg-white border border-slate-200 flex items-center justify-center hover:shadow-lg transition-all cursor-pointer">
+                  <Globe className="w-5 h-5 text-slate-900" />
                 </div>
               </div>
             </div>
           </div>
         </div>
         
-        <div className="mt-20 pt-10 border-t border-theme-border flex flex-col md:flex-row justify-between items-center gap-6">
-          <div className="flex flex-col gap-2">
-            <p className="text-theme-text-muted text-[10px] font-bold tracking-[0.2em] uppercase">© 2026 DUXX Project. Digital Innovation.</p>
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              <p className="text-theme-accent text-xs font-bold font-mono tracking-tight">Production Version: v{pkg.version}</p>
+        <div className="mt-32 pt-12 border-t border-slate-100 flex flex-col md:flex-row justify-between items-center gap-8">
+          <p className="text-slate-400 text-xs font-bold tracking-[0.2em] uppercase">© 2026 DUXX Project. All Rights Reserved.</p>
+          
+          <div className="flex items-center gap-4">
+            <div className="px-4 py-2 rounded-full bg-slate-100/50 border border-slate-200/50 backdrop-blur-md flex items-center gap-3">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+              </span>
+              <p className="text-slate-600 text-xs font-bold font-mono">Build v{pkg.version}</p>
+            </div>
+            <div className="hidden md:flex items-center gap-2 text-slate-400 text-xs font-bold px-4 py-2">
+              <Shield className="w-4 h-4" /> SSL Encrypted
             </div>
           </div>
-          <p className="text-theme-text-muted text-[10px] flex items-center gap-2 font-medium">
-            <Shield className="w-3 h-3" /> Securing Your Vision
-          </p>
         </div>
       </div>
     </footer>
