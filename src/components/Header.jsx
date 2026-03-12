@@ -9,12 +9,13 @@ const Header = () => {
     <header className="fixed top-0 left-0 right-0 z-50 transition-all duration-500 backdrop-blur-md bg-theme-bg/30">
       <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <span className="font-black text-xl tracking-tighter uppercase">DUXX</span>
+          {/* Logo: font-size 24px, letter-spacing 0 */}
+          <span className="font-black text-[24px] tracking-[0] uppercase">DUXX</span>
         </div>
         
         <button 
           onClick={toggleTheme}
-          className="p-3 rounded-2xl bg-theme-card/50 hover:bg-theme-accent hover:text-white transition-all duration-300 border border-theme-border/50 group"
+          className="p-3 rounded-2xl bg-theme-card/50 hover:bg-theme-accent hover:text-white transition-all duration-300 group"
           aria-label="Toggle Theme"
         >
           {isDarkMode ? (
