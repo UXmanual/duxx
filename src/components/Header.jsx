@@ -2,11 +2,15 @@ import React from 'react';
 import { useTheme } from '../context/ThemeContext';
 import { Sun, Moon } from 'lucide-react';
 
+/**
+ * [Component] 상단 헤더
+ * @description 블러 처리와 배경색을 제거한 투명한 레이아웃의 헤더 컴포넌트입니다.
+ */
 const Header = () => {
   const { isDarkMode, toggleTheme } = useTheme();
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 transition-all duration-500 backdrop-blur-md bg-theme-bg/30">
+    <header className="fixed top-0 left-0 right-0 z-50 transition-all duration-500">
       <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
         <div className="flex items-center gap-2">
           {/* Logo: font-size 24px, letter-spacing 0 */}

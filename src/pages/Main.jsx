@@ -1,9 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
 
 /**
- * [Map Engine] Live Map with Day/Night Cycle
- * @version 1.9.0
- * @description 시간(KST)을 감지하여 지도의 테마를 자동으로 전환합니다.
+ * [Page] 메인 페이지 (지도 엔진)
+ * @version 1.9.1
+ * @description 시간(KST)을 감지하여 지도의 테마를 자동으로 전환하며, 사용자 요청에 따라 불필요한 UI 오버레이를 제거한 버전입니다.
  */
 const Main = () => {
   const mapRef = useRef(null);
@@ -71,23 +71,6 @@ const Main = () => {
         className="absolute inset-0 z-0 transition-opacity duration-1000 opacity-0 [&.map-loaded]:opacity-100"
       />
 
-      {/* 2. UI Overlay */}
-      <div className="absolute bottom-32 left-8 z-20 pointer-events-none">
-        <div className="backdrop-blur-xl bg-theme-bg/10 border border-theme-border/5 p-6 rounded-[2rem] inline-block pointer-events-auto shadow-2xl">
-          <div className="flex items-center gap-3 mb-2">
-            <div className={`w-2 h-2 rounded-full animate-ping ${isNight ? 'bg-indigo-500' : 'bg-amber-500'}`} />
-            <span className={`text-[10px] font-black uppercase tracking-widest ${isNight ? 'text-indigo-400' : 'text-amber-600'}`}>
-              {isNight ? 'Night Cycle Active' : 'Day Cycle Active'}
-            </span>
-          </div>
-          <h2 className={`text-xl font-black ${isNight ? 'text-white/90' : 'text-slate-800'} tracking-tighter mb-1 uppercase`}>
-            Seoul Live
-          </h2>
-          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.3em]">
-            Auto-Syncing Map Engine
-          </p>
-        </div>
-      </div>
 
       {/* 3. Global Depth Overlay */}
       <div className={`absolute inset-0 pointer-events-none z-10 transition-opacity duration-1000 ${isNight ? 'bg-black/20' : 'bg-amber-500/5'}`} />
