@@ -1,5 +1,6 @@
 import React from 'react';
 import { Cpu, Github, Globe, Shield } from 'lucide-react';
+import pkg from '../../package.json';
 
 /**
  * 전역 푸터 컴포넌트
@@ -52,7 +53,10 @@ const Footer = () => {
         </div>
         
         <div className="mt-20 pt-10 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-6">
-          <p className="text-slate-600 text-[10px] font-bold tracking-[0.2em] uppercase">© 2026 DUXX Project. Digital Innovation.</p>
+          <div className="flex flex-col gap-1">
+            <p className="text-slate-600 text-[10px] font-bold tracking-[0.2em] uppercase">© 2026 DUXX Project. Digital Innovation.</p>
+            <p className="text-slate-700 text-[9px] font-mono">Build Version: v{pkg.version}</p>
+          </div>
           <p className="text-slate-500 text-[10px] flex items-center gap-2">
             <Shield className="w-3 h-3" /> Securing Your Vision
           </p>
