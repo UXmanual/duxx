@@ -84,6 +84,21 @@ const Main = () => {
             <p className="mt-8 text-center text-xs text-theme-text-secondary font-bold opacity-60">
               * 모든 파일은 PascalCase를 따르며, 각 섹션은 독립적으로 관리됩니다.
             </p>
+
+            {/* Added: Self-determined Layout Principle */}
+            <div className="mt-12 pt-8 border-t border-theme-border/50">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2 rounded-lg bg-theme-accent/20 text-theme-accent">
+                  <CheckCircle2 className="w-4 h-4" />
+                </div>
+                <h4 className="font-black text-theme-text-primary text-sm uppercase tracking-wide">Self-determined Layout Principle</h4>
+              </div>
+              <p className="text-[13px] text-theme-text-secondary leading-relaxed font-medium">
+                <strong>레이아웃(Layout.jsx)</strong>은 디자인적 여백이나 크기를 강제하지 않는 'Dumb Shell' 역할을 수행하며, 
+                실제 여백(padding), 너비(width), 중앙 정렬 등은 각 <strong>콘텐츠 페이지(Main.jsx 등)</strong>가 
+                테일윈드 클래스를 통해 스스로 결정합니다. 이는 에이전트 수정 시 타 영역에 대한 의도치 않은 간섭을 기술적으로 완벽히 차단합니다.
+              </p>
+            </div>
           </div>
         </div>
       </div>
