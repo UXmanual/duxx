@@ -4,15 +4,15 @@ import { useTheme } from '../context/ThemeContext';
 
 /**
  * [Page] 메인 페이지 (구글 맵 엔진)
- * @version 3.4.0
- * @description 구글 맵 기본 라벨을 사용하며, region: 'KR' 설정을 통해 한국 지명을 우선적으로 표시합니다.
- * (주의: 구글 정책상 '서해' 대신 '황해'가 기본 표기되는 것은 엔진 고유 특성입니다.)
+ * @version 3.5.0
+ * @description 프리미엄 다크 모드 스타일이 적용된 구글 맵 엔진입니다.
+ * 단순한 흑백 처리가 아닌, 깊이감 있는 네이비와 차콜 톤을 사용하여 고급스러운 야간 시인성을 제공합니다.
  */
 
 const containerStyle = {
   width: '100%',
   height: '100vh',
-  backgroundColor: '#0a0c10'
+  backgroundColor: '#0a1016'
 };
 
 const center = {
@@ -30,17 +30,121 @@ const mapBoundsRestriction = {
   strictBounds: false
 };
 
-// 구글 맵 커스텀 스타일 (다크 모드용)
+// 프리미엄 구글 맵 커스텀 스타일 (High-End Dark Mode)
 const darkMapStyles = [
-  { elementType: "geometry", stylers: [{ color: "#1a1c1e" }] },
-  { elementType: "labels.text.stroke", stylers: [{ color: "#1a1c1e" }] },
-  { elementType: "labels.text.fill", stylers: [{ color: "#6b7280" }] },
-  { featureType: "water", elementType: "geometry", stylers: [{ color: "#0f172a" }] },
-  { featureType: "water", elementType: "labels.text.fill", stylers: [{ color: "#334155" }] },
-  { featureType: "landscape", elementType: "geometry", stylers: [{ color: "#1e293b" }] },
-  { featureType: "administrative", elementType: "labels.text.fill", stylers: [{ color: "#94a3b8" }] },
-  { featureType: "road", stylers: [{ visibility: "simplified" }, { color: "#334155" }] },
-  { featureType: "poi", stylers: [{ visibility: "off" }] }
+  { elementType: "geometry", stylers: [{ color: "#1d2c4d" }] },
+  { elementType: "labels.text.fill", stylers: [{ color: "#8ec3b9" }] },
+  { elementType: "labels.text.stroke", stylers: [{ color: "#1a3646" }] },
+  {
+    featureType: "administrative.country",
+    elementType: "geometry.stroke",
+    stylers: [{ color: "#4b6878" }],
+  },
+  {
+    featureType: "administrative.province",
+    elementType: "geometry.stroke",
+    stylers: [{ color: "#4b6878" }],
+  },
+  {
+    featureType: "landscape.man_made",
+    elementType: "geometry.stroke",
+    stylers: [{ color: "#334e87" }],
+  },
+  {
+    featureType: "landscape.natural",
+    elementType: "geometry",
+    stylers: [{ color: "#023e58" }],
+  },
+  {
+    featureType: "poi",
+    elementType: "geometry",
+    stylers: [{ color: "#283d6a" }],
+  },
+  {
+    featureType: "poi",
+    elementType: "labels.text.fill",
+    stylers: [{ color: "#6f9ba5" }],
+  },
+  {
+    featureType: "poi",
+    elementType: "labels.text.stroke",
+    stylers: [{ color: "#1d2c4d" }],
+  },
+  {
+    featureType: "poi.park",
+    elementType: "geometry.fill",
+    stylers: [{ color: "#023e58" }],
+  },
+  {
+    featureType: "poi.park",
+    elementType: "labels.text.fill",
+    stylers: [{ color: "#3C7680" }],
+  },
+  {
+    featureType: "road",
+    elementType: "geometry",
+    stylers: [{ color: "#304a7d" }],
+  },
+  {
+    featureType: "road",
+    elementType: "labels.text.fill",
+    stylers: [{ color: "#98a5be" }],
+  },
+  {
+    featureType: "road",
+    elementType: "labels.text.stroke",
+    stylers: [{ color: "#1d2c4d" }],
+  },
+  {
+    featureType: "road.highway",
+    elementType: "geometry",
+    stylers: [{ color: "#2c6675" }],
+  },
+  {
+    featureType: "road.highway",
+    elementType: "geometry.stroke",
+    stylers: [{ color: "#255762" }],
+  },
+  {
+    featureType: "road.highway",
+    elementType: "labels.text.fill",
+    stylers: [{ color: "#b0d5ce" }],
+  },
+  {
+    featureType: "road.highway",
+    elementType: "labels.text.stroke",
+    stylers: [{ color: "#023e58" }],
+  },
+  {
+    featureType: "transit",
+    elementType: "labels.text.fill",
+    stylers: [{ color: "#98a5be" }],
+  },
+  {
+    featureType: "transit",
+    elementType: "labels.text.stroke",
+    stylers: [{ color: "#1d2c4d" }],
+  },
+  {
+    featureType: "transit.line",
+    elementType: "geometry.fill",
+    stylers: [{ color: "#283d6a" }],
+  },
+  {
+    featureType: "transit.station",
+    elementType: "geometry.fill",
+    stylers: [{ color: "#3a4762" }],
+  },
+  {
+    featureType: "water",
+    elementType: "geometry",
+    stylers: [{ color: "#0e1626" }],
+  },
+  {
+    featureType: "water",
+    elementType: "labels.text.fill",
+    stylers: [{ color: "#4e6d70" }],
+  },
 ];
 
 const Main = () => {
