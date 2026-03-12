@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { Cpu, Menu, Sparkles } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 
-import navData from '../../data/navigation.json';
+import navData from '../data/navigation.json';
 
 /**
  * 전역 헤더 컴포넌트
