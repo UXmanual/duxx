@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import navData from '../../data/navigation.json';
+import navData from '../data/navigation.json';
 
 /**
  * 단순화된 헤더 컴포넌트
