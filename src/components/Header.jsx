@@ -20,22 +20,17 @@ const Header = () => {
         
         <button 
           onClick={toggleTheme}
-          className="p-3 rounded-2xl bg-theme-card/30 hover:bg-theme-accent hover:text-white transition-all duration-500 group relative overflow-hidden"
+          className="p-3 rounded-2xl bg-theme-card/30 hover:bg-theme-accent/10 transition-colors duration-500 group relative flex items-center justify-center w-12 h-12"
           aria-label="Toggle Theme"
         >
           <AnimatePresence mode="wait">
             <motion.div
               key={isDark ? 'dark' : 'light'}
-              initial={{ y: 10, opacity: 0, rotate: -45 }}
-              animate={{ 
-                y: 0, 
-                opacity: 0.7, 
-                rotate: 0,
-                transition: { type: 'spring', stiffness: 300, damping: 20 }
-              }}
-              exit={{ y: -10, opacity: 0, rotate: 45 }}
-              whileHover={{ scale: 1.1, opacity: 1 }}
-              className="relative z-10"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 0.8 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.4, ease: "easeInOut" }}
+              className="relative z-10 flex items-center justify-center"
             >
               {isDark ? (
                 <motion.div
@@ -43,7 +38,7 @@ const Header = () => {
                     rotate: 360
                   }}
                   transition={{ 
-                    duration: 10, 
+                    duration: 15, 
                     repeat: Infinity, 
                     ease: "linear" 
                   }}
@@ -54,24 +49,21 @@ const Header = () => {
               ) : (
                 <motion.div
                   animate={{ 
-                    y: [0, -3, 0],
-                    rotate: [0, 10, 0]
+                    y: [0, -2, 0],
+                    rotate: [0, 5, 0]
                   }}
                   transition={{ 
-                    duration: 4, 
+                    duration: 5, 
                     repeat: Infinity, 
                     ease: "easeInOut" 
                   }}
-                  className="text-[#F6E05E]"
+                  className="text-[#D69E2E]"
                 >
                   <Moon className="w-6 h-6" fill="currentColor" />
                 </motion.div>
               )}
             </motion.div>
           </AnimatePresence>
-          
-          {/* Subtle Glow Effect on Hover */}
-          <div className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
         </button>
       </div>
     </header>
