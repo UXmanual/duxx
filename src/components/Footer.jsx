@@ -17,11 +17,11 @@ const Footer = () => {
           <div className="flex items-center gap-3 opacity-40">
             {/* Version Info: font-size 14px, letter-spacing 0 */}
             <p className="text-theme-text-secondary text-[14px] font-bold tracking-[0]">
-              Build v{pkg.version.split('.').slice(0, 2).join('.')}
+              Build v{pkg.version}
             </p>
             <span className="w-px h-3 bg-theme-text-secondary opacity-30" />
             <p className="text-theme-text-secondary text-[14px] font-bold tracking-[0]">
-              Last Deployed: 16:13 KST
+              Last Deployed: 16:15 KST
             </p>
           </div>
         </div>
