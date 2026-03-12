@@ -1,103 +1,138 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   FolderTree, Settings, Layers, Package, Cpu, 
-  ShieldCheck, Zap, FileCode, CheckCircle2
+  ShieldCheck, Zap, FileCode, CheckCircle2, ChevronDown, ChevronUp,
+  FileJson, Binary, AppWindow
 } from 'lucide-react';
-import DirectoryItem from '../components/home/DirectoryItem';
 
-/**
- * [Standard Content] 메인 페이지
- * @description 독립 수정 원칙: 이 파일의 수정은 헤더/푸터에 어떠한 영향을 미치지 않음.
- */
+/* 트리 가지 컴포넌트 */
+const TreeBranch = ({ name, description, isLast = false, children }) => (
+  <div className="relative pl-6">
+    {!isLast && <div className="absolute left-2.5 top-0 bottom-0 w-px bg-theme-border" />}
+    <div className="relative flex items-start gap-3 py-2.5">
+      <div className="absolute -left-3.5 top-5 w-3.5 h-px bg-theme-border" />
+      <div className="mt-1 p-1 rounded-lg bg-theme-accent/10 text-theme-accent">
+        {children ? <FolderTree className="w-3.5 h-3.5" /> : name.endsWith('.json') ? <FileJson className="w-3.5 h-3.5" /> : <Binary className="w-3.5 h-3.5" />}
+      </div>
+      <div className="flex-1">
+        <div className="flex items-center gap-2">
+          <span className={`font-bold tracking-tight text-[13px] ${children ? 'text-theme-text-primary' : 'text-theme-accent'}`}>
+            {name}{children ? '/' : ''}
+          </span>
+        </div>
+        <p className="text-[10px] text-theme-text-secondary font-medium leading-relaxed italic line-clamp-1 group-hover:line-clamp-none transition-all">
+          {description}
+        </p>
+        {children && <div className="mt-1.5 ml-0.5">{children}</div>}
+      </div>
+    </div>
+  </div>
+);
+
 const Main = () => {
+  const [isTreeOpen, setIsTreeOpen] = useState(true);
+
   return (
     <div className="pt-40 pb-48 max-w-6xl mx-auto px-6 font-sans">
       {/* 1. Header Section */}
-      <div className="mb-24 text-center">
+      <div className="mb-20 text-center">
         <div className="inline-block px-5 py-2 mb-8 rounded-full bg-theme-accent/10 border border-theme-accent/20 text-theme-accent text-[11px] font-black tracking-[0.2em] uppercase shadow-sm">
-          Project Standard v1.3.0
+          Project Master Blueprint v1.3.2
         </div>
         <h1 className="text-5xl md:text-7xl font-black text-theme-text-primary tracking-tighter mb-6 leading-tight">
-          Strictly <span className="text-theme-accent">Isolated</span>
+          Absolute <span className="text-theme-accent">Standard</span>
         </h1>
         <p className="text-theme-text-secondary text-lg font-medium max-w-3xl mx-auto leading-relaxed">
-          에이전트 수정 간 충돌 0%를 지향하는 물리적 격리 아키텍처입니다. <br />
-          <b>Layout</b>은 틀만, <b>Main</b>은 알맹이만, <b>Logic</b>은 내부만 담당합니다.
+          DUXX 아키텍처의 전수 조사 결과를 복구했습니다. <br />
+          아코디언 기능을 통해 상세 구조를 언제든 확인하고 관리할 수 있습니다.
         </p>
       </div>
 
-      <div className="space-y-16">
-        {/* 2. Isolation Guide List */}
+      <div className="space-y-12">
+        {/* 2. Isolation Logic Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="p-8 rounded-[40px] bg-theme-card border border-theme-border hover:border-theme-accent transition-colors">
-            <ShieldCheck className="w-8 h-8 text-theme-accent mb-6" />
-            <h3 className="font-bold text-lg mb-2 text-theme-text-primary text-theme-text-primary">01. Header Isolation</h3>
-            <p className="text-sm text-theme-text-secondary font-medium leading-relaxed italic border-l-2 border-theme-border pl-4">
-              "헤더 배경색 바꿔줘" → Header.jsx만 수정됨. 본문 영향 없음.
-            </p>
+          <div className="p-8 rounded-[40px] bg-theme-card border border-theme-border flex flex-col items-center text-center">
+            <ShieldCheck className="w-8 h-8 text-theme-accent mb-4" />
+            <h3 className="font-bold text-base text-theme-text-primary">Strict Isolation</h3>
           </div>
-          <div className="p-8 rounded-[40px] bg-theme-card border border-theme-border hover:border-theme-accent transition-colors">
-            <Zap className="w-8 h-8 text-theme-accent mb-6" />
-            <h3 className="font-bold text-lg mb-2 text-theme-text-primary">02. Content Isolation</h3>
-            <p className="text-sm text-theme-text-secondary font-medium leading-relaxed italic border-l-2 border-theme-border pl-4">
-              "메인 글자 키워줘" → Main.jsx만 수정됨. 푸터 영향 없음.
-            </p>
+          <div className="p-8 rounded-[40px] bg-theme-card border border-theme-border flex flex-col items-center text-center">
+            <Zap className="w-8 h-8 text-theme-accent mb-4" />
+            <h3 className="font-bold text-base text-theme-text-primary">Self-determined</h3>
           </div>
-          <div className="p-8 rounded-[40px] bg-theme-card border border-theme-border hover:border-theme-accent transition-colors">
-            <Settings className="w-8 h-8 text-theme-accent mb-6" />
-            <h3 className="font-bold text-lg mb-2 text-theme-text-primary">03. Logic Isolation</h3>
-            <p className="text-sm text-theme-text-secondary font-medium leading-relaxed italic border-l-2 border-theme-border pl-4">
-              "테마 로직 고쳐줘" → ThemeContext만 수정됨. UI 구조 영향 없음.
-            </p>
+          <div className="p-8 rounded-[40px] bg-theme-card border border-theme-border flex flex-col items-center text-center">
+            <Cpu className="w-8 h-8 text-theme-accent mb-4" />
+            <h3 className="font-bold text-base text-theme-text-primary">No Interference</h3>
           </div>
         </div>
 
-        {/* 3. Deep Dive Tree Section */}
-        <div className="bg-theme-card border border-theme-border rounded-[48px] p-8 md:p-16 shadow-2xl relative overflow-hidden">
-          <div className="flex items-center gap-4 mb-12 pb-6 border-b border-theme-border">
-            <div className="p-3 rounded-2xl bg-theme-text-primary text-theme-bg">
-              <Layers className="w-6 h-6" />
+        {/* 3. Detailed Master Architecture Tree (with Accordion) */}
+        <div className="bg-theme-card border border-theme-border rounded-[48px] overflow-hidden shadow-2xl transition-all duration-500">
+          <button 
+            onClick={() => setIsTreeOpen(!isTreeOpen)}
+            className="w-full flex items-center justify-between p-10 md:px-16 hover:bg-theme-accent/5 transition-colors group"
+          >
+            <div className="flex items-center gap-4 text-left">
+              <div className="p-3 rounded-2xl bg-theme-text-primary text-theme-bg group-hover:bg-theme-accent transition-colors">
+                <FolderTree className="w-6 h-6" />
+              </div>
+              <div>
+                <h2 className="text-2xl font-black text-theme-text-primary tracking-tight uppercase">Detailed Structure Tree</h2>
+                <p className="text-xs text-theme-accent font-black mt-1 uppercase tracking-widest">Global standard mapped</p>
+              </div>
             </div>
-            <div>
-              <h2 className="text-2xl font-black text-theme-text-primary tracking-tight uppercase">Master Architecture Tree</h2>
-              <p className="text-xs text-theme-accent font-black mt-1 uppercase tracking-widest">Confirmed Project Standard</p>
-            </div>
-          </div>
+            {isTreeOpen ? <ChevronUp className="w-8 h-8 text-theme-text-secondary" /> : <ChevronDown className="w-8 h-8 text-theme-text-secondary" />}
+          </button>
 
-          <div className="bg-theme-bg/50 rounded-3xl p-6 border border-theme-border/50">
-            {/* 트리 구조 가이드는 v1.2.7의 완벽한 전수 조사를 바탕으로 함 */}
-            <div className="text-sm text-theme-text-secondary space-y-4">
-              <div className="flex items-center justify-between p-4 bg-theme-card rounded-2xl border border-theme-border">
-                <span className="font-black text-theme-text-primary">/src/components/Layout.jsx</span>
-                <span className="text-[10px] bg-theme-accent/10 px-3 py-1 rounded-full text-theme-accent font-bold uppercase">Shell Only</span>
-              </div>
-              <div className="flex items-center justify-between p-4 bg-theme-card rounded-2xl border border-theme-border">
-                <span className="font-black text-theme-text-primary">/src/pages/Main.jsx</span>
-                <span className="text-[10px] bg-theme-accent text-theme-bg px-3 py-1 rounded-full font-bold uppercase">Main Almi (Content)</span>
-              </div>
-              <div className="flex items-center justify-between p-4 bg-theme-card rounded-2xl border border-theme-border">
-                <span className="font-black text-theme-text-primary">/src/context/ThemeContext.jsx</span>
-                <span className="text-[10px] bg-theme-text-primary text-theme-bg px-3 py-1 rounded-full font-bold uppercase">Engine Logic</span>
-              </div>
-            </div>
-            
-            <p className="mt-8 text-center text-xs text-theme-text-secondary font-bold opacity-60">
-              * 모든 파일은 PascalCase를 따르며, 각 섹션은 독립적으로 관리됩니다.
-            </p>
+          <div className={`px-8 md:px-16 pb-16 transition-all duration-500 overflow-hidden ${isTreeOpen ? 'max-h-[3000px] opacity-100' : 'max-h-0 opacity-0'}`}>
+            <div className="bg-theme-bg/50 rounded-3xl p-8 border border-theme-border/50">
+              <TreeBranch name="src" description="모든 개발 소스 코드가 집결된 루트 폴더" isLast={true}>
+                <TreeBranch name="components" description="UI 리소스 저장소: 재사용 가능한 UI 독립 관리">
+                  <TreeBranch name="home" description="Main 전용 부품들">
+                    <TreeBranch name="DirectoryItem.jsx" description="트리 항목 디자인 정의" isLast={true} />
+                  </TreeBranch>
+                  <TreeBranch name="Layout.jsx" description="[Shell] 헤더/푸터 레이아웃 틀" />
+                  <TreeBranch name="Header.jsx" description="내비게이션 및 테마 스위치" />
+                  <TreeBranch name="Footer.jsx" description="정보, 배포 시각, 버전 출력" isLast={true} />
+                </TreeBranch>
 
-            {/* Added: Self-determined Layout Principle */}
-            <div className="mt-12 pt-8 border-t border-theme-border/50">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="p-2 rounded-lg bg-theme-accent/20 text-theme-accent">
-                  <CheckCircle2 className="w-4 h-4" />
+                <TreeBranch name="pages" description="URL 이동에 따른 화면 페이지">
+                  <TreeBranch name="Main.jsx" description="[Core] 현재 페이지 (콘텐츠 알맹이)" />
+                  <TreeBranch name="About.jsx" description="서비스 정체성 소개" isLast={true} />
+                </TreeBranch>
+
+                <TreeBranch name="context" description="Logic Engine: 상태 로직 격리">
+                  <TreeBranch name="ThemeContext.jsx" description="다크모드 영속성 제어" isLast={true} />
+                </TreeBranch>
+
+                <TreeBranch name="styles" description="Design Tokens">
+                  <TreeBranch name="themes" description="독립된 컬러 시트">
+                    <TreeBranch name="light.css" description="Base Color Tokens" />
+                    <TreeBranch name="dark.css" description="Shifted Night Theme" isLast={true} />
+                  </TreeBranch>
+                  <TreeBranch name="global.css" description="전역 뼈대 스타일" isLast={true} />
+                </TreeBranch>
+
+                <TreeBranch name="data" description="JSON Assets">
+                  <TreeBranch name="navigation.json" description="메뉴 구성 중앙 관리" isLast={true} />
+                </TreeBranch>
+
+                <TreeBranch name="Routes.jsx" description="URL-컴포넌트 매핑 로직" />
+                <TreeBranch name="App.jsx" description="라우터/컨텍스트 조립 래퍼" />
+                <TreeBranch name="Index.jsx" description="[Entry] 시스템 최상위 진입점" isLast={true} />
+              </TreeBranch>
+
+              {/* 자기 결정적 레이아웃 원칙 추가 복구 */}
+              <div className="mt-12 pt-8 border-t border-theme-border">
+                <div className="flex items-center gap-3 mb-4">
+                  <CheckCircle2 className="w-5 h-5 text-theme-accent" />
+                  <h4 className="font-black text-theme-text-primary text-sm uppercase tracking-wide">Self-determined Layout Principle</h4>
                 </div>
-                <h4 className="font-black text-theme-text-primary text-sm uppercase tracking-wide">Self-determined Layout Principle</h4>
+                <p className="text-[13px] text-theme-text-secondary leading-relaxed font-medium">
+                  <strong>Layout.jsx</strong>는 여백이나 크기를 강제하지 않으며, 실제 레이아웃(Padding, Width 등)은 
+                  <strong>콘텐츠 페이지(Main.jsx 등)</strong>가 테일윈드를 통해 스스로 정의합니다. 
+                  이는 에이전트 수정 시 다른 영역에 대한 간섭을 물리적으로 차단하는 DUXX의 핵심 원칙입니다.
+                </p>
               </div>
-              <p className="text-[13px] text-theme-text-secondary leading-relaxed font-medium">
-                <strong>레이아웃(Layout.jsx)</strong>은 디자인적 여백이나 크기를 강제하지 않는 'Dumb Shell' 역할을 수행하며, 
-                실제 여백(padding), 너비(width), 중앙 정렬 등은 각 <strong>콘텐츠 페이지(Main.jsx 등)</strong>가 
-                테일윈드 클래스를 통해 스스로 결정합니다. 이는 에이전트 수정 시 타 영역에 대한 의도치 않은 간섭을 기술적으로 완벽히 차단합니다.
-              </p>
             </div>
           </div>
         </div>
