@@ -13,15 +13,15 @@ const Main = () => {
   const backgroundY = useTransform(scrollYProgress, [0, 1], ['0%', '20%']);
 
   return (
-    <div className="min-h-screen bg-[#020617] text-slate-200 selection:bg-indigo-500/30 font-sans antialiased overflow-x-hidden">
-      {/* Dynamic Mesh Background (Global) */}
+    <div className="min-h-screen bg-slate-50 text-slate-900 selection:bg-indigo-100 font-sans antialiased overflow-x-hidden">
+      {/* Dynamic Mesh Background (Global - Light) */}
       <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
         <motion.div 
           style={{ y: backgroundY }}
-          className="absolute -top-[20%] -left-[10%] w-[70%] h-[70%] bg-indigo-600/10 blur-[150px] rounded-full mix-blend-screen" 
+          className="absolute -top-[20%] -left-[10%] w-[70%] h-[70%] bg-indigo-500/5 blur-[150px] rounded-full" 
         />
-        <div className="absolute top-[10%] -right-[10%] w-[50%] h-[50%] bg-blue-500/10 blur-[130px] rounded-full mix-blend-screen" />
-        <div className="absolute -bottom-[10%] left-[20%] w-[60%] h-[60%] bg-purple-600/10 blur-[140px] rounded-full mix-blend-screen" />
+        <div className="absolute top-[10%] -right-[10%] w-[50%] h-[50%] bg-blue-500/5 blur-[130px] rounded-full" />
+        <div className="absolute -bottom-[10%] left-[20%] w-[60%] h-[60%] bg-purple-500/5 blur-[140px] rounded-full" />
       </div>
 
       <Header />
