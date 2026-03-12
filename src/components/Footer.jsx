@@ -58,15 +58,11 @@ const Footer = () => {
           <p className="text-slate-400 text-xs font-bold tracking-[0.2em] uppercase">© 2026 DUXX Project. All Rights Reserved.</p>
           
           <div className="flex items-center gap-4">
-            <div className="px-4 py-2 rounded-full bg-slate-100/50 border border-slate-200/50 backdrop-blur-md flex items-center gap-3">
+            <div className="px-4 py-2 rounded-full bg-slate-100/50 border border-slate-200/50 flex items-center gap-3">
               <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
               </span>
               <p className="text-slate-600 text-xs font-bold font-mono">Build v{pkg.version}</p>
-            </div>
-            <div className="hidden md:flex items-center gap-2 text-slate-400 text-xs font-bold px-4 py-2">
-              <Shield className="w-4 h-4" /> SSL Encrypted
             </div>
           </div>
         </div>
