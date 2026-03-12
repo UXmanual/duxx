@@ -3,6 +3,8 @@ import { motion } from 'framer-motion';
 import { Cpu, Menu, Sparkles } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 
+import navData from '../../data/navigation.json';
+
 /**
  * 전역 헤더 컴포넌트
  * @description 사이트의 내비게이션을 담당하며 스크롤 상태에 따라 디자인이 변함
@@ -17,12 +19,7 @@ const Header = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const navItems = [
-    { name: 'Home', path: '/' },
-    { name: 'Showcase', path: '/showcase' },
-    { name: 'Solutions', path: '/solutions' },
-    { name: 'About', path: '/about' },
-  ];
+  const { navItems } = navData;
 
   return (
     <nav className={`
@@ -51,13 +48,6 @@ const Header = () => {
               {item.name}
             </Link>
           ))}
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="px-5 py-2.5 bg-white/5 border border-white/10 rounded-xl text-sm font-bold text-white backdrop-blur-md hover:bg-white/10 transition-colors"
-          >
-            Sign In
-          </motion.button>
         </div>
         
         <button className="md:hidden text-white">

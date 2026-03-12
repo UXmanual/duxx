@@ -1,8 +1,7 @@
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
-import MainLayout from '../components/layout/MainLayout';
+import Main from '../components/Main';
 import Home from '../pages/Home';
-import Showcase from '../pages/Showcase';
 import About from '../pages/About';
 
 /**
@@ -12,11 +11,9 @@ import About from '../pages/About';
 const AppRoutes = () => {
   return (
     <Routes>
-      <Route path="/" element={<MainLayout />}>
+      <Route path="/" element={<Main />}>
         <Route index element={<Home />} />
-        <Route path="showcase" element={<Showcase />} />
         <Route path="about" element={<About />} />
-        {/* 추가적인 서브 페이지는 여기에 등록 */}
       </Route>
     </Routes>
   );

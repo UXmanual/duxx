@@ -5,10 +5,10 @@ import Footer from './Footer';
 import { motion, useScroll, useTransform } from 'framer-motion';
 
 /**
- * 프로젝트 전역 레이아웃 시스템
+ * 프로젝트 전역 메인 구조
  * @description 헤더, 푸터, 공통 배경 효과를 포함하며 중앙의 Outlet에 페이지가 렌더링됨
  */
-const MainLayout = () => {
+const Main = () => {
   const { scrollYProgress } = useScroll();
   const backgroundY = useTransform(scrollYProgress, [0, 1], ['0%', '20%']);
 
@@ -36,4 +36,4 @@ const MainLayout = () => {
   );
 };
 
-export default MainLayout;
+export default Main;
