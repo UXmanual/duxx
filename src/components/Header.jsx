@@ -1,6 +1,7 @@
 import React from 'react';
 import { useTheme } from '../context/ThemeContext';
 import { Sun, Moon } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 /**
  * [Component] 상단 헤더
@@ -19,14 +20,56 @@ const Header = () => {
         
         <button 
           onClick={toggleTheme}
-          className="p-3 rounded-2xl bg-theme-card/50 hover:bg-theme-accent hover:text-white transition-all duration-300 group"
+          className="p-3 rounded-2xl bg-theme-card/30 hover:bg-theme-accent hover:text-white transition-all duration-500 group relative overflow-hidden"
           aria-label="Toggle Theme"
         >
-          {isDark ? (
-            <Sun className="w-6 h-6 group-hover:rotate-90 transition-transform duration-500" fill="currentColor" />
-          ) : (
-            <Moon className="w-6 h-6 group-hover:-rotate-12 transition-transform duration-500" fill="currentColor" />
-          )}
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={isDark ? 'dark' : 'light'}
+              initial={{ y: 10, opacity: 0, rotate: -45 }}
+              animate={{ 
+                y: 0, 
+                opacity: 0.7, 
+                rotate: 0,
+                transition: { type: 'spring', stiffness: 300, damping: 20 }
+              }}
+              exit={{ y: -10, opacity: 0, rotate: 45 }}
+              whileHover={{ scale: 1.1, opacity: 1 }}
+              className="relative z-10"
+            >
+              {isDark ? (
+                <motion.div
+                  animate={{ 
+                    y: [0, -3, 0],
+                  }}
+                  transition={{ 
+                    duration: 3, 
+                    repeat: Infinity, 
+                    ease: "easeInOut" 
+                  }}
+                >
+                  <Sun className="w-6 h-6" fill="currentColor" />
+                </motion.div>
+              ) : (
+                <motion.div
+                  animate={{ 
+                    rotate: [0, 10, 0],
+                    y: [0, -2, 0]
+                  }}
+                  transition={{ 
+                    duration: 4, 
+                    repeat: Infinity, 
+                    ease: "easeInOut" 
+                  }}
+                >
+                  <Moon className="w-6 h-6" fill="currentColor" />
+                </motion.div>
+              )}
+            </motion.div>
+          </AnimatePresence>
+          
+          {/* Subtle Glow Effect on Hover */}
+          <div className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
         </button>
       </div>
     </header>
