@@ -36,9 +36,6 @@ const Main = () => {
     <div className="pt-40 pb-48 max-w-6xl mx-auto px-6 font-sans">
       {/* 1. Header Section */}
       <div className="mb-20 text-center">
-        <div className="inline-block px-5 py-2 mb-8 rounded-full bg-theme-accent/10 border border-theme-accent/20 text-theme-accent text-[11px] font-black tracking-[0.2em] uppercase shadow-sm">
-          Project Master Blueprint v1.3.2
-        </div>
         <h1 className="text-5xl md:text-7xl font-black text-theme-text-primary tracking-tighter mb-6 leading-tight">
           Absolute <span className="text-theme-accent">Standard</span>
         </h1>
