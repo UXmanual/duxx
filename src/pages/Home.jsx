@@ -17,6 +17,9 @@ const Home = () => {
   return (
     <div className="pt-32 pb-48 max-w-4xl mx-auto px-6">
       <div className="mb-20 text-center">
+        <div className="inline-block px-4 py-1.5 mb-6 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-600 text-[10px] font-black tracking-widest uppercase">
+          ✅ v1.0.9 DEPLOYED SUCCESSFULLY
+        </div>
         <h1 className="text-4xl font-black text-theme-text tracking-tight mb-4">Project Architecture</h1>
         <p className="text-theme-text-muted font-medium">현재 DUXX 프로젝트의 폴더 및 파일 관리 체계입니다.</p>
       </div>
