@@ -4,12 +4,13 @@ import { useTheme } from '../context/ThemeContext';
 import { Crosshair } from 'lucide-react';
 
 /**
- * [Page] 메인 페이지 (커스텀 디자인 버튼 적용 버전)
- * @version 8.3.0
+ * [Page] 메인 페이지 (테마 대응 커스텀 버튼 버전)
+ * @version 8.4.0
  * @author Antigravity
  * @description 
- * - 사용자가 제공한 이미지의 디자인(다크 서클 + 화이트 크로스헤어)으로 현위치 버튼을 변경했습니다.
- * - 버튼 사이즈를 컴팩트하게 축소하고, 모바일에서의 반응성을 유지합니다.
+ * - 현재 테마(다크/라이트)에 따라 현위치 버튼의 색상이 자동으로 반전되도록 수정했습니다.
+ * - 다크모드: 다크 배경 + 화이트 아이콘
+ * - 라이트모드: 화이트 배경 + 다크 아이콘
  */
 
 const Main = () => {
@@ -56,7 +57,7 @@ const Main = () => {
   if (loading) return null;
 
   return (
-    <div className="w-full h-screen relative bg-white">
+    <div className="w-full h-screen relative bg-white overflow-hidden">
       <Map
         center={{ lat: 37.5665, lng: 126.9780 }}
         level={4}
@@ -67,20 +68,24 @@ const Main = () => {
         {myLocation && <MapMarker position={myLocation} />}
       </Map>
 
-      {/* 커스텀 디자인 현위치 버튼 (이미지 가이드 반영) */}
+      {/* 테마 대응 현위치 버튼 */}
       <div className="fixed right-6 bottom-32 z-[9999]">
         <button 
           onPointerDown={handleMyLocation}
-          className="w-10 h-10 bg-[#1a1c1e]/90 rounded-full shadow-lg flex items-center justify-center active:scale-90 transition-all border border-white/10"
+          className={`w-10 h-10 rounded-full shadow-lg flex items-center justify-center active:scale-90 transition-all border
+            ${isDark 
+              ? 'bg-[#1a1c1e]/90 border-white/10 text-white' 
+              : 'bg-white border-gray-200 text-[#1a1c1e]'}
+          `}
           style={{ cursor: 'pointer', WebkitTapHighlightColor: 'transparent' }}
           aria-label="현위치"
         >
-          <Crosshair size={22} className="text-white" strokeWidth={1.5} />
+          <Crosshair size={22} strokeWidth={1.5} />
         </button>
       </div>
 
       <style>{`
-        .kakao-dark-theme { filter: invert(100%) hue-rotate(180deg) brightness(0.9); background-color: #fff !important; }
+        .kakao-dark-theme { filter: invert(100%) hue-rotate(180deg) brightness(0.9) grayscale(0.2); background-color: #fff !important; }
         .kakao-dark-theme img { filter: none !important; }
         @media (max-width: 640px) {
           .kakao-copyright, .kakao-logo { visibility: hidden; }
