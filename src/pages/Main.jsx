@@ -85,7 +85,7 @@ const Main = () => {
   };
   
   const zoomOut = () => {
-    setState(prev => ({ ...prev, level: Math.min(prev.level + 1, 13), isPanto: false }));
+    setState(prev => ({ ...prev, level: Math.min(prev.level + 1, 11), isPanto: false }));
   };
 
   const moveToMyLocation = useCallback(() => {
@@ -128,6 +128,7 @@ const Main = () => {
         isPanto={state.isPanto}
         onCreate={setMap}
         style={containerStyle}
+        maxLevel={11}
         onDragStart={() => setIsFollowing(false)}
         onCenterChanged={(mapInstance) => {
           setState(prev => ({
