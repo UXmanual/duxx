@@ -199,7 +199,7 @@ const Main = () => {
                   e.stopPropagation();
                   handleDeleteMemo(memo.id);
                 }}
-                className="flex items-center justify-center text-gray-200 hover:text-[#FF4D00] transition-colors"
+                className="flex items-center justify-center text-zinc-400 hover:text-[#FF4D00] transition-colors"
                 aria-label="메모 삭제"
               >
                 <X size={12} strokeWidth={2.5} />
