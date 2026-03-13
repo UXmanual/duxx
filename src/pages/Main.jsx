@@ -1,16 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Map, MapMarker, useKakaoLoader } from 'react-kakao-maps-sdk';
+import { Map, CustomOverlayMap, useKakaoLoader } from 'react-kakao-maps-sdk';
 import { useTheme } from '../context/ThemeContext';
 import { Crosshair } from 'lucide-react';
 
 /**
- * [Page] 메인 페이지 (테마 대응 커스텀 버튼 버전)
- * @version 8.4.0
+ * [Page] 메인 페이지 (커스텀 오렌지 마커 적용 버전)
+ * @version 8.5.0
  * @author Antigravity
  * @description 
- * - 현재 테마(다크/라이트)에 따라 현위치 버튼의 색상이 자동으로 반전되도록 수정했습니다.
- * - 다크모드: 다크 배경 + 화이트 아이콘
- * - 라이트모드: 화이트 배경 + 다크 아이콘
+ * - 현위치 마커를 사용자 요청에 따라 심플한 원형 오렌지 컬러(#f57d00)로 변경했습니다.
+ * - 마커 중앙에 작은 흰색 원을 배치하고, 흰색 테두리와 반투명 효과를 적용했습니다.
  */
 
 const Main = () => {
@@ -65,7 +64,16 @@ const Main = () => {
         style={{ width: '100%', height: '100%' }}
         className={isDark ? 'kakao-dark-theme' : ''}
       >
-        {myLocation && <MapMarker position={myLocation} />}
+        {/* 커스텀 오렌지 위치 마커 */}
+        {myLocation && (
+          <CustomOverlayMap position={myLocation} zIndex={999}>
+            <div className="flex items-center justify-center transform -translate-y-1/2 pointer-events-none">
+              <div className="w-5 h-5 bg-[#f57d00]/80 border-2 border-white rounded-full flex items-center justify-center shadow-[0_2px_8px_rgba(0,0,0,0.3)]">
+                <div className="w-1.5 h-1.5 bg-white rounded-full shadow-sm" />
+              </div>
+            </div>
+          </CustomOverlayMap>
+        )}
       </Map>
 
       {/* 테마 대응 현위치 버튼 */}
