@@ -10,10 +10,6 @@ const Footer = () => {
     <footer className="fixed bottom-0 left-0 right-0 z-50 pointer-events-none">
       <div className="w-full px-10 py-8">
         <div className="flex flex-col items-start gap-1 py-5 inline-block pointer-events-auto">
-          {/* Copyright: font-size 14px, letter-spacing 0 */}
-          <p className="text-theme-text-primary font-black text-[14px] tracking-[0] opacity-80">
-            ©DUXX
-          </p>
           <div className="flex items-center gap-3 opacity-40">
             {/* Version Info: font-size 14px, letter-spacing 0 */}
             <p className="text-theme-text-secondary text-[14px] font-bold tracking-[0]">
@@ -24,6 +20,10 @@ const Footer = () => {
               Last Deployed: 15:43 KST
             </p>
           </div>
+          {/* Copyright: font-size 14px, letter-spacing 0 */}
+          <p className="text-theme-text-primary font-black text-[14px] tracking-[0] opacity-80">
+            ©DUXX
+          </p>
         </div>
       </div>
     </footer>
