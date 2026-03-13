@@ -190,8 +190,8 @@ const Main = () => {
             yAnchor={1.2}
             zIndex={10}
           >
-            <div className={`relative px-3.5 py-2 bg-white border-[1.5px] border-[#FF4D00] rounded-[14px] shadow-lg flex items-center gap-2 group animate-pop-in ${isDark ? 'custom-marker-original-color' : ''}`}>
-              <span className="text-[13px] font-bold text-black whitespace-nowrap leading-none tracking-tight">
+            <div className={`relative px-4 py-2 bg-white border-[1.5px] border-[#FF4D00] rounded-[14px] shadow-lg flex items-center gap-2 group animate-pop-in ${isDark ? 'custom-marker-original-color' : ''}`}>
+              <span className="text-[14px] font-medium text-black whitespace-nowrap leading-none tracking-tight">
                 {memo.text}
               </span>
               <button 
@@ -205,11 +205,11 @@ const Main = () => {
                 <X size={10} strokeWidth={3} />
               </button>
               
-              {/* [Refined Tail] 라운드 시작점과 매끄럽게 연결되는 SVG 꼬리 */}
-              <div className="absolute -bottom-[8px] left-1/2 -translate-x-1/2 w-4 h-2">
-                <svg width="16" height="8" viewBox="0 0 16 8" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M8 8L0 0H16L8 8Z" fill="white"/>
-                  <path d="M0 0L8 8L16 0" stroke="#FF4D00" strokeWidth="1.5"/>
+              {/* [Simplified Tail] 가로 폭을 줄여 더 심플해진 SVG 꼬리 */}
+              <div className="absolute -bottom-[8px] left-1/2 -translate-x-1/2 w-[10px] h-2">
+                <svg width="10" height="8" viewBox="0 0 10 8" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M5 8L0 0H10L5 8Z" fill="white"/>
+                  <path d="M0 0L5 8L10 0" stroke="#FF4D00" strokeWidth="1.5"/>
                 </svg>
               </div>
             </div>
