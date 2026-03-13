@@ -4,12 +4,12 @@ import { useTheme } from '../context/ThemeContext';
 import { Crosshair } from 'lucide-react';
 
 /**
- * [Page] 메인 페이지 (마커 애니메이션 정밀 튜닝 버전)
- * @version 9.4.0
+ * [Page] 메인 페이지 (푸터 정렬 버튼 적용 버전)
+ * @version 9.5.0
  * @author Antigravity
  * @description 
- * - 현위치 마커의 펄스 애니메이션에서 불필요한 중앙 효과를 제거했습니다.
- * - 외곽으로 퍼져나가는 모션의 범위를 기존의 절반 사이즈로 축소하여 더욱 절제된 느낌을 줍니다.
+ * - 현위치 버튼을 푸터의 가로 여백(px-10) 및 세로 중앙(py-8, py-5 레이아웃)에 맞춰 배치했습니다.
+ * - z-index 최적화를 통해 푸터 위에서도 클릭이 가능하도록 설정했습니다.
  */
 
 const Main = () => {
@@ -79,10 +79,7 @@ const Main = () => {
             yAnchor={0.5}
           >
             <div className="relative flex items-center justify-center pointer-events-none">
-              {/* 외곽으로만 살짝 퍼져나가는 펄스 효과 (사이즈 축소) */}
               <div className="absolute w-8 h-8 bg-[#FF4D00] rounded-full animate-ping opacity-30" />
-              
-              {/* 메인 마커 소체 */}
               <div className="relative w-[24px] h-[24px] bg-[#FF4D00] border-2 border-white rounded-full flex items-center justify-center shadow-[0_2px_8px_rgba(0,0,0,0.3)]">
                 <div className="w-[6px] h-[6px] bg-white rounded-full" />
               </div>
@@ -91,20 +88,24 @@ const Main = () => {
         )}
       </Map>
 
-      {/* 테마 대응 현위치 버튼 */}
-      <div className="fixed right-6 bottom-32 z-[9999]">
-        <button 
-          onPointerDown={handleMyLocationBtn}
-          className={`w-10 h-10 rounded-full shadow-md flex items-center justify-center active:scale-90 transition-all border
-            ${isDark 
-              ? 'bg-[#1a1c1e]/90 border-white/10 text-white' 
-              : 'bg-white border-gray-200 text-[#1a1c1e]'}
-          `}
-          style={{ cursor: 'pointer', WebkitTapHighlightColor: 'transparent' }}
-          aria-label="현위치"
-        >
-          <Crosshair size={22} strokeWidth={1.5} />
-        </button>
+      {/* [Footer Aligned] 테마 대응 현위치 버튼 */}
+      <div className="fixed bottom-0 right-0 z-[100] pointer-events-none">
+        <div className="w-full px-10 py-8">
+          <div className="py-5 flex items-center justify-end pointer-events-auto">
+            <button 
+              onPointerDown={handleMyLocationBtn}
+              className={`w-10 h-10 rounded-full shadow-md flex items-center justify-center active:scale-90 transition-all border
+                ${isDark 
+                  ? 'bg-[#1a1c1e]/90 border-white/10 text-white' 
+                  : 'bg-white border-gray-200 text-[#1a1c1e]'}
+              `}
+              style={{ cursor: 'pointer', WebkitTapHighlightColor: 'transparent' }}
+              aria-label="현위치"
+            >
+              <Crosshair size={22} strokeWidth={1.5} />
+            </button>
+          </div>
+        </div>
       </div>
 
       <style>{`
