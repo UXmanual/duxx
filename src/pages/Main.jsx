@@ -4,13 +4,13 @@ import { useTheme } from '../context/ThemeContext';
 import { Compass, Plus, Minus, Target, Navigation2 } from 'lucide-react';
 
 /**
- * [Page] 메인 페이지 (카카오 맵 영역 가두기 버전)
- * @version 5.4.0
+ * [Page] 메인 페이지 (카카오 맵 모바일 대응 및 애니메이션 강화 버전)
+ * @version 5.6.0
  * @author Antigravity
  * @description 
- * - 줌인(Zoom-in)은 절대 막지 않으며, 모든 확대 기능을 순정 상태로 유지합니다.
- * - 지도를 드래그할 때 한반도 영역을 벗어나 흰 배경이 보이는 것을 방지하는 가두기 로직을 탑재했습니다.
- * - 초기 로드 시 현위치(레벨 4)를 우선 표시하며, 최대 줌아웃은 레벨 11로 제한합니다.
+ * - 현위치 이동 시 위치 이동(panTo)과 줌(setLevel)을 부드럽게 연결했습니다.
+ * - 모바일 환경에서 한 손 조작이 쉽도록 리모콘 배치를 최적화했습니다.
+ * - 지도를 드래그할 때 한반도 외곽으로 나가는 것을 방지하는 가두기 로직을 유지합니다.
  */
 
 const containerStyle = {
@@ -90,7 +90,7 @@ const Main = () => {
     }
   }, [map, isFollowing]);
 
-  // 버튼 인터랙션 (명령형 접근으로 리액트 상태 충돌 방지)
+  // 버튼 인터랙션
   const zoomIn = () => {
     if (map) map.setLevel(map.getLevel() - 1, { animate: true });
   };
@@ -104,10 +104,21 @@ const Main = () => {
     }
   };
 
+  // 현위치로 부드럽게 이동 (애니메이션 강화)
   const moveToMyLocation = useCallback(() => {
     if (myLocation && map) {
-      map.panTo(new window.kakao.maps.LatLng(myLocation.lat, myLocation.lng));
-      map.setLevel(4, { animate: true });
+      const latlng = new window.kakao.maps.LatLng(myLocation.lat, myLocation.lng);
+      
+      // 1단계: 위치로 부드럽게 이동
+      map.panTo(latlng);
+      
+      // 2단계: 약간의 시간차를 두고 줌 레벨 복원 (애니메이션이 겹쳐서 끊기지 않도록)
+      setTimeout(() => {
+        if (map.getLevel() !== 4) {
+          map.setLevel(4, { animate: true });
+        }
+      }, 300);
+      
       setIsFollowing(true);
     }
   }, [myLocation, map]);
@@ -141,7 +152,7 @@ const Main = () => {
         }}
         style={containerStyle}
         onDragStart={() => setIsFollowing(false)}
-        onCenterChanged={handleBoundsCheck} // 드래그 시 마다 영역 이탈 체크
+        onCenterChanged={handleBoundsCheck}
         className={`transition-all duration-1000 ${isDark ? 'kakao-dark-theme' : ''}`}
       >
         {myLocation && (
@@ -166,26 +177,26 @@ const Main = () => {
         )}
       </Map>
 
-      {/* Floating Control Interface */}
-      <div className="absolute right-8 top-1/2 -translate-y-1/2 z-20 flex flex-col gap-4">
+      {/* Floating Control Interface (모바일 대응 최적화) */}
+      <div className="absolute right-6 sm:right-8 bottom-24 sm:top-1/2 sm:-translate-y-1/2 z-20 flex flex-col gap-4">
         <div className="flex flex-col bg-black/40 backdrop-blur-2xl border border-white/10 rounded-2xl overflow-hidden shadow-2xl pointer-events-auto text-white">
-            <button onClick={zoomIn} className="p-4 hover:bg-white/10 transition-colors border-b border-white/5">
-                <Plus size={20} />
+            <button onClick={zoomIn} className="p-4 sm:p-4 hover:bg-white/10 transition-colors border-b border-white/5 active:scale-95">
+                <Plus size={20} className="sm:w-5 sm:h-5 w-6 h-6" />
             </button>
-            <button onClick={zoomOut} className="p-4 hover:bg-white/10 transition-colors text-white/70 hover:text-white">
-                <Minus size={20} />
+            <button onClick={zoomOut} className="p-4 sm:p-4 hover:bg-white/10 transition-colors text-white/70 hover:text-white active:scale-95">
+                <Minus size={20} className="sm:w-5 sm:h-5 w-6 h-6" />
             </button>
         </div>
 
         <button 
             onClick={moveToMyLocation}
-            className={`p-4 rounded-full backdrop-blur-2xl border transition-all duration-500 shadow-2xl flex items-center justify-center pointer-events-auto
+            className={`p-4 sm:p-4 rounded-full backdrop-blur-2xl border transition-all duration-500 shadow-2xl flex items-center justify-center pointer-events-auto active:scale-90
                 ${isFollowing 
                     ? 'bg-blue-600 border-blue-400 text-white animate-pulse' 
                     : 'bg-black/40 border-white/10 text-white/70 hover:text-white hover:bg-black/60'
                 }`}
         >
-            <Target size={22} />
+            <Target size={24} className="sm:w-[22px] sm:h-[22px]" />
         </button>
       </div>
 
@@ -203,6 +214,11 @@ const Main = () => {
         .kakao-dark-theme .kakao-logo {
             filter: invert(100%) hue-rotate(180deg) !important;
             opacity: 0.4;
+        }
+        @media (max-width: 640px) {
+            .kakao-copyright, .kakao-logo {
+                display: none !important;
+            }
         }
       `}</style>
     </div>
