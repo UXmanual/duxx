@@ -4,12 +4,12 @@ import { useTheme } from '../context/ThemeContext';
 import { Target } from 'lucide-react';
 
 /**
- * [Page] 메인 페이지 (위치 권한 인식 오류 수정 버전)
- * @version 7.3.0
+ * [Page] 메인 페이지 (iOS Safari 위치 인식 최적화 버전)
+ * @version 7.4.0
  * @author Antigravity
  * @description 
- * - 권한 허용 후에도 알럿이 계속 뜨는 현상을 방지하기 위해 Timeout을 15초로 상향했습니다.
- * - PERMISSION_DENIED(1) 에러가 명확할 때만 시스템 알럿을 띄우도록 로직을 정교화했습니다.
+ * - iOS Safari에서 허용 후에도 즉시 거부되는 현상을 잡기 위해 enableHighAccuracy 옵션을 조정했습니다.
+ * - 에러 발생 시 시스템 메시지를 그대로 노출하여 정확한 원인 파악을 돕습니다.
  */
 
 const Main = () => {
@@ -17,27 +17,23 @@ const Main = () => {
   const mapRef = useRef(null);
   const [myLocation, setMyLocation] = useState(null);
   const [isFollowing, setIsFollowing] = useState(false);
-  const isRequesting = useRef(false);
 
   const [loading, error] = useKakaoLoader({
     appkey: import.meta.env.VITE_KAKAO_MAPS_API_KEY,
     libraries: ['services', 'clusterer', 'drawing'],
   });
 
-  const moveToMyLocation = () => {
-    if (!navigator.geolocation || isRequesting.current) return;
-
-    isRequesting.current = true;
+  const handleLocationRequest = (e) => {
+    if (e) e.stopPropagation();
     
-    const options = {
-      enableHighAccuracy: true,
-      timeout: 15000,   // 대기 시간을 15초로 상향하여 가짜 거부 방지
-      maximumAge: 30000 // 30초 이내의 이전 위치 정보 허용으로 안정성 확보
-    };
+    if (!navigator.geolocation) {
+      alert("이 브라우저는 위치 정보를 지원하지 않습니다.");
+      return;
+    }
 
+    // iOS Safari 대응: 사용자의 클릭 이벤트와 최대한 가까운 시점에 호출
     navigator.geolocation.getCurrentPosition(
       (position) => {
-        isRequesting.current = false;
         const { latitude, longitude } = position.coords;
         const latlng = new window.kakao.maps.LatLng(latitude, longitude);
         
@@ -49,16 +45,23 @@ const Main = () => {
         setIsFollowing(true);
       },
       (err) => {
-        isRequesting.current = false;
-        console.error("Geolocation Error:", err);
+        setIsFollowing(false);
+        console.error("Native GeoError:", err);
         
-        // 사용자가 명시적으로 '거부'를 눌렀을 때만 알럿 표시
-        if (err.code === 1) {
-          alert("위치 권한이 거부되었습니다. 원활한 서비를 위해 브라우저 설정에서 위치 권한을 허용해 주세요.");
-        } 
-        // code 2(사용 불가)나 code 3(시간 초과)은 알럿 없이 조용히 종료 (모바일 GPS 특성 고려)
+        // 상세 에러 원인 파악을 위한 메시지 구성
+        let msg = "위치 정보를 가져올 수 없습니다.\n";
+        if (err.code === 1) msg = "권한이 거부되었습니다. (Safari 설정에서 위치 권한을 확인해주세요.)\n";
+        else if (err.code === 2) msg = "위치 정보를 사용할 수 없습니다. (신호 약함)\n";
+        else if (err.code === 3) msg = "요청 시간이 초과되었습니다.\n";
+        
+        // Safari 원문 에러 메시지를 포함하여 정확한 진단 유도
+        alert(`${msg}\n[Detail]: ${err.message}`);
       },
-      options
+      { 
+        enableHighAccuracy: false, // iOS Safari 버그 대응: 일부 환경에서 true 시 즉시 거부될 수 있음
+        timeout: 10000,
+        maximumAge: 0 
+      }
     );
   };
 
@@ -71,7 +74,7 @@ const Main = () => {
         if (mapRef.current) mapRef.current.panTo(new window.kakao.maps.LatLng(latitude, longitude));
       },
       null,
-      { enableHighAccuracy: true, maximumAge: 10000 }
+      { enableHighAccuracy: false }
     );
     return () => navigator.geolocation.clearWatch(watchId);
   }, [isFollowing]);
@@ -92,31 +95,23 @@ const Main = () => {
         style={{ width: '100%', height: '100%' }}
         className={isDark ? 'kakao-dark-theme' : ''}
       >
-        {myLocation && (
-          <MapMarker position={myLocation} />
-        )}
+        {myLocation && <MapMarker position={myLocation} />}
       </Map>
 
-      {/* 현위치 버튼 */}
       <div className="absolute right-4 bottom-32 z-10">
         <button 
-          onClick={moveToMyLocation}
+          onClick={handleLocationRequest}
           className={`w-[42px] h-[42px] bg-white border border-gray-300 rounded-lg shadow-lg flex items-center justify-center active:scale-95 transition-all
-            ${isFollowing ? 'text-blue-500 border-blue-200' : 'text-gray-700'}
+            ${isFollowing ? 'text-blue-500 border-blue-200 font-bold' : 'text-gray-700'}
           `}
-          title="현위치"
         >
           <Target size={24} fill={isFollowing ? "currentColor" : "none"} />
         </button>
       </div>
 
       <style>{`
-        .kakao-dark-theme { 
-          filter: invert(100%) hue-rotate(180deg) brightness(0.9) grayscale(0.2); 
-          background-color: #fff !important; 
-        }
+        .kakao-dark-theme { filter: invert(100%) hue-rotate(180deg) brightness(0.9) grayscale(0.2); background-color: #fff !important; }
         .kakao-dark-theme img { filter: none !important; }
-        .kakao-dark-theme .kakao-logo, .kakao-dark-theme .kakao-copyright { filter: invert(100%) hue-rotate(180deg) !important; opacity: 0.4; }
         * { -webkit-tap-highlight-color: transparent; }
       `}</style>
     </div>
