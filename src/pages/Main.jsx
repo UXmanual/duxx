@@ -5,12 +5,13 @@ import { Compass, Plus, Minus, Target, Navigation2 } from 'lucide-react';
 
 /**
  * [Page] 메인 페이지 (카카오 맵 엔진 프리미엄 버전)
- * @version 4.2.0
+ * @version 4.7.0
  * @author Antigravity
  * @description 
  * - 카카오 맵 SDK를 활용한 하이엔드 맵 서비스입니다.
- * - 다크 모드 시 CSS Filter를 이용한 'Deep Space' 테마가 적용됩니다.
- * - 사용자의 현재 위치를 추적하고 맥동(Pulse) 애니메이션을 제공합니다.
+ * - 지도의 자유로운 드래그 및 휠 줌을 위해 비제어 컴포넌트(Uncontrolled) 방식을 채택했습니다.
+ * - 사용자의 현재 위치를 실시간으로 감지하고 초기 화면으로 설정합니다.
+ * - 대한민국 영역을 벗어나는 줌아웃 여백을 물리적으로 차단합니다.
  */
 
 const containerStyle = {
@@ -27,56 +28,24 @@ const defaultCenter = {
 const Main = () => {
   const { isDark } = useTheme();
   const [map, setMap] = useState(null);
-  const [center, setCenter] = useState(defaultCenter);
-  const [level, setLevel] = useState(4);
   const [myLocation, setMyLocation] = useState(null);
   const [isFollowing, setIsFollowing] = useState(false);
+  const [isInitialLocationSet, setIsInitialLocationSet] = useState(false);
 
   const [loading, error] = useKakaoLoader({
     appkey: import.meta.env.VITE_KAKAO_MAPS_API_KEY,
     libraries: ['services', 'clusterer', 'drawing'],
   });
 
-  // 사용자의 현위치 실시간 감지
-  useEffect(() => {
-    let watchId;
-    if (navigator.geolocation) {
-      watchId = navigator.geolocation.watchPosition(
-        (position) => {
-          const { latitude, longitude } = position.coords;
-          const newPos = { lat: latitude, lng: longitude };
-          setMyLocation(newPos);
-          
-          // 초기 로드 시 또는 '따라가기' 모드일 때 중심 이동
-          if (!myLocation || isFollowing) {
-            setCenter(newPos);
-          }
-        },
-        (err) => console.error("Location error:", err),
-        { enableHighAccuracy: true }
-      );
-    }
-    return () => navigator.geolocation.clearWatch(watchId);
-  }, [isFollowing]);
-
-  // 내 위치로 부드럽게 이동
-  const moveToMyLocation = useCallback(() => {
-    if (myLocation && map) {
-      const loc = new window.kakao.maps.LatLng(myLocation.lat, myLocation.lng);
-      map.panTo(loc);
-      setIsFollowing(true);
-    }
-  }, [myLocation, map]);
-
-  // 한반도 영역 정의 (남서단, 북동단) - 줌아웃 여백 방지용
+  // 한반도 영역 정의 (줌아웃 여백 방지용)
   const KOREA_BOUNDS = {
-    sw: { lat: 32.0, lng: 123.0 },
-    ne: { lat: 40.0, lng: 133.0 }
+    sw: { lat: 33.0, lng: 124.0 },
+    ne: { lat: 39.0, lng: 132.0 }
   };
 
-  // 영역 제한 체크 로직 (최대 줌아웃 상태에서만 부드럽게 작동하도록 조정)
+  // 영역 제한 체크 로직
   const checkBounds = useCallback((mapInstance) => {
-    if (mapInstance.getLevel() < 10) return; // 줌인 상태에서는 자유롭게 이동
+    if (mapInstance.getLevel() < 10) return;
 
     const latlng = mapInstance.getCenter();
     let lat = latlng.getLat();
@@ -92,13 +61,50 @@ const Main = () => {
     }
   }, []);
 
-  // 줌 조절 (버튼용)
+  // 현위치 실시간 감지 및 자동 이동 컨트롤
+  useEffect(() => {
+    let watchId;
+    if (navigator.geolocation) {
+      watchId = navigator.geolocation.watchPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          const newPos = { lat: latitude, lng: longitude };
+          setMyLocation(newPos);
+          
+          if (map) {
+            // 최초 로드 시 현위치로 이동
+            if (!isInitialLocationSet) {
+              map.setCenter(new window.kakao.maps.LatLng(latitude, longitude));
+              map.setLevel(4);
+              setIsInitialLocationSet(true);
+            }
+            // 따라가기 모드 활성화 시 이동
+            if (isFollowing) {
+              map.panTo(new window.kakao.maps.LatLng(latitude, longitude));
+            }
+          }
+        },
+        (err) => console.error("Location error:", err),
+        { enableHighAccuracy: true }
+      );
+    }
+    return () => navigator.geolocation.clearWatch(watchId);
+  }, [map, isFollowing, isInitialLocationSet]);
+
+  // UI 버튼 인터랙션
   const zoomIn = () => {
     if (map) map.setLevel(map.getLevel() - 1, { animate: true });
   };
   const zoomOut = () => {
     if (map && map.getLevel() < 13) map.setLevel(map.getLevel() + 1, { animate: true });
   };
+
+  const moveToMyLocation = useCallback(() => {
+    if (myLocation && map) {
+      map.panTo(new window.kakao.maps.LatLng(myLocation.lat, myLocation.lng));
+      setIsFollowing(true);
+    }
+  }, [myLocation, map]);
 
   if (loading) {
     return (
@@ -130,22 +136,15 @@ const Main = () => {
     <div className={`w-full h-screen relative overflow-hidden transition-colors duration-1000 ${isDark ? 'bg-[#05070a]' : 'bg-[#f4f7f9]'}`}>
       
       <Map
-        center={center}
-        level={level}
+        center={defaultCenter} // 초기 로드 후 Geolocation이 작동하기 전까지의 임시 중심
+        level={4}
         minLevel={1}
-        maxLevel={13}
+        maxLevel={13} // 대한민국이 가득 차는 축소 한도
         onCreate={setMap}
         style={containerStyle}
         onDragStart={() => setIsFollowing(false)}
         onCenterChanged={(mapInstance) => {
-            checkBounds(mapInstance);
-            setCenter({
-                lat: mapInstance.getCenter().getLat(),
-                lng: mapInstance.getCenter().getLng(),
-            });
-        }}
-        onZoomChanged={(mapInstance) => {
-            setLevel(mapInstance.getLevel());
+            checkBounds(mapInstance); // 여백 발생 방지
         }}
         className={`transition-all duration-1000 ${isDark ? 'kakao-dark-theme' : ''}`}
       >
@@ -164,7 +163,7 @@ const Main = () => {
             <MapMarker 
                 position={myLocation}
                 image={{
-                    src: 'https://cdn-icons-png.flaticon.com/512/0/619.png', // 보이지 않는 투명 이미지 대체 가능
+                    src: 'https://cdn-icons-png.flaticon.com/512/0/619.png',
                     size: { width: 1, height: 1 }
                 }}
             />
@@ -174,7 +173,7 @@ const Main = () => {
 
       {/* Floating Control Interface */}
       <div className="absolute right-8 top-1/2 -translate-y-1/2 z-20 flex flex-col gap-4">
-        <div className="flex flex-col bg-black/40 backdrop-blur-2xl border border-white/10 rounded-2xl overflow-hidden shadow-2xl">
+        <div className="flex flex-col bg-black/40 backdrop-blur-2xl border border-white/10 rounded-2xl overflow-hidden shadow-2xl pointer-events-auto">
             <button onClick={zoomIn} className="p-4 hover:bg-white/10 transition-colors text-white/70 hover:text-white border-b border-white/5">
                 <Plus size={20} />
             </button>
@@ -185,7 +184,7 @@ const Main = () => {
 
         <button 
             onClick={moveToMyLocation}
-            className={`p-4 rounded-full backdrop-blur-2xl border transition-all duration-500 shadow-2xl flex items-center justify-center
+            className={`p-4 rounded-full backdrop-blur-2xl border transition-all duration-500 shadow-2xl flex items-center justify-center pointer-events-auto
                 ${isFollowing 
                     ? 'bg-blue-600 border-blue-400 text-white animate-pulse' 
                     : 'bg-black/40 border-white/10 text-white/70 hover:text-white hover:bg-black/60'
@@ -195,23 +194,16 @@ const Main = () => {
         </button>
       </div>
 
-
       {/* Global Depth Overlay (Post-Processing) */}
       <div className={`absolute inset-0 pointer-events-none z-10 transition-opacity duration-1000 ${isDark ? 'bg-black/10 mix-blend-overlay' : 'bg-transparent'}`} />
 
       {/* Dark Theme Filters & Animations */}
       <style>{`
-        @keyframes fade-up {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
         .kakao-dark-theme {
             filter: invert(100%) hue-rotate(180deg) brightness(0.9) contrast(1.1) grayscale(0.2);
             background-color: #05070a !important;
         }
         
-        /* 로고 및 저작권 정보 등 특정 요소는 반전시키지 않음 (선택 사항) */
         .kakao-dark-theme img[src*="dapi.kakao.com"] {
             filter: none !important;
         }
