@@ -1,15 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Map, CustomOverlayMap, useKakaoLoader } from 'react-kakao-maps-sdk';
+import { Map, MapMarker, useKakaoLoader } from 'react-kakao-maps-sdk';
 import { useTheme } from '../context/ThemeContext';
 import { Crosshair } from 'lucide-react';
 
 /**
- * [Page] 메인 페이지 (푸터 정렬 버튼 적용 버전)
- * @version 9.5.0
+ * [Page] 메인 페이지 (모바일 마커 가시성 개선 버전)
+ * @version 9.7.0
  * @author Antigravity
  * @description 
- * - 현위치 버튼을 푸터의 가로 여백(px-10) 및 세로 중앙(py-8, py-5 레이아웃)에 맞춰 배치했습니다.
- * - z-index 최적화를 통해 푸터 위에서도 클릭이 가능하도록 설정했습니다.
+ * - 모바일에서 마커가 안 보이는 문제를 해결하기 위해 다크모드 역반전 필터를 적용했습니다.
+ * - MapMarker 내부에 커스텀 UI를 배치하여 모바일 렌더링 안정성을 높였습니다.
  */
 
 const Main = () => {
@@ -37,14 +37,20 @@ const Main = () => {
             map.setLevel(4);
           }
         },
-        null,
-        { enableHighAccuracy: true, timeout: 5000 }
+        null, // 초기 진입 에러는 무시
+        { 
+          enableHighAccuracy: true, 
+          timeout: 10000, // 모바일 GPS 수신 대기시간 연장
+          maximumAge: 30000 
+        }
       );
     }
   };
 
   useEffect(() => {
-    requestLocation(true);
+    if (map) {
+      requestLocation(true);
+    }
   }, [map]);
 
   const handleMyLocationBtn = (e) => {
@@ -70,21 +76,22 @@ const Main = () => {
         style={{ width: '100%', height: '100%' }}
         className={isDark ? 'kakao-dark-theme' : ''}
       >
-        {/* 현위치 마커 + 정밀 펄스 애니메이션 */}
+        {/* 모바일 가시성 개선 커스텀 마커 */}
         {myLocation && (
-          <CustomOverlayMap 
+          <MapMarker 
             position={myLocation} 
-            zIndex={999}
-            xAnchor={0.5}
-            yAnchor={0.5}
+            zIndex={1000}
           >
-            <div className="relative flex items-center justify-center pointer-events-none">
+            <div className={`relative flex items-center justify-center pointer-events-none ${isDark ? 'custom-marker-invert' : ''}`}>
+              {/* 펄스 파동 (사이즈/투명도 최적화) */}
               <div className="absolute w-8 h-8 bg-[#FF4D00] rounded-full animate-ping opacity-30" />
+              
+              {/* 픽셀 퍼펙트 마커 소체 (24px) */}
               <div className="relative w-[24px] h-[24px] bg-[#FF4D00] border-2 border-white rounded-full flex items-center justify-center shadow-[0_2px_8px_rgba(0,0,0,0.3)]">
                 <div className="w-[6px] h-[6px] bg-white rounded-full" />
               </div>
             </div>
-          </CustomOverlayMap>
+          </MapMarker>
         )}
       </Map>
 
@@ -112,6 +119,11 @@ const Main = () => {
         .kakao-dark-theme { filter: invert(100%) hue-rotate(180deg) brightness(0.9) grayscale(0.2); background-color: #fff !important; }
         .kakao-dark-theme img { filter: none !important; }
         
+        /* 다크모드에서 주황색 마커가 반전되지 않도록 재반전 */
+        .custom-marker-invert {
+          filter: invert(100%) hue-rotate(180deg) !important;
+        }
+
         @keyframes custom-ping {
           0% { transform: scale(0.8); opacity: 0.6; }
           70%, 100% { transform: scale(1.6); opacity: 0; }
