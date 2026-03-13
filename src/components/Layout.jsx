@@ -4,22 +4,27 @@ import Header from './Header';
 import Footer from './Footer';
 
 /**
- * [Standard] 플로팅 레이아웃 (시맨틱 구조 최적화)
- * @version 10.5.0
+ * [Standard] 시맨틱 레이아웃
+ * @version 11.0.0
+ * @author Antigravity
  * @description 
- * - 사용자 피드백을 반영하여 Header -> main -> Footer 순으로 구조를 재배치했습니다.
- * - 지도를 absolute로 바닥에 깔고, 인터페이스를 그 위에서 블렌딩(mix-blend-mode)되도록 구성했습니다.
+ * - 사용자 요청에 따라 소스코드 구조를 Header -> Main -> Footer 순으로 정비했습니다.
+ * - 시맨틱한 순서를 유지하면서도 지도가 배경으로 작동하도록 레이어 순서를 관리합니다.
  */
 const Layout = () => {
   return (
     <div id="duxx-layout-root" className="relative w-full h-screen overflow-hidden">
-      {/* 1. 메인 콘텐츠 (Backdrop) */}
-      <main id="main-content" className="absolute inset-0">
-        <Outlet />
+      {/* 1. 상단 인터페이스 */}
+      <Header />
+
+      {/* 2. 메인 콘텐츠 (Backdrop 지도는 뒷단에 배치) */}
+      <main id="main-content" className="absolute inset-0 pointer-events-none">
+        <div className="w-full h-full pointer-events-auto">
+          <Outlet />
+        </div>
       </main>
 
-      {/* 2. 인터페이스 레이어 (Foreground / Blending) */}
-      <Header />
+      {/* 3. 하단 인터페이스 */}
       <Footer />
     </div>
   );
