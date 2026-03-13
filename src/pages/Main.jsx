@@ -68,9 +68,9 @@ const Main = () => {
     }
   }, [myLocation, map]);
 
-  // 줌 조절 (카카오맵은 레벨이 클수록 줌아웃임. 여백 방지를 위해 최대 레벨 제한 강화)
+  // 줌 조절 (카카오맵은 레벨이 클수록 줌아웃임. 대한민국 전체를 꽉 채우기 위해 13으로 조정)
   const zoomIn = () => setLevel((prev) => Math.max(prev - 1, 1));
-  const zoomOut = () => setLevel((prev) => Math.min(prev + 1, 10)); // 14 -> 10으로 제한하여 가로 여백 방지
+  const zoomOut = () => setLevel((prev) => Math.min(prev + 1, 13));
 
   if (loading) {
     return (
@@ -104,7 +104,7 @@ const Main = () => {
       <Map
         center={center}
         level={level}
-        maxLevel={10} // 컴포넌트 수준에서도 최대 줌아웃 제한
+        maxLevel={13} // 대한민국이 화면에 꽉 차는 수준인 13으로 제한
         onCreate={setMap}
         style={containerStyle}
         onDragStart={() => setIsFollowing(false)}
