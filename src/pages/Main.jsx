@@ -1,18 +1,22 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { GoogleMap, useJsApiLoader } from '@react-google-maps/api';
+import { Map, MapMarker, CustomOverlayMap, useKakaoLoader } from 'react-kakao-maps-sdk';
 import { useTheme } from '../context/ThemeContext';
+import { Compass, Plus, Minus, Target, Navigation2 } from 'lucide-react';
 
 /**
- * [Page] 메인 페이지 (구글 맵 엔진)
- * @version 3.6.0
- * @description 프리미엄 다크 모드가 적용된 구글 맵입니다. 
- * 접속 시 브라우저 Geolocation API를 사용하여 사용자의 현위치를 자동으로 감지하고 기본 줌(Zoom 14)을 제공합니다.
+ * [Page] 메인 페이지 (카카오 맵 엔진 프리미엄 버전)
+ * @version 4.2.0
+ * @author Antigravity
+ * @description 
+ * - 카카오 맵 SDK를 활용한 하이엔드 맵 서비스입니다.
+ * - 다크 모드 시 CSS Filter를 이용한 'Deep Space' 테마가 적용됩니다.
+ * - 사용자의 현재 위치를 추적하고 맥동(Pulse) 애니메이션을 제공합니다.
  */
 
 const containerStyle = {
   width: '100%',
   height: '100vh',
-  backgroundColor: '#0a1016'
+  backgroundColor: '#05070a'
 };
 
 const defaultCenter = {
@@ -20,186 +24,185 @@ const defaultCenter = {
   lng: 126.9780
 };
 
-const mapBoundsRestriction = {
-  latLngBounds: {
-    north: 85,
-    south: -85,
-    west: -180,
-    east: 180
-  },
-  strictBounds: false
-};
-
-// 프리미엄 구글 맵 커스텀 스타일 (High-End Dark Mode)
-const darkMapStyles = [
-  { elementType: "geometry", stylers: [{ color: "#1d2c4d" }] },
-  { elementType: "labels.text.fill", stylers: [{ color: "#8ec3b9" }] },
-  { elementType: "labels.text.stroke", stylers: [{ color: "#1a3646" }] },
-  {
-    featureType: "administrative.country",
-    elementType: "geometry.stroke",
-    stylers: [{ color: "#4b6878" }],
-  },
-  {
-    featureType: "administrative.province",
-    elementType: "geometry.stroke",
-    stylers: [{ color: "#4b6878" }],
-  },
-  {
-    featureType: "landscape.man_made",
-    elementType: "geometry.stroke",
-    stylers: [{ color: "#334e87" }],
-  },
-  {
-    featureType: "landscape.natural",
-    elementType: "geometry",
-    stylers: [{ color: "#023e58" }],
-  },
-  {
-    featureType: "poi",
-    elementType: "geometry",
-    stylers: [{ color: "#283d6a" }],
-  },
-  {
-    featureType: "poi",
-    elementType: "labels.text.fill",
-    stylers: [{ color: "#6f9ba5" }],
-  },
-  {
-    featureType: "poi",
-    elementType: "labels.text.stroke",
-    stylers: [{ color: "#1d2c4d" }],
-  },
-  {
-    featureType: "poi.park",
-    elementType: "geometry.fill",
-    stylers: [{ color: "#023e58" }],
-  },
-  {
-    featureType: "poi.park",
-    elementType: "labels.text.fill",
-    stylers: [{ color: "#3C7680" }],
-  },
-  {
-    featureType: "road",
-    elementType: "geometry",
-    stylers: [{ color: "#304a7d" }],
-  },
-  {
-    featureType: "road",
-    elementType: "labels.text.fill",
-    stylers: [{ color: "#98a5be" }],
-  },
-  {
-    featureType: "road",
-    elementType: "labels.text.stroke",
-    stylers: [{ color: "#1d2c4d" }],
-  },
-  {
-    featureType: "road.highway",
-    elementType: "geometry",
-    stylers: [{ color: "#2c6675" }],
-  },
-  {
-    featureType: "road.highway",
-    elementType: "geometry.stroke",
-    stylers: [{ color: "#255762" }],
-  },
-  {
-    featureType: "road.highway",
-    elementType: "labels.text.fill",
-    stylers: [{ color: "#b0d5ce" }],
-  },
-  {
-    featureType: "road.highway",
-    elementType: "labels.text.stroke",
-    stylers: [{ color: "#023e58" }],
-  },
-  {
-    featureType: "transit",
-    elementType: "labels.text.fill",
-    stylers: [{ color: "#98a5be" }],
-  },
-  {
-    featureType: "transit",
-    elementType: "labels.text.stroke",
-    stylers: [{ color: "#1d2c4d" }],
-  },
-  {
-    featureType: "transit.line",
-    elementType: "geometry.fill",
-    stylers: [{ color: "#283d6a" }],
-  },
-  {
-    featureType: "transit.station",
-    elementType: "geometry.fill",
-    stylers: [{ color: "#3a4762" }],
-  },
-  {
-    featureType: "water",
-    elementType: "geometry",
-    stylers: [{ color: "#0e1626" }],
-  },
-  {
-    featureType: "water",
-    elementType: "labels.text.fill",
-    stylers: [{ color: "#4e6d70" }],
-  },
-];
-
 const Main = () => {
   const { isDark } = useTheme();
-  const [mapCenter, setMapCenter] = useState(defaultCenter);
-  const [mapZoom, setMapZoom] = useState(7);
-  
-  const { isLoaded } = useJsApiLoader({
-    id: 'google-map-script',
-    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
-    language: 'ko',
-    region: 'KR'
+  const [map, setMap] = useState(null);
+  const [center, setCenter] = useState(defaultCenter);
+  const [level, setLevel] = useState(4);
+  const [myLocation, setMyLocation] = useState(null);
+  const [isFollowing, setIsFollowing] = useState(false);
+
+  const [loading, error] = useKakaoLoader({
+    appkey: import.meta.env.VITE_KAKAO_MAPS_API_KEY,
+    libraries: ['services', 'clusterer', 'drawing'],
   });
 
-  // 현위치 감지 로직
+  // 사용자의 현위치 실시간 감지
   useEffect(() => {
+    let watchId;
     if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
+      watchId = navigator.geolocation.watchPosition(
         (position) => {
           const { latitude, longitude } = position.coords;
-          setMapCenter({ lat: latitude, lng: longitude });
-          setMapZoom(14); // 현위치 발견 시 기본줌
+          const newPos = { lat: latitude, lng: longitude };
+          setMyLocation(newPos);
+          
+          // 초기 로드 시 또는 '따라가기' 모드일 때 중심 이동
+          if (!myLocation || isFollowing) {
+            setCenter(newPos);
+          }
         },
-        () => {
-          console.warn("Geolocation access denied or failed. Using default center.");
-        }
+        (err) => console.error("Location error:", err),
+        { enableHighAccuracy: true }
       );
     }
-  }, []);
+    return () => navigator.geolocation.clearWatch(watchId);
+  }, [isFollowing]);
+
+  // 내 위치로 부드럽게 이동
+  const moveToMyLocation = useCallback(() => {
+    if (myLocation && map) {
+      const loc = new window.kakao.maps.LatLng(myLocation.lat, myLocation.lng);
+      map.panTo(loc);
+      setIsFollowing(true);
+    }
+  }, [myLocation, map]);
+
+  // 줌 조절
+  const zoomIn = () => setLevel((prev) => Math.max(prev - 1, 1));
+  const zoomOut = () => setLevel((prev) => Math.min(prev + 1, 14));
+
+  if (loading) {
+    return (
+      <div className="w-full h-full flex flex-col items-center justify-center bg-[#05070a] gap-6">
+        <div className="relative w-24 h-24">
+            <div className="absolute inset-0 border-4 border-blue-500/20 rounded-full"></div>
+            <div className="absolute inset-0 border-4 border-t-blue-500 rounded-full animate-spin"></div>
+        </div>
+        <div className="text-white/20 font-black text-4xl tracking-[0.2em] animate-pulse">
+          DUXX CORE LOADING
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="w-full h-full flex flex-col items-center justify-center bg-[#0a0c10] text-[#ff4b4b] p-10">
+        <div className="bg-red-500/10 p-8 rounded-3xl border border-red-500/20 backdrop-blur-xl flex flex-col items-center">
+            <Compass className="w-16 h-16 mb-6 animate-bounce" />
+            <h2 className="text-3xl mb-4 font-black tracking-tighter uppercase text-red-500">System Failure</h2>
+            <p className="text-white/40 max-w-sm text-center font-light leading-relaxed">
+              카카오맵 API 연동에 실패했습니다.<br/>
+              <span className="text-white/60 font-mono">.env</span> 파일의 <span className="text-white/60 font-mono">VITE_KAKAO_MAPS_API_KEY</span>를 확인해 주세요.
+            </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className={`w-full h-screen relative overflow-hidden transition-colors duration-1000 ${isDark ? 'bg-[#0a0c10]' : 'bg-[#f4f7f9]'}`}>
-      {isLoaded ? (
-        <GoogleMap
-          mapContainerStyle={containerStyle}
-          center={mapCenter}
-          zoom={mapZoom}
-          options={{
-            disableDefaultUI: true,
-            minZoom: 3,
-            maxZoom: 18,
-            restriction: mapBoundsRestriction,
-            styles: isDark ? darkMapStyles : [],
-            gestureHandling: 'greedy',
-            backgroundColor: isDark ? '#0a1016' : '#f4f7f9'
-          }}
-        />
-      ) : (
-        <div className="w-full h-full flex items-center justify-center text-white/5 font-black text-6xl animate-pulse tracking-tighter">
-          DUXX ENGINE
-        </div>
-      )}
+    <div className={`w-full h-screen relative overflow-hidden transition-colors duration-1000 ${isDark ? 'bg-[#05070a]' : 'bg-[#f4f7f9]'}`}>
       
-      {/* Global Depth Overlay */}
-      <div className={`absolute inset-0 pointer-events-none z-10 transition-opacity duration-1000 ${isDark ? 'bg-black/5' : 'bg-transparent'}`} />
+      <Map
+        center={center}
+        level={level}
+        onCreate={setMap}
+        style={containerStyle}
+        onDragStart={() => setIsFollowing(false)}
+        onCenterChanged={(map) => {
+            setCenter({
+                lat: map.getCenter().getLat(),
+                lng: map.getCenter().getLng(),
+            });
+        }}
+        className={`transition-all duration-1000 ${isDark ? 'kakao-dark-theme' : ''}`}
+      >
+        {/* 내 위치 마커 & 펄스 효과 */}
+        {myLocation && (
+          <>
+            <CustomOverlayMap position={myLocation}>
+              <div className="relative flex items-center justify-center">
+                <div className="absolute w-12 h-12 bg-blue-500 rounded-full animate-ping opacity-20"></div>
+                <div className="absolute w-8 h-8 bg-blue-500 rounded-full animate-ping opacity-40" style={{ animationDelay: '0.5s' }}></div>
+                <div className="w-5 h-5 bg-blue-600 rounded-full border-2 border-white shadow-[0_0_15px_rgba(37,99,235,0.8)] z-10 flex items-center justify-center">
+                    <Navigation2 size={10} className="text-white fill-current" />
+                </div>
+              </div>
+            </CustomOverlayMap>
+            <MapMarker 
+                position={myLocation}
+                image={{
+                    src: 'https://cdn-icons-png.flaticon.com/512/0/619.png', // 보이지 않는 투명 이미지 대체 가능
+                    size: { width: 1, height: 1 }
+                }}
+            />
+          </>
+        )}
+      </Map>
+
+      {/* Floating Control Interface */}
+      <div className="absolute right-8 top-1/2 -translate-y-1/2 z-20 flex flex-col gap-4">
+        <div className="flex flex-col bg-black/40 backdrop-blur-2xl border border-white/10 rounded-2xl overflow-hidden shadow-2xl">
+            <button onClick={zoomIn} className="p-4 hover:bg-white/10 transition-colors text-white/70 hover:text-white border-b border-white/5">
+                <Plus size={20} />
+            </button>
+            <button onClick={zoomOut} className="p-4 hover:bg-white/10 transition-colors text-white/70 hover:text-white">
+                <Minus size={20} />
+            </button>
+        </div>
+
+        <button 
+            onClick={moveToMyLocation}
+            className={`p-4 rounded-full backdrop-blur-2xl border transition-all duration-500 shadow-2xl flex items-center justify-center
+                ${isFollowing 
+                    ? 'bg-blue-600 border-blue-400 text-white animate-pulse' 
+                    : 'bg-black/40 border-white/10 text-white/70 hover:text-white hover:bg-black/60'
+                }`}
+        >
+            <Target size={22} />
+        </button>
+      </div>
+
+      {/* Info Badge (Glassmorphism) */}
+      <div className="absolute left-8 bottom-12 z-20 pointer-events-none">
+        <div className="bg-black/40 backdrop-blur-3xl border border-white/10 p-6 rounded-[2rem] shadow-2xl flex items-center gap-5 translate-y-0 animate-[fade-up_1s_ease-out]">
+            <div className="w-12 h-12 bg-blue-500/20 rounded-2xl flex items-center justify-center border border-blue-500/30">
+                <Compass className={`text-blue-400 ${loading ? 'animate-spin' : ''}`} />
+            </div>
+            <div>
+                <h3 className="text-white font-bold tracking-tight text-lg leading-none mb-1">DUXX NEURAL MAP</h3>
+                <p className="text-white/40 text-xs font-medium uppercase tracking-[0.1em]">Engine v4.2.0 Active • Kakao Runtime</p>
+            </div>
+        </div>
+      </div>
+
+      {/* Global Depth Overlay (Post-Processing) */}
+      <div className={`absolute inset-0 pointer-events-none z-10 transition-opacity duration-1000 ${isDark ? 'bg-black/10 mix-blend-overlay' : 'bg-transparent'}`} />
+
+      {/* Dark Theme Filters & Animations */}
+      <style>{`
+        @keyframes fade-up {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .kakao-dark-theme {
+            filter: invert(100%) hue-rotate(180deg) brightness(0.9) contrast(1.1) grayscale(0.2);
+            background-color: #05070a !important;
+        }
+        
+        /* 로고 및 저작권 정보 등 특정 요소는 반전시키지 않음 (선택 사항) */
+        .kakao-dark-theme img[src*="dapi.kakao.com"] {
+            filter: none !important;
+        }
+        
+        .kakao-dark-theme .kakao-copyright,
+        .kakao-dark-theme .kakao-logo {
+            filter: invert(100%) hue-rotate(180deg) !important;
+            opacity: 0.4;
+        }
+      `}</style>
     </div>
   );
 };

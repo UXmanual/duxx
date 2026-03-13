@@ -8,8 +8,17 @@ const ThemeContext = createContext();
  */
 export const ThemeProvider = ({ children }) => {
   const [isDark, setIsDark] = useState(() => {
-    // 초기값: 로컬 스토리지 확인
-    return localStorage.getItem('theme') === 'dark';
+    // 1. 로컬 스토리지에 저장된 사용자 설정이 있는지 확인
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme) {
+      return savedTheme === 'dark';
+    }
+
+    // 2. 저장된 설정이 없다면 현재 한국 시간(KST) 기준 자동 설정 (오후 6시 ~ 오전 6시)
+    const now = new Date();
+    // Vercel 배포 환경이나 시스템 설정에 따라 UTC가 기준일 수 있으므로 KST(UTC+9) 보정
+    const kstHour = (now.getUTCHours() + 9) % 24;
+    return kstHour >= 18 || kstHour < 6;
   });
 
   useEffect(() => {
