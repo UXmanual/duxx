@@ -4,12 +4,12 @@ import { Sun, Moon, MoonStar } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 /**
- * [Component] 상단 헤더
- * @version 10.3.0
+ * [Component] 상단 헤더 (배경 반전 강화 버전)
+ * @version 10.4.0
  * @author Antigravity
  * @description 
- * - 로고에 'mix-blend-mode: difference' 효과가 확실히 나타나도록 CSS 속성을 강화했습니다.
- * - 'display: inline-block'과 'will-change'를 추가하여 브라우저의 전용 렌더링 레이어를 생성했습니다.
+ * - 레이어 분리를 유발하는 transition을 제거하고 순수 CSS 블렌딩에 집중했습니다.
+ * - 지도의 픽셀과 직접 연산될 수 있도록 최상위 레이아웃 컨텍스트를 활용합니다.
  */
 const Header = () => {
   const { isDark, toggleTheme } = useTheme();
@@ -25,19 +25,16 @@ const Header = () => {
   }, [isDark]);
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 transition-all duration-500 pointer-events-none">
+    <header className="fixed top-0 left-0 right-0 z-50 pointer-events-none">
       <div className="w-full px-10 h-24 flex items-center justify-between">
         <div className="flex items-center gap-2 pointer-events-auto">
-          {/* Logo: Photoshop의 '차이(Difference)' 모드 재현 */}
-          {/* isolation: auto와 inline-block을 통해 배경과 직접 연산되도록 유도 */}
+          {/* Logo: 배경 반전 효과를 위한 전용 스타일 */}
           <span 
-            className="font-black text-[24px] tracking-[0] uppercase select-none transition-transform active:scale-95"
+            className="font-black text-[24px] tracking-[0] uppercase select-none"
             style={{ 
               mixBlendMode: 'difference',
-              color: 'white',
-              display: 'inline-block',
-              willChange: 'mix-blend-mode, transform',
-              WebkitFontSmoothing: 'antialiased'
+              color: '#ffffff',
+              display: 'block'
             }}
           >
             DUXX

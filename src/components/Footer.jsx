@@ -3,9 +3,9 @@ import pkg from '../../package.json';
 
 /**
  * [Standard Component] 푸터
- * @version 10.3.0
+ * @version 10.4.0
  * @description 
- * - 푸터 로고에도 헤더와 동일한 고성능 블렌딩 기법을 적용했습니다.
+ * - 로고 반전 효과가 극대화되도록 불필요한 레이어 속성을 제거했습니다.
  */
 const Footer = () => {
   return (
@@ -18,17 +18,16 @@ const Footer = () => {
             </p>
             <span className="w-px h-3 bg-theme-text-secondary opacity-30" />
             <p className="text-theme-text-secondary text-[14px] font-bold tracking-[0]">
-              Last Deployed: 16:15 KST
+              Last Deployed: 16:21 KST
             </p>
           </div>
-          {/* Copyright: Photoshop-like 블렌딩 마감 */}
+          {/* Logo: 배경 반전 텍스트 */}
           <p 
             className="font-black text-[14px] tracking-[0] select-none"
             style={{ 
               mixBlendMode: 'difference',
-              color: 'white',
-              display: 'inline-block',
-              willChange: 'mix-blend-mode'
+              color: '#ffffff',
+              display: 'block'
             }}
           >
             ©DUXX
