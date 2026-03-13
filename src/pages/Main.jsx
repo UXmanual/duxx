@@ -4,12 +4,12 @@ import { useTheme } from '../context/ThemeContext';
 import { Crosshair } from 'lucide-react';
 
 /**
- * [Page] 메인 페이지 (마커 그림자 미세 조정 버전)
- * @version 8.8.0
+ * [Page] 메인 페이지 (마커 컬러 및 디자인 디테일 튜닝 버전)
+ * @version 8.9.0
  * @author Antigravity
  * @description 
- * - 현위치 마커의 드롭쉐도우를 더 얇고 좁게 조정하여 깔끔한 디자인을 완성했습니다.
- * - 오렌지 컬러(#FF6A00)와 사이즈(30px)는 유지하되, 그림자 가독성을 높였습니다.
+ * - 현위치 마커의 메인 컬러를 #F5003B로 변경했습니다.
+ * - 중앙의 흰색 원 사이즈를 더욱 작게 줄여 정교한 느낌을 강조했습니다.
  */
 
 const Main = () => {
@@ -64,12 +64,12 @@ const Main = () => {
         style={{ width: '100%', height: '100%' }}
         className={isDark ? 'kakao-dark-theme' : ''}
       >
-        {/* 커스텀 오렌지 위치 마커 (그림자 정밀 조정) */}
+        {/* 커스텀 위치 마커 (#F5003B + 미니 도트) */}
         {myLocation && (
           <CustomOverlayMap position={myLocation} zIndex={999}>
             <div className="flex items-center justify-center transform -translate-y-1/2 pointer-events-none">
-              <div className="w-[30px] h-[30px] bg-[#FF6A00] border-[2.5px] border-white rounded-full flex items-center justify-center shadow-[0_2px_6px_rgba(0,0,0,0.25)]">
-                <div className="w-[10px] h-[10px] bg-white rounded-full shadow-sm" />
+              <div className="w-[30px] h-[30px] bg-[#F5003B] border-[2.5px] border-white rounded-full flex items-center justify-center shadow-[0_2px_6px_rgba(0,0,0,0.25)]">
+                <div className="w-[6px] h-[6px] bg-white rounded-full shadow-inner" />
               </div>
             </div>
           </CustomOverlayMap>
