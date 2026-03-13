@@ -1,16 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Map, MapMarker, useKakaoLoader } from 'react-kakao-maps-sdk';
+import { Map, MapMarker, ZoomControl, MapTypeControl, useKakaoLoader } from 'react-kakao-maps-sdk';
 import { useTheme } from '../context/ThemeContext';
-import { Plus, Minus, Target } from 'lucide-react';
+import { Target } from 'lucide-react';
 
 /**
- * [Page] 메인 페이지 (엔진 직결형 초고속 위치 이동 버전)
- * @version 7.0.0
+ * [Page] 메인 페이지 (카카오 공식 컨트롤 통합 버전)
+ * @version 7.1.0
  * @author Antigravity
  * @description 
- * - 리액트의 상태 관리(useState)가 지도 렌더링 스레드를 방해하여 발생하는 '프리징' 현상을 근본적으로 해결했습니다.
- * - Kakao Map API 인스턴스에 직접 접근(Native Imperative)하여 명령을 내리므로 드래그 전에도 즉시 이동합니다.
- * - 불필요한 이벤트 바인딩과 중복 호출을 모두 제거한 최경량 구조입니다.
+ * - 모든 커스텀 UI를 삭제하고 카카오맵 SDK 표준 컨트롤(ZoomControl)을 적용했습니다.
+ * - '현위치' 버튼은 카카오맵 공식 디자인 가이드를 준수하여 최소화된 형태로 구현했습니다.
  */
 
 const Main = () => {
@@ -24,24 +23,17 @@ const Main = () => {
     libraries: ['services', 'clusterer', 'drawing'],
   });
 
-  // [Native Direct] 위치 이동 및 지도 엔진 직접 제어
+  // 현위치 이동 로직 (엔진 직결)
   const moveToMyLocation = () => {
     if (!navigator.geolocation) return;
-
-    // 1. 시스템 위치 요청 (초경량)
     navigator.geolocation.getCurrentPosition(
       (position) => {
         const { latitude, longitude } = position.coords;
         const latlng = new window.kakao.maps.LatLng(latitude, longitude);
-        
-        // 2. 리액트 렌더링을 거치지 않고 지도 엔진에 즉시 이동 명령 (가장 중요)
-        const mapInstance = mapRef.current;
-        if (mapInstance) {
-          mapInstance.panTo(latlng);
-          mapInstance.setLevel(4); // 줌 애니메이션 제거로 프리징 차단
+        if (mapRef.current) {
+          mapRef.current.panTo(latlng);
+          mapRef.current.setLevel(4);
         }
-
-        // 3. 마커 표시를 위한 상태 업데이트 (최소화)
         setMyLocation({ lat: latitude, lng: longitude });
         setIsFollowing(true);
       },
@@ -52,18 +44,13 @@ const Main = () => {
     );
   };
 
-  // 실시간 추적 (동일한 직결 로직 적용)
   useEffect(() => {
-    if (!navigator.geolocation) return;
+    if (!navigator.geolocation || !isFollowing) return;
     const watchId = navigator.geolocation.watchPosition(
       (position) => {
         const { latitude, longitude } = position.coords;
-        const pos = { lat: latitude, lng: longitude };
-        
-        if (isFollowing && mapRef.current) {
-          mapRef.current.panTo(new window.kakao.maps.LatLng(latitude, longitude));
-        }
-        setMyLocation(pos);
+        setMyLocation({ lat: latitude, lng: longitude });
+        if (mapRef.current) mapRef.current.panTo(new window.kakao.maps.LatLng(latitude, longitude));
       },
       null,
       { enableHighAccuracy: true }
@@ -74,12 +61,13 @@ const Main = () => {
   if (loading) return null;
 
   return (
-    <div className="w-full h-screen relative bg-[#05070a]">
+    <div className="w-full h-screen relative bg-white">
       <Map
         center={{ lat: 37.5665, lng: 126.9780 }}
         level={4}
         onCreate={(m) => {
           mapRef.current = m;
+          // 최대 줌아웃 제한
           m.setMaxLevel(11);
           // 드래그 시 추적 해제
           window.kakao.maps.event.addListener(m, 'dragstart', () => setIsFollowing(false));
@@ -87,41 +75,40 @@ const Main = () => {
         style={{ width: '100%', height: '100%' }}
         className={isDark ? 'kakao-dark-theme' : ''}
       >
+        {/* 카카오 공식 줌 컨트롤 */}
+        <ZoomControl position={window.kakao.maps.ControlPosition.RIGHT} />
+        
+        {/* 카카오 공식 지도 타입 컨트롤 */}
+        <MapTypeControl position={window.kakao.maps.ControlPosition.TOPRIGHT} />
+
         {myLocation && (
           <MapMarker position={myLocation} />
         )}
       </Map>
 
-      {/* Control UI (최상위 단일 레이어 배치) */}
-      <div className="absolute right-6 top-1/2 -translate-y-1/2 z-10 flex flex-col gap-5">
-        <div className="flex flex-col bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-xl">
-          <button 
-            onClick={() => mapRef.current?.setLevel(mapRef.current.getLevel() - 1)}
-            className="p-5 active:bg-gray-100 border-b border-gray-100"
-          >
-            <Plus size={24} className="text-gray-900" />
-          </button>
-          <button 
-            onClick={() => { if (mapRef.current?.getLevel() < 11) mapRef.current.setLevel(mapRef.current.getLevel() + 1); }}
-            className="p-5 active:bg-gray-100"
-          >
-            <Minus size={24} className="text-gray-600" />
-          </button>
-        </div>
-        
+      {/* 공식 스타일 현위치 버튼 (카카오맵 표준 디자인 모사) */}
+      <div className="absolute right-[11px] bottom-[110px] z-10">
         <button 
           onClick={moveToMyLocation}
-          className={`p-5 rounded-full shadow-2xl transition-transform active:scale-95
-            ${isFollowing ? 'bg-blue-600 text-white' : 'bg-white text-gray-900 border border-gray-200'}
+          className={`w-[36px] h-[36px] bg-white border border-gray-300 rounded shadow-sm flex items-center justify-center active:bg-gray-100 transition-colors
+            ${isFollowing ? 'text-blue-500' : 'text-gray-700'}
           `}
+          title="현위치"
         >
-          <Target size={30} />
+          <Target size={20} fill={isFollowing ? "currentColor" : "none"} />
         </button>
       </div>
 
       <style>{`
-        .kakao-dark-theme { filter: invert(100%) hue-rotate(180deg) brightness(0.9) grayscale(0.25); background-color: #05070a !important; }
+        .kakao-dark-theme { 
+          filter: invert(100%) hue-rotate(180deg) brightness(0.9) grayscale(0.2); 
+          background-color: #fff !important; 
+        }
+        /* 다크모드 시 마커/로고 속성 보호 */
         .kakao-dark-theme img { filter: none !important; }
+        .kakao-dark-theme .kakao-logo, .kakao-dark-theme .kakao-copyright { filter: invert(100%) hue-rotate(180deg) !important; opacity: 0.4; }
+        
+        /* 모바일에서 불필요한 레이아웃 보정 */
         * { -webkit-tap-highlight-color: transparent; }
       `}</style>
     </div>
