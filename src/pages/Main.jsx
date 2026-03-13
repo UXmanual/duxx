@@ -102,7 +102,7 @@ const Main = () => {
           <div className="py-5 flex items-center justify-end pointer-events-auto">
             <button 
               onPointerDown={handleMyLocationBtn}
-              className={`w-10 h-10 rounded-full shadow-md flex items-center justify-center active:scale-90 transition-all border
+              className={`w-10 h-10 rounded-full flex items-center justify-center active:scale-90 transition-all border
                 ${isDark 
                   ? 'bg-[#1a1c1e]/90 border-white/10 text-white' 
                   : 'bg-white border-gray-200 text-[#1a1c1e]'}

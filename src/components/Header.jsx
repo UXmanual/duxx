@@ -5,10 +5,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 /**
  * [Component] 상단 헤더
- * @version 11.5.0
+ * @version 11.8.0
  * @author Antigravity
  * @description
- * - 로고 컨테이너에 'color-burn' 블렌딩 모드를 적용하여 배경색을 진하게 태우는 효과를 구현했습니다.
+ * - 테마 토글 버튼의 배경 블러, 쉐도우, 배경색을 모두 제거하여 순수 아이콘만 노출되도록 했습니다.
+ * - 터치 영역(w-12 h-12)은 유지하여 사용성을 확보했습니다.
  */
 const Header = () => {
   const { isDark, toggleTheme } = useTheme();
@@ -27,8 +28,7 @@ const Header = () => {
     <header style={{ display: 'contents' }}>
       {/* 
         [Logo Layer] 
-        mix-blend-mode를 'color-burn'으로 변경하여 
-        로고가 배경 지도의 색상을 진하게 태우는듯한 강렬한 대비 효과를 줍니다.
+        mix-blend-mode: color-burn
       */}
       <div 
         className="absolute top-0 left-0 px-10 h-24 flex items-center z-10 pointer-events-none"
@@ -39,11 +39,11 @@ const Header = () => {
         </span>
       </div>
 
-      {/* [Interface Layer] 테마 버튼 */}
+      {/* [Interface Layer] 테마 버튼 - 배경 및 쉐도우 제거 버전 */}
       <div className="absolute top-0 right-0 px-10 h-24 flex items-center z-20 pointer-events-none">
         <button 
           onClick={toggleTheme}
-          className="p-3 rounded-2xl bg-theme-card/30 hover:bg-theme-accent/10 transition-colors duration-500 group flex items-center justify-center w-12 h-12 pointer-events-auto shadow-sm backdrop-blur-sm"
+          className="p-3 bg-transparent transition-colors duration-500 group flex items-center justify-center w-12 h-12 pointer-events-auto"
           aria-label="Toggle Theme"
         >
           <AnimatePresence mode="wait">
