@@ -29,13 +29,18 @@ const Main = () => {
 
   // 초기 메모 데이터 로드
   const fetchMemos = async () => {
-    const { data, error } = await supabase
-      .from('memos')
-      .select('*')
-      .order('created_at', { ascending: true });
+    if (!supabase) return;
+    try {
+      const { data, error } = await supabase
+        .from('memos')
+        .select('*')
+        .order('created_at', { ascending: true });
 
-    if (!error && data) {
-      setMemos(data);
+      if (!error && data) {
+        setMemos(data);
+      }
+    } catch (e) {
+      console.warn('Supabase fetch failed:', e);
     }
   };
 
@@ -82,6 +87,10 @@ const Main = () => {
   // 지도 클릭 시 메모 생성
   const handleMapClick = async (_t, mouseEvent) => {
     if (!isMemoMode) return;
+    if (!supabase) {
+      alert('데이터베이스 연결 설정이 완료되지 않았습니다. .env 환경 변수를 확인해주세요.');
+      return;
+    }
 
     const latlng = mouseEvent.latLng;
     const text = prompt('여기에 남길 메모를 입력해주세요:');
@@ -107,6 +116,7 @@ const Main = () => {
 
   // 메모 삭제 처리
   const handleDeleteMemo = async (id) => {
+    if (!supabase) return;
     if (confirm('이 메모를 삭제하시겠습니까?')) {
       const { error } = await supabase
         .from('memos')
