@@ -1,16 +1,16 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Map, MapMarker, CustomOverlayMap, useKakaoLoader } from 'react-kakao-maps-sdk';
 import { useTheme } from '../context/ThemeContext';
 import { Compass, Plus, Minus, Target, Navigation2 } from 'lucide-react';
 
 /**
  * [Page] 메인 페이지 (카카오 맵 엔진 하이엔드 버전)
- * @version 4.8.0
+ * @version 4.9.0
  * @author Antigravity
  * @description 
- * - 카카오 맵 SDK를 활용한 자유로운 줌/드레이그 인터랙션 제공
- * - 초기 로드 시 현위치 중심 자동 설정 (레벨 4)
- * - 줌아웃 최대치만 대한민국 전역(레벨 13)으로 제한하여 여백 발생 방지
+ * - 카카오 맵 SDK의 모든 순정 인터랙션(드래그, 휠 줌)을 100% 허용합니다.
+ * - 초기 로드 시 사용자의 현위치를 감지하여 중심으로 설정합니다.
+ * - 줌아웃 최대치만 대한민국이 가득 차는 레벨 13으로 제한하여 흰 여백 발생을 방지합니다.
  */
 
 const containerStyle = {
@@ -28,10 +28,11 @@ const Main = () => {
   const [map, setMap] = useState(null);
   const [myLocation, setMyLocation] = useState(null);
   const [isFollowing, setIsFollowing] = useState(false);
-  
-  // 맵의 중심과 레벨은 SDK 내부 동작을 방해하지 않도록 '최초 1회' 혹은 '특수한 이동' 시에만 명령형으로 제어합니다.
-  const [mapCenter, setMapCenter] = useState(defaultCenter);
-  const [mapLevel, setMapLevel] = useState(4);
+  const isInitialSet = useRef(false);
+
+  // 지도의 중심과 레벨을 '비제어(Uncontrolled)' 방식으로 관리하기 위해 초기값으로만 사용합니다.
+  const [center, setCenter] = useState(defaultCenter);
+  const [level, setLevel] = useState(4);
 
   const [loading, error] = useKakaoLoader({
     appkey: import.meta.env.VITE_KAKAO_MAPS_API_KEY,
@@ -48,10 +49,10 @@ const Main = () => {
           const newPos = { lat: latitude, lng: longitude };
           setMyLocation(newPos);
           
-          // 최초 1회 또는 따라가기 모드일 때만 지도의 중심을 변경
+          // 최초 1회 현위치 설정 또는 '따라가기' 활성 시에만 중심 이동
           if (!isInitialSet.current || isFollowing) {
-            setMapCenter(newPos);
-            setMapLevel(4);
+            setCenter(newPos);
+            setLevel(4);
             isInitialSet.current = true;
           }
         },
@@ -59,11 +60,10 @@ const Main = () => {
         { enableHighAccuracy: true }
       );
     }
-    const isInitialSet = { current: false };
     return () => navigator.geolocation.clearWatch(watchId);
   }, [isFollowing]);
 
-  // 버튼을 통한 줌 인/아웃 (명령형 API 사용)
+  // 버튼 인터랙션 (명령형 API 사용)
   const zoomIn = () => {
     if (map) map.setLevel(map.getLevel() - 1, { animate: true });
   };
@@ -100,10 +100,7 @@ const Main = () => {
               {!import.meta.env.VITE_KAKAO_MAPS_API_KEY ? 'Status: API KEY MISSING' : 'Status: KAKAO SDK LOAD FAILED'}
             </p>
             <p className="text-white/40 max-w-sm text-center font-light text-xs leading-relaxed">
-              카카오 개발자 콘솔에서 다음을 확인해 주세요:<br/>
-              1. JavaScript 키를 사용 중인가요? (REST API 키 X)<br/>
-              2. 도메인에 {window.location.host}가 등록되어 있나요?<br/>
-              3. Vercel 환경 변수가 정확히 등록되었나요?
+              카카오 개발자 콘솔에서 필수 설정을 확인해 주세요.
             </p>
         </div>
       </div>
@@ -114,18 +111,12 @@ const Main = () => {
     <div className={`w-full h-screen relative overflow-hidden transition-colors duration-1000 ${isDark ? 'bg-[#05070a]' : 'bg-[#f4f7f9]'}`}>
       
       <Map
-        center={mapCenter}
-        level={mapLevel}
+        center={center}
+        level={level}
         onCreate={setMap}
         style={containerStyle}
-        maxLevel={13} // 줌아웃 최대치 제한 (여백 방지)
+        maxLevel={13} // 줌아웃 최대치만 대한민국 전역(13)으로 제한하여 여백 방지
         onDragStart={() => setIsFollowing(false)}
-        onZoomChanged={(mapInstance) => {
-          // 최대 줌아웃 레벨 강제 고정 (휠 동작 대응)
-          if (mapInstance.getLevel() > 13) {
-            mapInstance.setLevel(13);
-          }
-        }}
         className={`transition-all duration-1000 ${isDark ? 'kakao-dark-theme' : ''}`}
       >
         {myLocation && (
@@ -173,10 +164,8 @@ const Main = () => {
         </button>
       </div>
 
-      {/* Global Depth Overlay */}
       <div className={`absolute inset-0 pointer-events-none z-10 transition-opacity duration-1000 ${isDark ? 'bg-black/10 mix-blend-overlay' : 'bg-transparent'}`} />
 
-      {/* Dark Theme Filters */}
       <style>{`
         .kakao-dark-theme {
             filter: invert(100%) hue-rotate(180deg) brightness(0.9) contrast(1.1) grayscale(0.2);
