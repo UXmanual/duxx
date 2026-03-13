@@ -190,7 +190,7 @@ const Main = () => {
             yAnchor={1.2}
             zIndex={10}
           >
-            <div className={`relative px-4 py-2 bg-white border-[1.5px] border-[#FF4D00] rounded-[14px] shadow-lg flex items-center gap-2 group animate-pop-in ${isDark ? 'custom-marker-original-color' : ''}`}>
+            <div className={`relative px-2.5 py-1.5 bg-white border-[1.5px] border-[#FF4D00] rounded-[8px] shadow-lg flex items-center gap-1.5 group animate-pop-in ${isDark ? 'custom-marker-original-color' : ''}`}>
               <span className="text-[14px] font-medium text-black whitespace-nowrap leading-none tracking-tight">
                 {memo.text}
               </span>
@@ -199,10 +199,10 @@ const Main = () => {
                   e.stopPropagation();
                   handleDeleteMemo(memo.id);
                 }}
-                className="w-4 h-4 rounded-full bg-gray-50 flex items-center justify-center text-gray-300 hover:text-[#FF4D00] transition-colors"
+                className="flex items-center justify-center text-gray-200 hover:text-[#FF4D00] transition-colors"
                 aria-label="메모 삭제"
               >
-                <X size={10} strokeWidth={3} />
+                <X size={12} strokeWidth={2.5} />
               </button>
               
               {/* [Simplified Tail] 가로 폭을 줄여 더 심플해진 SVG 꼬리 */}
