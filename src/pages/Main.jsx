@@ -68,9 +68,36 @@ const Main = () => {
     }
   }, [myLocation, map]);
 
-  // 줌 조절 (카카오맵은 레벨이 클수록 줌아웃임. 대한민국 전체를 꽉 채우기 위해 13으로 조정)
-  const zoomIn = () => setLevel((prev) => Math.max(prev - 1, 1));
-  const zoomOut = () => setLevel((prev) => Math.min(prev + 1, 13));
+  // 한반도 영역 정의 (남서단, 북동단)
+  const KOREA_BOUNDS = {
+    sw: { lat: 33.0, lng: 124.0 },
+    ne: { lat: 39.0, lng: 132.0 }
+  };
+
+  // 영역 제한 체크 로직
+  const checkBounds = useCallback((mapInstance) => {
+    const latlng = mapInstance.getCenter();
+    let lat = latlng.getLat();
+    let lng = latlng.getLng();
+
+    // 위도/경도가 범위를 벗어나면 강제로 조정
+    if (lat < KOREA_BOUNDS.sw.lat) lat = KOREA_BOUNDS.sw.lat;
+    if (lat > KOREA_BOUNDS.ne.lat) lat = KOREA_BOUNDS.ne.lat;
+    if (lng < KOREA_BOUNDS.sw.lng) lng = KOREA_BOUNDS.sw.lng;
+    if (lng > KOREA_BOUNDS.ne.lng) lng = KOREA_BOUNDS.ne.lng;
+
+    if (lat !== latlng.getLat() || lng !== latlng.getLng()) {
+      mapInstance.setCenter(new window.kakao.maps.LatLng(lat, lng));
+    }
+  }, []);
+
+  // 줌 조절 (레벨 1~13 제한, 숫자 작을수록 확대)
+  const zoomIn = () => {
+    if (level > 1) setLevel(level - 1);
+  };
+  const zoomOut = () => {
+    if (level < 13) setLevel(level + 1);
+  };
 
   if (loading) {
     return (
@@ -104,15 +131,20 @@ const Main = () => {
       <Map
         center={center}
         level={level}
-        maxLevel={13} // 대한민국이 화면에 꽉 차는 수준인 13으로 제한
+        minLevel={1}
+        maxLevel={13}
         onCreate={setMap}
         style={containerStyle}
         onDragStart={() => setIsFollowing(false)}
-        onCenterChanged={(map) => {
+        onCenterChanged={(mapInstance) => {
+            checkBounds(mapInstance); // 영역 밖으로 나가는 것 방지
             setCenter({
-                lat: map.getCenter().getLat(),
-                lng: map.getCenter().getLng(),
+                lat: mapInstance.getCenter().getLat(),
+                lng: mapInstance.getCenter().getLng(),
             });
+        }}
+        onZoomChanged={(mapInstance) => {
+            setLevel(mapInstance.getLevel());
         }}
         className={`transition-all duration-1000 ${isDark ? 'kakao-dark-theme' : ''}`}
       >
