@@ -5,11 +5,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 /**
  * [Component] 상단 헤더
- * @version 11.4.0
+ * @version 11.5.0
  * @author Antigravity
  * @description
- * - 로고의 부모 컨테이너에 직접 블렌딩 모드를 적용하여 효과를 극대화했습니다.
- * - 지도의 배경색이 투명하게 투영되도록 컬러 설정을 최적화했습니다.
+ * - 로고 컨테이너에 'color-burn' 블렌딩 모드를 적용하여 배경색을 진하게 태우는 효과를 구현했습니다.
  */
 const Header = () => {
   const { isDark, toggleTheme } = useTheme();
@@ -28,12 +27,12 @@ const Header = () => {
     <header style={{ display: 'contents' }}>
       {/* 
         [Logo Layer] 
-        사용자 피드백을 반영하여 부모 div에 'overlay' 블렌딩을 적용했습니다. 
-        이로써 로고 텍스트가 배경 지도와 훨씬 강력하고 자연스럽게 결합됩니다.
+        mix-blend-mode를 'color-burn'으로 변경하여 
+        로고가 배경 지도의 색상을 진하게 태우는듯한 강렬한 대비 효과를 줍니다.
       */}
       <div 
         className="absolute top-0 left-0 px-10 h-24 flex items-center z-10 pointer-events-none"
-        style={{ mixBlendMode: 'overlay' }}
+        style={{ mixBlendMode: 'color-burn' }}
       >
         <span className="font-black text-[24px] tracking-[0] uppercase select-none pointer-events-auto">
           DUXX

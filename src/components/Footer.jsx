@@ -3,10 +3,10 @@ import pkg from '../../package.json';
 
 /**
  * [Component] 푸터
- * @version 11.4.0
+ * @version 11.5.0
  * @author Antigravity
  * @description 
- * - 푸터 로고에도 부모 컨테이너 블렌딩 기법을 적용하여 시각적 일관성을 확보했습니다.
+ * - 푸터 로고에도 'color-burn' 블렌딩 모드를 적용하여 배경 지도와 강렬하게 반응하도록 했습니다.
  */
 const Footer = () => {
   return (
@@ -19,15 +19,14 @@ const Footer = () => {
             </p>
             <span className="w-px h-3 bg-current opacity-30" />
             <p className="text-[14px] font-bold tracking-[0]">
-              Last Deployed: 17:03 KST
+              Last Deployed: 17:05 KST
             </p>
           </div>
           {/* 
             [Copyright Layer] 
-            부모 div(또는 이 문단 자체)에 overlay 블렌딩을 적용하여 
-            지도의 배경색이 자연스럽게 스며들도록 했습니다.
+            'color-burn' 모드를 사용하여 배경색을 어둡게 강조하는 블렌딩을 구현했습니다.
           */}
-          <div style={{ mixBlendMode: 'overlay' }}>
+          <div style={{ mixBlendMode: 'color-burn' }}>
             <p className="font-black text-[14px] tracking-[0] select-none">
               ©DUXX
             </p>
