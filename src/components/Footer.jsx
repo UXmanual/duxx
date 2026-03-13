@@ -2,15 +2,12 @@ import React from 'react';
 import pkg from '../../package.json';
 
 /**
- * [Standard Component] 푸터
- * @version 10.9.0
- * @author Antigravity
- * @description 
- * - 하단 Copyright 로고에만 'overlay' 블렌딩을 적용했습니다.
+ * [Component] 푸터 (무격리 블렌딩 버전)
+ * @version 11.2.0
  */
 const Footer = () => {
   return (
-    <footer className="absolute bottom-0 left-0 right-0 z-50 pointer-events-none">
+    <footer className="absolute bottom-0 left-0 right-0 pointer-events-none">
       <div className="w-full px-10 py-8">
         <div className="flex flex-col items-start gap-1 py-5 inline-block pointer-events-auto">
           <div className="flex items-center gap-3 opacity-60 text-theme-text-secondary">
@@ -19,13 +16,16 @@ const Footer = () => {
             </p>
             <span className="w-px h-3 bg-current opacity-30" />
             <p className="text-[14px] font-bold tracking-[0]">
-              Last Deployed: 16:47 KST
+              Last Deployed: 16:51 KST
             </p>
           </div>
-          {/* Copyright: 개별 블렌딩 적용 */}
+          {/* Copyright: 배경에 따라 색상이 동적으로 변하는 Overlay 모드 */}
           <p 
             className="font-black text-[14px] tracking-[0] select-none"
-            style={{ mixBlendMode: 'overlay' }}
+            style={{ 
+              mixBlendMode: 'overlay',
+              color: 'inherit'
+            }}
           >
             ©DUXX
           </p>

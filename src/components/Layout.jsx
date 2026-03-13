@@ -4,52 +4,41 @@ import Header from './Header';
 import Footer from './Footer';
 
 /**
- * [Layout] 전역 시맨틱 레이아웃
+ * [Layout] 무격리 시맨틱 레이아웃 (Blending Engine v2)
  * 
  * @description
- * 본 레이아웃은 전형적인 웹 시맨틱 구조(Header-Main-Footer)를 따르면서, 
- * 전체 화면 지도를 배경으로 활용하는 'Floating UI' 패턴을 구현합니다.
+ * mix-blend-mode가 작동하지 않는 근본 원인인 'Stacking Context Isolation'을 해결하기 위해
+ * z-index를 배제하고 DOM 순서(Paint Order)에만 의존하는 구조로 재설계했습니다.
  * 
- * @structure
- * 1. Global Header: 최상단 네비게이션 및 테마 토글 버튼
- * 2. Main Content: 지도를 포함한 핵심 콘텐츠가 렌더링되는 영역 (Backdrop)
- * 3. Global Footer: 저작권 및 시스템 상태 정보 제공
- * 
- * @version 11.1.0
+ * @logic
+ * 1. Main(지형): DOM의 처음에 위치하여 바닥 레이어 형성
+ * 2. Header/Footer(인터페이스): Main 다음에 위치하여 자연스럽게 위에 겹침
+ * 3. 이 구조에서 Header는 격리되지 않으므로, 하위 요소인 로고가 지도의 픽셀과 직접 블렌딩 가능
  */
 const Layout = () => {
   return (
     <div 
-      id="duxx-app-container" 
+      id="duxx-app-root" 
       className="relative w-full h-screen overflow-hidden font-sans antialiased"
-      style={{ isolation: 'isolate' }}
+      style={{ isolation: 'auto' }} // 격리 방지
     >
       {/* 
-        [Semantic Section] Header
-        지도 위에 고정된 인터페이스 레이어입니다.
+        1. 메인 콘텐츠 (Backdrop)
+        DOM 순서가 앞서므로 가장 아래에 그려집니다.
+      */}
+      <main id="main-content" role="main" className="absolute inset-0">
+        <Outlet />
+      </main>
+
+      {/* 
+        2. 인터페이스 (Header)
+        z-index 없이 DOM 순서에 의해 Main 위로 겹쳐집니다. (블렌딩 허용)
       */}
       <Header />
 
       {/* 
-        [Semantic Section] Main
-        지도가 전체 화면 배경으로 깔리는 영역입니다. 
-        pointer-events 설정을 통해 배경 지도는 인터랙션이 가능하면서 
-        마린 레이아웃의 시맨틱 순서는 유지합니다.
-      */}
-      <main 
-        id="main-content" 
-        role="main" 
-        className="absolute inset-0 z-0 pointer-events-none"
-        aria-label="Map Content Area"
-      >
-        <div className="w-full h-full pointer-events-auto">
-          <Outlet />
-        </div>
-      </main>
-
-      {/* 
-        [Semantic Section] Footer
-        하단에 배치된 시스템 정보 레이어입니다.
+        3. 인터페이스 (Footer)
+        z-index 없이 DOM 순서에 의해 Main 위로 겹쳐집니다. (블렌딩 허용)
       */}
       <Footer />
     </div>
