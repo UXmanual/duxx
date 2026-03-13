@@ -86,15 +86,20 @@ const Main = () => {
     );
   }
 
-  if (error) {
+  if (error || !import.meta.env.VITE_KAKAO_MAPS_API_KEY) {
     return (
       <div className="w-full h-full flex flex-col items-center justify-center bg-[#0a0c10] text-[#ff4b4b] p-10">
         <div className="bg-red-500/10 p-8 rounded-3xl border border-red-500/20 backdrop-blur-xl flex flex-col items-center">
             <Compass className="w-16 h-16 mb-6 animate-bounce" />
             <h2 className="text-3xl mb-4 font-black tracking-tighter uppercase text-red-500">System Failure</h2>
-            <p className="text-white/40 max-w-sm text-center font-light leading-relaxed">
-              카카오맵 API 연동에 실패했습니다.<br/>
-              <span className="text-white/60 font-mono">.env</span> 파일의 <span className="text-white/60 font-mono">VITE_KAKAO_MAPS_API_KEY</span>를 확인해 주세요.
+            <p className="text-white/60 max-w-sm text-center font-mono text-sm leading-relaxed mb-4">
+              {!import.meta.env.VITE_KAKAO_MAPS_API_KEY ? 'Status: API KEY MISSING' : 'Status: KAKAO SDK LOAD FAILED'}
+            </p>
+            <p className="text-white/40 max-w-sm text-center font-light text-xs leading-relaxed">
+              카카오 개발자 콘솔에서 다음을 확인해 주세요:<br/>
+              1. <b>JavaScript 키</b>를 사용 중인가요? (REST API 키 X)<br/>
+              2. 도메인에 <b>{window.location.host}</b>가 등록되어 있나요?<br/>
+              3. Vercel 환경 변수가 정확히 등록되었나요?
             </p>
         </div>
       </div>
