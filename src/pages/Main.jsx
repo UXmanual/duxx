@@ -1,25 +1,43 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Map, CustomOverlayMap, useKakaoLoader } from 'react-kakao-maps-sdk';
 import { useTheme } from '../context/ThemeContext';
-import { Crosshair } from 'lucide-react';
+import { Crosshair, MessageSquare, X } from 'lucide-react';
+import { supabase } from '../lib/supabaseClient';
 
 /**
- * [Page] 메인 페이지 (마커 컬러 무결성 유지 버전)
- * @version 9.9.0
+ * [Page] 메인 페이지 (지도 메모 기능 통합 버전)
+ * @version 12.0.0
  * @author Antigravity
  * @description 
- * - 다크모드에서도 현위치 마커의 주황색(#FF4D00)이 라이트모드와 동일하게 보이도록 역보정을 적용했습니다.
+ * - Supabase 백엔드를 연동하여 지도 위에 말풍선 메모를 남기는 기능을 구현했습니다.
+ * - 화이트 배경에 주황색 테두리가 있는 프리미엄 말풍선 UI를 적용했습니다.
  */
 
 const Main = () => {
   const { isDark } = useTheme();
   const [map, setMap] = useState(null);
   const [myLocation, setMyLocation] = useState(null);
+  
+  // 메모 관련 상태
+  const [memos, setMemos] = useState([]);
+  const [isMemoMode, setIsMemoMode] = useState(false);
 
   const [loading, error] = useKakaoLoader({
     appkey: import.meta.env.VITE_KAKAO_MAPS_API_KEY,
     libraries: ['services', 'clusterer', 'drawing'],
   });
+
+  // 초기 메모 데이터 로드
+  const fetchMemos = async () => {
+    const { data, error } = await supabase
+      .from('memos')
+      .select('*')
+      .order('created_at', { ascending: true });
+
+    if (!error && data) {
+      setMemos(data);
+    }
+  };
 
   const requestLocation = (shouldPan = true) => {
     if (navigator.geolocation) {
@@ -49,6 +67,7 @@ const Main = () => {
   useEffect(() => {
     if (map) {
       requestLocation(true);
+      fetchMemos();
     }
   }, [map]);
 
@@ -60,20 +79,55 @@ const Main = () => {
     requestLocation(true);
   };
 
+  // 지도 클릭 시 메모 생성
+  const handleMapClick = async (_t, mouseEvent) => {
+    if (!isMemoMode) return;
+
+    const latlng = mouseEvent.latLng;
+    const text = prompt('여기에 남길 메모를 입력해주세요:');
+    
+    if (text && text.trim()) {
+      const newMemo = {
+        lat: latlng.getLat(),
+        lng: latlng.getLng(),
+        text: text.trim()
+      };
+
+      const { data, error } = await supabase
+        .from('memos')
+        .insert([newMemo])
+        .select();
+
+      if (!error && data) {
+        setMemos(prev => [...prev, data[0]]);
+        setIsMemoMode(false); // 작성 후 모드 해제
+      }
+    }
+  };
+
+  // 메모 삭제 처리
+  const handleDeleteMemo = async (id) => {
+    if (confirm('이 메모를 삭제하시겠습니까?')) {
+      const { error } = await supabase
+        .from('memos')
+        .delete()
+        .eq('id', id);
+
+      if (!error) {
+        setMemos(prev => prev.filter(m => m.id !== id));
+      }
+    }
+  };
+
   if (loading) {
     return (
       <div className="w-full h-screen bg-[#f8f9fa] relative overflow-hidden flex items-center justify-center">
-        {/* Map Skeleton Base */}
         <div className="absolute inset-0 opacity-20">
           <div className="w-full h-full border-t border-l border-gray-300 bg-[linear-gradient(to_right,#e9ecef_1px,transparent_1px),linear-gradient(to_bottom,#e9ecef_1px,transparent_1px)] bg-[size:40px_40px]" />
         </div>
-        
-        {/* Pulsing Center Piece */}
         <div className="relative w-16 h-16 bg-gray-200 rounded-full animate-pulse flex items-center justify-center overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/50 to-transparent -translate-x-full animate-shimmer" />
         </div>
-
-        {/* Shimmer Animation CSS */}
         <style>{`
           @keyframes shimmer {
             0% { transform: translateX(-100%); }
@@ -97,10 +151,11 @@ const Main = () => {
           m.setMaxLevel(11);
           setTimeout(() => m.relayout(), 100);
         }}
+        onClick={handleMapClick}
         style={{ width: '100%', height: '100%' }}
         className={isDark ? 'kakao-dark-theme' : ''}
       >
-        {/* 현위치 마커 (다크모드 컬러 보정 적용) */}
+        {/* 현위치 마커 */}
         {myLocation && (
           <CustomOverlayMap 
             position={myLocation} 
@@ -109,22 +164,64 @@ const Main = () => {
             yAnchor={0.5}
           >
             <div className={`relative flex items-center justify-center pointer-events-none ${isDark ? 'custom-marker-original-color' : ''}`}>
-              {/* 펄스 파동 */}
               <div className="absolute w-8 h-8 bg-[#FF4D00] rounded-full animate-ping opacity-30" />
-              
-              {/* 메인 마커 소체 (#FF4D00 - 다크모드 보정) */}
               <div className="relative w-[24px] h-[24px] bg-[#FF4D00] border-2 border-white rounded-full flex items-center justify-center shadow-[0_2px_8px_rgba(0,0,0,0.3)]">
                 <div className="w-[6px] h-[6px] bg-white rounded-full" />
               </div>
             </div>
           </CustomOverlayMap>
         )}
+
+        {/* 지도 메모 말풍선 UI */}
+        {memos.map((memo) => (
+          <CustomOverlayMap
+            key={memo.id}
+            position={{ lat: memo.lat, lng: memo.lng }}
+            yAnchor={1.2}
+            zIndex={10}
+          >
+            <div className={`relative px-4 py-2.5 bg-white border-2 border-[#FF4D00] rounded-[18px] shadow-lg flex items-center gap-2 group animate-pop-in ${isDark ? 'custom-marker-original-color' : ''}`}>
+              <span className="text-[14px] font-bold text-black whitespace-nowrap">
+                {memo.text}
+              </span>
+              <button 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDeleteMemo(memo.id);
+                }}
+                className="w-5 h-5 rounded-full bg-gray-100 flex items-center justify-center text-gray-400 hover:text-[#FF4D00] transition-colors"
+                aria-label="메모 삭제"
+              >
+                <X size={12} strokeWidth={3} />
+              </button>
+              
+              {/* 말풍선 꼬리 */}
+              <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-white border-r-2 border-b-2 border-[#FF4D00] rotate-45 transform" />
+            </div>
+          </CustomOverlayMap>
+        ))}
       </Map>
 
-      {/* [Footer Aligned] 테마 대응 현위치 버튼 */}
+      {/* [Interface Layer] 우측 컨트롤 스택 */}
       <div className="fixed bottom-0 right-0 z-[9999] pointer-events-none">
         <div className="w-full px-10 py-8">
-          <div className="py-5 flex items-center justify-end pointer-events-auto">
+          <div className="flex flex-col items-center justify-end gap-3 pointer-events-auto">
+            {/* 메모 작성 모드 버튼 */}
+            <button 
+              onClick={() => setIsMemoMode(!isMemoMode)}
+              className={`w-12 h-12 rounded-full flex items-center justify-center active:scale-90 transition-all border shadow-lg
+                ${isMemoMode 
+                  ? 'bg-[#FF4D00] border-[#FF4D00] text-white' 
+                  : (isDark 
+                    ? 'bg-[#1a1c1e]/90 border-white/10 text-white' 
+                    : 'bg-white border-gray-200 text-[#1a1c1e]')}
+              `}
+              aria-label="메모 작성 모드"
+            >
+              <MessageSquare size={22} fill={isMemoMode ? "currentColor" : "none"} />
+            </button>
+
+            {/* 현위치 버튼 */}
             <button 
               onPointerDown={handleMyLocationBtn}
               className={`w-10 h-10 rounded-full flex items-center justify-center active:scale-90 transition-all border
@@ -132,7 +229,6 @@ const Main = () => {
                   ? 'bg-[#1a1c1e]/90 border-white/10 text-white' 
                   : 'bg-white border-gray-200 text-[#1a1c1e]'}
               `}
-              style={{ cursor: 'pointer', WebkitTapHighlightColor: 'transparent' }}
               aria-label="현위치"
             >
               <Crosshair size={22} strokeWidth={1.5} />
@@ -145,21 +241,16 @@ const Main = () => {
         .kakao-dark-theme { filter: invert(100%) hue-rotate(180deg) brightness(0.9) grayscale(0.2); background-color: #fff !important; }
         .kakao-dark-theme img { filter: none !important; }
         
-        /* 다크모드에서 주황색 마커가 라이트모드와 똑같은 컬러로 나오도록 정밀 역보정 */
         .custom-marker-original-color {
           filter: invert(100%) hue-rotate(180deg) brightness(1.12) grayscale(0) !important;
         }
 
-        @keyframes custom-ping {
-          0% { transform: scale(0.8); opacity: 0.6; }
-          70%, 100% { transform: scale(1.6); opacity: 0; }
+        @keyframes pop-in {
+          0% { transform: scale(0.8) translateY(10px); opacity: 0; }
+          100% { transform: scale(1) translateY(0); opacity: 1; }
         }
-        .animate-ping {
-          animation: custom-ping 2s cubic-bezier(0, 0, 0.2, 1) infinite;
-        }
-
-        @media (max-width: 640px) {
-          .kakao-copyright, .kakao-logo { visibility: hidden; }
+        .animate-pop-in {
+          animation: pop-in 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
       `}</style>
     </div>

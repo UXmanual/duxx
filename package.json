@@ -1,7 +1,7 @@
 {
   "name": "duxx-project",
   "private": true,
-  "version": "11.9.0",
+  "version": "12.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@react-google-maps/api": "^2.20.8",
+    "@supabase/supabase-js": "^2.99.1",
     "framer-motion": "^10.16.4",
     "lucide-react": "^0.284.0",
     "react": "^18.2.0",
