@@ -4,12 +4,12 @@ import { useTheme } from '../context/ThemeContext';
 import { Crosshair } from 'lucide-react';
 
 /**
- * [Page] 메인 페이지 (초기 자동 위치 인식 버전)
- * @version 9.2.0
+ * [Page] 메인 페이지 (현위치 펄스 애니메이션 버전)
+ * @version 9.3.0
  * @author Antigravity
  * @description 
- * - 사이트 진입 시 자동으로 위치 정보를 확인하여 동의 시 현위치 마커를 표시합니다.
- * - 픽셀 퍼펙트 마커 디자인(#FF4D00, 24px)을 그대로 노출합니다.
+ * - 현위치 마커 주변에 은은하게 퍼져나가는 반투명 펄스(Pulse) 애니메이션을 추가했습니다.
+ * - 시각적으로 '현재 위치'임을 더욱 명확하게 인지할 수 있도록 돕습니다.
  */
 
 const Main = () => {
@@ -22,7 +22,6 @@ const Main = () => {
     libraries: ['services', 'clusterer', 'drawing'],
   });
 
-  // 위치 정보를 가져와 지도를 이동시키는 공통 함수
   const requestLocation = (shouldPan = true) => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
@@ -38,16 +37,15 @@ const Main = () => {
             map.setLevel(4);
           }
         },
-        null, // 초기 진입 시에는 에러 알럿을 띄우지 않음 (사용자 경험 고려)
+        null,
         { enableHighAccuracy: true, timeout: 5000 }
       );
     }
   };
 
-  // 1. 사이트 초기 진입 시 자동 실행
   useEffect(() => {
     requestLocation(true);
-  }, [map]); // map 인스턴스가 생성된 후 실행
+  }, [map]);
 
   const handleMyLocationBtn = (e) => {
     if (e) {
@@ -62,7 +60,7 @@ const Main = () => {
   return (
     <div className="w-full h-screen relative bg-white overflow-hidden">
       <Map
-        center={{ lat: 37.5665, lng: 126.9780 }} // 위치 정보 확인 전 기본값
+        center={{ lat: 37.5665, lng: 126.9780 }}
         level={4}
         onCreate={(m) => {
           setMap(m);
@@ -72,7 +70,7 @@ const Main = () => {
         style={{ width: '100%', height: '100%' }}
         className={isDark ? 'kakao-dark-theme' : ''}
       >
-        {/* 현위치 마커 (자동 노출) */}
+        {/* 현위치 마커 + 펄스 애니메이션 */}
         {myLocation && (
           <CustomOverlayMap 
             position={myLocation} 
@@ -80,8 +78,13 @@ const Main = () => {
             xAnchor={0.5}
             yAnchor={0.5}
           >
-            <div className="flex items-center justify-center pointer-events-none">
-              <div className="w-[24px] h-[24px] bg-[#FF4D00] border-2 border-white rounded-full flex items-center justify-center shadow-[0_2px_6px_rgba(0,0,0,0.25)]">
+            <div className="relative flex items-center justify-center pointer-events-none">
+              {/* 바깥쪽 퍼져나가는 펄스 효과 */}
+              <div className="absolute w-12 h-12 bg-[#FF4D00] rounded-full animate-ping opacity-20" />
+              <div className="absolute w-10 h-10 bg-[#FF4D00] rounded-full animate-pulse opacity-10" />
+              
+              {/* 메인 마커 */}
+              <div className="relative w-[24px] h-[24px] bg-[#FF4D00] border-2 border-white rounded-full flex items-center justify-center shadow-[0_2px_8px_rgba(0,0,0,0.3)]">
                 <div className="w-[6px] h-[6px] bg-white rounded-full" />
               </div>
             </div>
@@ -108,6 +111,15 @@ const Main = () => {
       <style>{`
         .kakao-dark-theme { filter: invert(100%) hue-rotate(180deg) brightness(0.9) grayscale(0.2); background-color: #fff !important; }
         .kakao-dark-theme img { filter: none !important; }
+        
+        @keyframes custom-ping {
+          0% { transform: scale(1); opacity: 0.4; }
+          70%, 100% { transform: scale(2.5); opacity: 0; }
+        }
+        .animate-ping {
+          animation: custom-ping 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+        }
+
         @media (max-width: 640px) {
           .kakao-copyright, .kakao-logo { visibility: hidden; }
         }
