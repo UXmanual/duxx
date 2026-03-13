@@ -169,18 +169,6 @@ const Main = () => {
         </button>
       </div>
 
-      {/* Info Badge (Glassmorphism) */}
-      <div className="absolute left-8 bottom-12 z-20 pointer-events-none">
-        <div className="bg-black/40 backdrop-blur-3xl border border-white/10 p-6 rounded-[2rem] shadow-2xl flex items-center gap-5 translate-y-0 animate-[fade-up_1s_ease-out]">
-            <div className="w-12 h-12 bg-blue-500/20 rounded-2xl flex items-center justify-center border border-blue-500/30">
-                <Compass className={`text-blue-400 ${loading ? 'animate-spin' : ''}`} />
-            </div>
-            <div>
-                <h3 className="text-white font-bold tracking-tight text-lg leading-none mb-1">DUXX NEURAL MAP</h3>
-                <p className="text-white/40 text-xs font-medium uppercase tracking-[0.1em]">Engine v4.2.0 Active • Kakao Runtime</p>
-            </div>
-        </div>
-      </div>
 
       {/* Global Depth Overlay (Post-Processing) */}
       <div className={`absolute inset-0 pointer-events-none z-10 transition-opacity duration-1000 ${isDark ? 'bg-black/10 mix-blend-overlay' : 'bg-transparent'}`} />
