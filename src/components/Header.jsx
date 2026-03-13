@@ -4,12 +4,12 @@ import { Sun, Moon, MoonStar } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 /**
- * [Component] 상단 헤더 (전체 블렌딩 적용 버전)
- * @version 10.7.0
+ * [Component] 상단 헤더 (Overlay 블렌딩 버전)
+ * @version 10.8.0
  * @author Antigravity
  * @description 
- * - 사용자 피드백을 반영하여 블렌딩 모드를 개별 요소가 아닌 헤더 컨테이너 자체에 적용했습니다.
- * - 지도의 배경색과 헤더 전체가 실시간으로 반전(Difference) 연산됩니다.
+ * - 블렌딩 모드를 'overlay'로 변경하고 로고의 화이트 컬러를 제거했습니다.
+ * - 지도의 배경색이 투명하게 비치며 로고가 배경의 톤을 따라가는 효과를 구현했습니다.
  */
 const Header = () => {
   const { isDark, toggleTheme } = useTheme();
@@ -27,19 +27,19 @@ const Header = () => {
   return (
     <header 
       className="absolute top-0 left-0 right-0 z-50 pointer-events-none"
-      style={{ mixBlendMode: 'difference' }}
+      style={{ mixBlendMode: 'overlay' }}
     >
       <div className="w-full px-10 h-24 flex items-center justify-between">
         <div className="flex items-center gap-2 pointer-events-auto">
-          {/* Logo: 컨테이너 블렌딩을 통해 배경과 반전됨 */}
-          <span className="font-black text-[24px] tracking-[0] uppercase select-none text-white">
+          {/* Logo: Overlay 블렌딩 적용, 명시적 컬러 제거 */}
+          <span className="font-black text-[24px] tracking-[0] uppercase select-none">
             DUXX
           </span>
         </div>
         
         <button 
           onClick={toggleTheme}
-          className="p-3 rounded-2xl bg-white/10 hover:bg-white/20 transition-all duration-500 group relative flex items-center justify-center w-12 h-12 pointer-events-auto"
+          className="p-3 rounded-2xl bg-theme-accent/5 hover:bg-theme-accent/10 transition-all duration-500 group relative flex items-center justify-center w-12 h-12 pointer-events-auto"
           aria-label="Toggle Theme"
         >
           <AnimatePresence mode="wait">
