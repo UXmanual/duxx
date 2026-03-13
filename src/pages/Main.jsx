@@ -4,13 +4,13 @@ import { useTheme } from '../context/ThemeContext';
 import { Compass, Plus, Minus, Target, Navigation2 } from 'lucide-react';
 
 /**
- * [Page] 메인 페이지 (모바일 현위치 및 마커 복구 버전)
- * @version 6.0.0
+ * [Page] 메인 페이지 (iOS/모바일 실기기 완전 대응 버전)
+ * @version 6.1.0
  * @author Antigravity
  * @description 
- * - 모바일에서 마커가 보이지 않던 현상을 해결하기 위해 렌더링 구조를 개선했습니다.
- * - 현위치 버튼 클릭 시 시스템 권한 팝업이 확실히 호출되도록 로직을 일원화했습니다.
- * - 모바일 브라우저의 특성을 고려하여 지도 레이아웃과 좌표 이탈 방지 로직을 최적화했습니다.
+ * - iOS Safari에서 Geolocation 권한 요청 및 마커 렌더링 문제를 해결했습니다.
+ * - 지도의 다크 테두리 필터가 모바일에서 마커를 가리는 현상을 방지하기 위해 스타일을 조정했습니다.
+ * - 버튼 클릭 시 즉각적인 피드백을 강화했습니다.
  */
 
 const containerStyle = {
@@ -23,7 +23,7 @@ const containerStyle = {
 
 const KOREA_BOUNDS = {
   sw: { lat: 31.0, lng: 122.0 },
-  ne: { lat: 40.5, lng: 134.0 }
+  ne: { lat: 41.0, lng: 133.0 }
 };
 
 const defaultCenter = { lat: 37.5665, lng: 126.9780 };
@@ -58,73 +58,64 @@ const Main = () => {
     }
   }, []);
 
-  // 실제 위치를 지도로 반영하는 함수
-  const applyLocationToMap = useCallback((lat, lng, shouldPan = true) => {
-    if (!map) return;
-    const latlng = new window.kakao.maps.LatLng(lat, lng);
-    
-    if (shouldPan) {
-      map.panTo(latlng);
-      // 부드러운 전환을 위해 약간의 지연 후 레벨 조절
-      setTimeout(() => {
-        if (map.getLevel() !== 4) map.setLevel(4, { animate: true });
-      }, 350);
-    } else if (!isInitialSet.current) {
-      map.setCenter(latlng);
-      map.setLevel(4);
-      isInitialSet.current = true;
-    }
-  }, [map]);
-
-  // 위치 추적 설정
-  useEffect(() => {
+  // 위치 요청 및 지도 반영 통합 로직
+  const fetchAndApplyLocation = useCallback((shouldAnimate = true) => {
     if (!navigator.geolocation) return;
 
-    const watchId = navigator.geolocation.watchPosition(
+    navigator.geolocation.getCurrentPosition(
       (position) => {
         const { latitude, longitude } = position.coords;
         const pos = { lat: latitude, lng: longitude };
         setMyLocation(pos);
         
-        // 최초 1회 자동 이동
-        if (!isInitialSet.current && map) {
-          applyLocationToMap(latitude, longitude, false);
+        if (map) {
+          const latlng = new window.kakao.maps.LatLng(latitude, longitude);
+          if (shouldAnimate) {
+            map.panTo(latlng);
+            setTimeout(() => {
+                if (map.getLevel() !== 4) map.setLevel(4, { animate: true });
+            }, 300);
+          } else {
+            map.setCenter(latlng);
+            map.setLevel(4);
+          }
+          setIsFollowing(true);
         }
-        
-        // 따라가기 모드
+      },
+      (err) => {
+        console.warn("Location error:", err);
+        // iOS에서 최초 거부 후 버튼 클릭 시 안내를 위해 alert는 최소화합니다.
+      },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+    );
+  }, [map]);
+
+  // 초기 로드 시 현위치 시도
+  useEffect(() => {
+    if (map && !isInitialSet.current) {
+        fetchAndApplyLocation(false);
+        isInitialSet.current = true;
+        // 모바일 브레이크 방지를 위한 강제 리아웃
+        setTimeout(() => map.relayout(), 100);
+    }
+  }, [map, fetchAndApplyLocation]);
+
+  // 실시간 위치 추적 (Background)
+  useEffect(() => {
+    if (!navigator.geolocation) return;
+    const watchId = navigator.geolocation.watchPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        setMyLocation({ lat: latitude, lng: longitude });
         if (isFollowing && map) {
           map.panTo(new window.kakao.maps.LatLng(latitude, longitude));
         }
       },
-      (err) => console.warn("Watch Error:", err.code, err.message),
-      { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 }
+      null,
+      { enableHighAccuracy: true, maximumAge: 0 }
     );
-
     return () => navigator.geolocation.clearWatch(watchId);
-  }, [map, isFollowing, applyLocationToMap]);
-
-  // 현위치 버튼 클릭 시 실행 (시스템 팝업 강제 유도 포함)
-  const moveToMyLocation = useCallback(() => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const { latitude, longitude } = position.coords;
-          setMyLocation({ lat: latitude, lng: longitude });
-          applyLocationToMap(latitude, longitude, true);
-          setIsFollowing(true);
-        },
-        (err) => {
-          console.error("Geolocation Error:", err);
-          if (err.code === 1) {
-            alert("위치 정보 권한이 거부되었습니다. 설정에서 위치 권한을 허용해 주세요.");
-          } else {
-            alert("위치 정보를 가져올 수 없습니다. GPS 상태를 확인해 주세요.");
-          }
-        },
-        { enableHighAccuracy: true, timeout: 10000 }
-      );
-    }
-  }, [applyLocationToMap]);
+  }, [map, isFollowing]);
 
   const zoomIn = () => map?.setLevel(map.getLevel() - 1, { animate: true });
   const zoomOut = () => {
@@ -138,24 +129,21 @@ const Main = () => {
       <Map
         center={defaultCenter}
         level={4}
-        onCreate={(m) => {
-          setMap(m);
-          m.setMaxLevel(11);
-          // 모바일 레이아웃 강제 갱신
-          setTimeout(() => m.relayout(), 100);
-        }}
+        onCreate={setMap}
         style={containerStyle}
         onDragStart={() => setIsFollowing(false)}
         onCenterChanged={handleBoundsCheck}
+        onTileLoaded={(m) => m.setMaxLevel(11)}
         className={isDark ? 'kakao-dark-theme' : ''}
       >
-        {/* 모바일 가시성을 확보한 현위치 오버레이 */}
+        {/* iOS 실기기에서 마커 유실 방지를 위해 CustomOverlay 옵션 최적화 */}
         {myLocation && (
           <CustomOverlayMap 
             position={myLocation} 
-            zIndex={10} // 우선순위 상향
+            zIndex={100} 
+            clickable={false}
           >
-            <div className="relative flex items-center justify-center" style={{ transform: 'translate(0, 0)' }}>
+            <div className="relative flex items-center justify-center pointer-events-none">
               <div className="absolute w-20 h-20 bg-blue-500/20 rounded-full animate-ping"></div>
               <div className="absolute w-12 h-12 bg-blue-400/30 rounded-full animate-ping" style={{ animationDelay: '0.4s' }}></div>
               <div className="relative w-7 h-7 bg-blue-600 rounded-full border-[3px] border-white shadow-[0_0_20px_rgba(37,99,235,1)] flex items-center justify-center">
@@ -166,20 +154,26 @@ const Main = () => {
         )}
       </Map>
 
-      {/* Control Panel (모바일 터치 최적화) */}
-      <div className="absolute right-6 bottom-28 sm:right-8 sm:top-1/2 sm:-translate-y-1/2 z-30 flex flex-col gap-5 pointer-events-none">
-        <div className="flex flex-col bg-black/60 backdrop-blur-3xl border border-white/10 rounded-[24px] overflow-hidden shadow-2xl pointer-events-auto">
-          <button onClick={zoomIn} className="p-6 sm:p-4 hover:bg-white/10 border-b border-white/5 text-white active:bg-white/20 active:scale-95 transition-all">
+      {/* Control Panel (터치 지연 방지를 위해 active 스타일과 pointer-events 최적화) */}
+      <div className="absolute right-6 bottom-32 sm:right-8 sm:top-1/2 sm:-translate-y-1/2 z-50 flex flex-col gap-5">
+        <div className="flex flex-col bg-black/60 backdrop-blur-3xl border border-white/10 rounded-[28px] overflow-hidden shadow-2xl pointer-events-auto">
+          <button 
+            onClick={zoomIn} 
+            className="p-6 sm:p-5 hover:bg-white/10 border-b border-white/5 text-white active:bg-blue-500/20 transition-all touch-manipulation"
+          >
             <Plus size={28} className="sm:w-5 sm:h-5" />
           </button>
-          <button onClick={zoomOut} className="p-6 sm:p-4 hover:bg-white/10 text-white active:bg-white/20 active:scale-95 transition-all">
+          <button 
+            onClick={zoomOut} 
+            className="p-6 sm:p-5 hover:bg-white/10 text-white active:bg-blue-500/20 transition-all touch-manipulation"
+          >
             <Minus size={28} className="sm:w-5 sm:h-5" />
           </button>
         </div>
         <button 
-          onClick={moveToMyLocation} 
-          className={`p-6 sm:p-4 rounded-full backdrop-blur-3xl border transition-all duration-500 shadow-2xl flex items-center justify-center pointer-events-auto active:scale-90
-            ${isFollowing ? 'bg-blue-600 border-blue-400 text-white animate-pulse' : 'bg-black/60 border-white/10 text-white/70'}
+          onClick={() => fetchAndApplyLocation(true)} 
+          className={`p-6 sm:p-5 rounded-full backdrop-blur-3xl border transition-all duration-500 shadow-2xl flex items-center justify-center pointer-events-auto touch-manipulation
+            ${isFollowing ? 'bg-blue-600 border-blue-400 text-white animate-pulse' : 'bg-black/60 border-white/10 text-white/80'}
           `}
         >
           <Target size={32} className="sm:w-6 sm:h-6" />
@@ -187,11 +181,25 @@ const Main = () => {
       </div>
 
       <style>{`
-        .kakao-dark-theme { filter: invert(100%) hue-rotate(180deg) brightness(0.95) contrast(1.1) grayscale(0.1); background-color: #05070a !important; }
+        .kakao-dark-theme { 
+            filter: invert(100%) hue-rotate(180deg) brightness(0.95) contrast(1.1) grayscale(0.1); 
+            background-color: #05070a !important; 
+        }
+        /* Safari에서 필터 적용 시 겹침 현상 방지 */
+        .kakao-dark-theme img {
+            -webkit-user-drag: none;
+            -webkit-user-select: none;
+        }
         .kakao-dark-theme img[src*="dapi.kakao.com"] { filter: none !important; }
         .kakao-dark-theme .kakao-copyright, .kakao-dark-theme .kakao-logo { filter: invert(100%) hue-rotate(180deg) !important; opacity: 0.3; }
+        
+        .touch-manipulation {
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+        }
+
         @media (max-width: 640px) { 
-          .kakao-copyright, .kakao-logo { transform: scale(0.85); transform-origin: bottom right; } 
+          .kakao-copyright, .kakao-logo { display: none !important; } 
         }
       `}</style>
     </div>
