@@ -1,16 +1,16 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Map, MapMarker, CustomOverlayMap, useKakaoLoader } from 'react-kakao-maps-sdk';
 import { useTheme } from '../context/ThemeContext';
-import { Compass, Plus, Minus, Target, Navigation2, Loader2, Settings, X, ChevronRight, Globe, ShieldCheck } from 'lucide-react';
+import { Compass, Plus, Minus, Target, Navigation2, Loader2 } from 'lucide-react';
 
 /**
- * [Page] 메인 페이지 (하이엔드 권한 가이드 & iOS 안정화 버전)
- * @version 6.3.0
+ * [Page] 메인 페이지 (네이티브 위치 시스템 전용 버전)
+ * @version 6.4.0
  * @author Antigravity
  * @description 
- * - 사용자 불만이 있었던 네이티브 Alert를 제거하고, 하이엔드 바텀 시트(Bottom Sheet) 가이드를 도입했습니다.
- * - 시스템 보안 정책상 권한 거부 시 다시 팝업을 띄울 수 없는 이유를 시각적으로 친절히 설명합니다.
- * - iOS/AOS 기기별 맞춤형 설정 경로를 고해상도 그래픽과 함께 제공합니다.
+ * - 모든 종류의 커스텀 팝업과 알림(Alert)을 완전히 삭제했습니다.
+ * - 오직 브라우저/OS의 네이티브 지오로케이션 기능만 사용하여 작동합니다.
+ * - 버튼 클릭 시 즉각적인 로딩 피드백을 유지하며, 무음 응답(Silent fail) 방식으로 처리합니다.
  */
 
 const containerStyle = {
@@ -34,7 +34,6 @@ const Main = () => {
   const [myLocation, setMyLocation] = useState(null);
   const [isFollowing, setIsFollowing] = useState(false);
   const [isLocating, setIsLocating] = useState(false);
-  const [showPermissionGuide, setShowPermissionGuide] = useState(false);
   const isInitialSet = useRef(false);
 
   const [loading, error] = useKakaoLoader({
@@ -77,17 +76,13 @@ const Main = () => {
         }
         setIsFollowing(true);
         setIsLocating(false);
-        setShowPermissionGuide(false);
       },
       (err) => {
         setIsLocating(false);
-        // 권한 거부(1) 시에만 가이드 바텀시트 표시
-        if (err.code === 1) {
-          setShowPermissionGuide(true);
-        }
-        console.error("GeoError:", err);
+        console.warn("Geolocation Warning:", err.message);
+        // 모든 팝업 및 알림 삭제 (사용자 요청)
       },
-      { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 }
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
     );
   }, [map]);
 
@@ -139,8 +134,8 @@ const Main = () => {
         )}
       </Map>
 
-      {/* Control Panel */}
-      <div className="fixed right-6 bottom-32 sm:right-8 sm:top-1/2 sm:-translate-y-1/2 z-[40] flex flex-col gap-6">
+      {/* Control Panel (최상위 z-index 유지) */}
+      <div className="fixed right-6 bottom-32 sm:right-8 sm:top-1/2 sm:-translate-y-1/2 z-[999] flex flex-col gap-6">
         <div className="flex flex-col bg-black/70 backdrop-blur-3xl border border-white/20 rounded-[24px] overflow-hidden shadow-2xl">
           <button type="button" onClick={(e) => { e.stopPropagation(); map?.setLevel(map.getLevel() - 1, { animate: true }); }} className="p-6 sm:p-4 text-white active:bg-white/20 border-b border-white/10"><Plus size={28} className="sm:w-6 sm:h-6" /></button>
           <button type="button" onClick={(e) => { e.stopPropagation(); if (map?.getLevel() < 11) map?.setLevel(map.getLevel() + 1, { animate: true }); }} className="p-6 sm:p-4 text-white/70 active:bg-white/20"><Minus size={28} className="sm:w-6 sm:h-6" /></button>
@@ -157,59 +152,10 @@ const Main = () => {
         </button>
       </div>
 
-      {/* Premium Bottom Sheet Guide (권한 거부 시에만) */}
-      <div className={`fixed inset-0 z-[100] transition-opacity duration-500 pointer-events-none ${showPermissionGuide ? 'bg-black/40 opacity-100 pointer-events-auto backdrop-blur-sm' : 'bg-transparent opacity-0'}`} onClick={() => setShowPermissionGuide(false)}>
-        <div 
-          className={`absolute bottom-0 left-0 right-0 bg-[#12141c] rounded-t-[40px] border-t border-white/10 p-8 pt-4 pb-12 transition-transform duration-500 ease-out shadow-[0_-20px_60px_rgba(0,0,0,0.8)]
-            ${showPermissionGuide ? 'translate-y-0' : 'translate-y-full'}`}
-          onClick={(e) => e.stopPropagation()}
-        >
-          {/* Handle */}
-          <div className="w-12 h-1.5 bg-white/10 rounded-full mx-auto mb-8" />
-          
-          <div className="flex flex-col items-center max-w-lg mx-auto">
-            <div className="w-20 h-20 bg-blue-500/10 rounded-[2.5rem] flex items-center justify-center mb-6 border border-blue-500/20">
-              <ShieldCheck size={42} className="text-blue-500" />
-            </div>
-            
-            <h3 className="text-2xl font-bold text-white mb-2 tracking-tight">위치 접근이 거부되었습니다</h3>
-            <p className="text-white/40 text-sm font-light leading-relaxed mb-10 text-center">
-              브라우저 보안 정책에 따라 한 번 거부된 권한은<br/> 
-              <span className="text-white/80 font-medium">설정 앱에서 수동으로 다시 허용</span>해 주셔야 합니다.
-            </p>
-
-            <div className="w-full space-y-4 mb-10">
-              <div className="flex items-center gap-5 p-5 bg-white/5 rounded-3xl border border-white/5">
-                <div className="w-12 h-12 bg-black/40 rounded-2xl flex items-center justify-center flex-shrink-0 border border-white/10 italic text-[#007AFF] font-black italic">i</div>
-                <div className="flex-1">
-                  <p className="text-xs font-bold text-white/40 uppercase tracking-widest mb-1">iOS iPhone</p>
-                  <p className="text-white/90 text-[14px] leading-snug">설정 &gt; 개인정보 보호 &gt; 위치 서비스 &gt; 브라우저 &gt; <span className="text-blue-400 font-bold">'앱을 사용하는 동안'</span></p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-5 p-5 bg-white/5 rounded-3xl border border-white/5">
-                <div className="w-12 h-12 bg-black/40 rounded-2xl flex items-center justify-center flex-shrink-0 border border-white/10"><Globe size={20} className="text-[#34A853]" /></div>
-                <div className="flex-1">
-                  <p className="text-xs font-bold text-white/40 uppercase tracking-widest mb-1">Android Galaxy</p>
-                  <p className="text-white/90 text-[14px] leading-snug">설정 &gt; 애플리케이션 &gt; 브라우저 &gt; 권한 &gt; 위치 &gt; <span className="text-green-400 font-bold">'앱 사용 중에만 허용'</span></p>
-                </div>
-              </div>
-            </div>
-
-            <button 
-              onClick={() => setShowPermissionGuide(false)}
-              className="w-full py-5 bg-white text-black rounded-3xl font-bold text-lg active:scale-[0.97] transition-all flex items-center justify-center gap-2 shadow-xl"
-            >
-              알겠습니다 <ChevronRight size={20} />
-            </button>
-          </div>
-        </div>
-      </div>
-
       <style>{`
         .kakao-dark-theme { filter: invert(100%) hue-rotate(180deg) brightness(0.95) contrast(1.1) grayscale(0.1); background-color: #05070a !important; }
         .kakao-dark-theme img[src*="dapi.kakao.com"] { filter: none !important; }
-        @media (max-width: 640px) { .kakao-copyright, .kakao-logo { transform: scale(0.8); transform-origin: bottom right; } }
+        @media (max-width: 640px) { .kakao-copyright, .kakao-logo { display: none !important; } }
         * { -webkit-tap-highlight-color: transparent; }
       `}</style>
     </div>
