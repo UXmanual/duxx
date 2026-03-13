@@ -4,37 +4,36 @@ import Header from './Header';
 import Footer from './Footer';
 
 /**
- * [Layout] 비격리 레이어 아키텍처
+ * [Layout] 전문 시맨틱 레이아웃 (Interactive & Blending v3)
  * 
  * @description
- * mix-blend-mode가 지도와 연동되려면 UI 컨테이너가 'Stacking Context'를 형성하지 않아야 합니다.
- * 이를 위해 UI(Header/Footer)는 z-index를 제거하고, 배경(Main)을 음수 z-index로 밀어내는 전략을 사용합니다.
+ * 1. Semantic Structure: Header -> Main -> Footer 순서 준수
+ * 2. Blending Engine: UI 컨테이너의 display: contents를 통해 스태킹 컨텍스트를 제거, 
+ *    하위 로고가 지도의 픽셀 데이터와 직접 블렌딩(Overlay)되도록 구현
+ * 3. Interaction: 지도는 z-0(relative)로 배치하여 드래그 및 클릭 방해 요소를 완벽 제거
  * 
- * @order
- * 1. Header (Semantic Top - Paint Level: 0)
- * 2. Main (Semantic Mid - Paint Level: -1)
- * 3. Footer (Semantic Bottom - Paint Level: 0)
+ * @version 11.3.0
  */
 const Layout = () => {
   return (
     <div 
       id="duxx-app-root" 
-      className="relative w-full h-screen overflow-hidden font-sans antialiased text-theme-text-primary"
+      className="relative w-full h-screen overflow-hidden font-sans antialiased bg-theme-bg"
     >
-      {/* [Layer 1] 시맨틱 상단 헤더 (z-index 제거로 블렌딩 허용) */}
+      {/* [Semantic 1] Header (UI Layer) */}
       <Header />
 
-      {/* [Layer 2] 메인 콘텐츠 영역 (z-[-1]로 배경화) */}
+      {/* [Semantic 2] Main Content (Map Layer) */}
       <main 
         id="main-content" 
         role="main" 
-        className="absolute inset-0 z-[-1]"
-        aria-label="Interactive Map Area"
+        className="relative w-full h-full z-0"
+        aria-label="Interactive Map"
       >
         <Outlet />
       </main>
 
-      {/* [Layer 3] 시맨틱 하단 푸터 (z-index 제거로 블렌딩 허용) */}
+      {/* [Semantic 3] Footer (UI Layer) */}
       <Footer />
     </div>
   );
