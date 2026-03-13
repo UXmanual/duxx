@@ -4,13 +4,13 @@ import { useTheme } from '../context/ThemeContext';
 import { Compass, Plus, Minus, Target, Navigation2 } from 'lucide-react';
 
 /**
- * [Page] 메인 페이지 (카카오 맵 엔진 하이엔드 버전)
- * @version 4.9.0
+ * [Page] 메인 페이지 (카카오 맵 엔진 순정 복구 버전)
+ * @version 5.0.0
  * @author Antigravity
  * @description 
- * - 카카오 맵 SDK의 모든 순정 인터랙션(드래그, 휠 줌)을 100% 허용합니다.
+ * - 카카오 맵 SDK의 모든 순정 인터랙션(드래그, 휠 줌 인/아웃)을 완벽히 복구했습니다.
  * - 초기 로드 시 사용자의 현위치를 감지하여 중심으로 설정합니다.
- * - 줌아웃 최대치만 대한민국이 가득 차는 레벨 13으로 제한하여 흰 여백 발생을 방지합니다.
+ * - 복잡한 제약 로직을 모두 제거하고 SDK 기본 동작에 충실하도록 재구현했습니다.
  */
 
 const containerStyle = {
@@ -30,10 +30,6 @@ const Main = () => {
   const [isFollowing, setIsFollowing] = useState(false);
   const isInitialSet = useRef(false);
 
-  // 지도의 중심과 레벨을 '비제어(Uncontrolled)' 방식으로 관리하기 위해 초기값으로만 사용합니다.
-  const [center, setCenter] = useState(defaultCenter);
-  const [level, setLevel] = useState(4);
-
   const [loading, error] = useKakaoLoader({
     appkey: import.meta.env.VITE_KAKAO_MAPS_API_KEY,
     libraries: ['services', 'clusterer', 'drawing'],
@@ -49,11 +45,17 @@ const Main = () => {
           const newPos = { lat: latitude, lng: longitude };
           setMyLocation(newPos);
           
-          // 최초 1회 현위치 설정 또는 '따라가기' 활성 시에만 중심 이동
-          if (!isInitialSet.current || isFollowing) {
-            setCenter(newPos);
-            setLevel(4);
-            isInitialSet.current = true;
+          if (map) {
+            // 최초 로드 시 현위치로 중심 이동
+            if (!isInitialSet.current) {
+              map.setCenter(new window.kakao.maps.LatLng(latitude, longitude));
+              map.setLevel(4);
+              isInitialSet.current = true;
+            }
+            // 따라가기 활성화 시 부드러운 이동
+            if (isFollowing) {
+              map.panTo(new window.kakao.maps.LatLng(latitude, longitude));
+            }
           }
         },
         (err) => console.error("Location error:", err),
@@ -61,9 +63,9 @@ const Main = () => {
       );
     }
     return () => navigator.geolocation.clearWatch(watchId);
-  }, [isFollowing]);
+  }, [map, isFollowing]);
 
-  // 버튼 인터랙션 (명령형 API 사용)
+  // 버튼 인터랙션 (SDK 순정 레벨 조절)
   const zoomIn = () => {
     if (map) map.setLevel(map.getLevel() - 1, { animate: true });
   };
@@ -99,9 +101,6 @@ const Main = () => {
             <p className="text-white/60 max-w-sm text-center font-mono text-sm leading-relaxed mb-4">
               {!import.meta.env.VITE_KAKAO_MAPS_API_KEY ? 'Status: API KEY MISSING' : 'Status: KAKAO SDK LOAD FAILED'}
             </p>
-            <p className="text-white/40 max-w-sm text-center font-light text-xs leading-relaxed">
-              카카오 개발자 콘솔에서 필수 설정을 확인해 주세요.
-            </p>
         </div>
       </div>
     );
@@ -111,11 +110,11 @@ const Main = () => {
     <div className={`w-full h-screen relative overflow-hidden transition-colors duration-1000 ${isDark ? 'bg-[#05070a]' : 'bg-[#f4f7f9]'}`}>
       
       <Map
-        center={center}
-        level={level}
+        center={defaultCenter}
+        level={4}
         onCreate={setMap}
         style={containerStyle}
-        maxLevel={13} // 줌아웃 최대치만 대한민국 전역(13)으로 제한하여 여백 방지
+        maxLevel={13} // 줌아웃 최대치만 대한민국 전역으로 제한 (여백 방지)
         onDragStart={() => setIsFollowing(false)}
         className={`transition-all duration-1000 ${isDark ? 'kakao-dark-theme' : ''}`}
       >
