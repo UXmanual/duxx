@@ -60,7 +60,32 @@ const Main = () => {
     requestLocation(true);
   };
 
-  if (loading) return null;
+  if (loading) {
+    return (
+      <div className="w-full h-screen bg-[#f8f9fa] relative overflow-hidden flex items-center justify-center">
+        {/* Map Skeleton Base */}
+        <div className="absolute inset-0 opacity-20">
+          <div className="w-full h-full border-t border-l border-gray-300 bg-[linear-gradient(to_right,#e9ecef_1px,transparent_1px),linear-gradient(to_bottom,#e9ecef_1px,transparent_1px)] bg-[size:40px_40px]" />
+        </div>
+        
+        {/* Pulsing Center Piece */}
+        <div className="relative w-16 h-16 bg-gray-200 rounded-full animate-pulse flex items-center justify-center overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/50 to-transparent -translate-x-full animate-shimmer" />
+        </div>
+
+        {/* Shimmer Animation CSS */}
+        <style>{`
+          @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+          }
+          .animate-shimmer {
+            animation: shimmer 2.5s infinite linear;
+          }
+        `}</style>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full h-screen relative bg-white overflow-hidden">
