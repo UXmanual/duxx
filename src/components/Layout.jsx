@@ -4,42 +4,37 @@ import Header from './Header';
 import Footer from './Footer';
 
 /**
- * [Layout] 무격리 시맨틱 레이아웃 (Blending Engine v2)
+ * [Layout] 비격리 레이어 아키텍처
  * 
  * @description
- * mix-blend-mode가 작동하지 않는 근본 원인인 'Stacking Context Isolation'을 해결하기 위해
- * z-index를 배제하고 DOM 순서(Paint Order)에만 의존하는 구조로 재설계했습니다.
+ * mix-blend-mode가 지도와 연동되려면 UI 컨테이너가 'Stacking Context'를 형성하지 않아야 합니다.
+ * 이를 위해 UI(Header/Footer)는 z-index를 제거하고, 배경(Main)을 음수 z-index로 밀어내는 전략을 사용합니다.
  * 
- * @logic
- * 1. Main(지형): DOM의 처음에 위치하여 바닥 레이어 형성
- * 2. Header/Footer(인터페이스): Main 다음에 위치하여 자연스럽게 위에 겹침
- * 3. 이 구조에서 Header는 격리되지 않으므로, 하위 요소인 로고가 지도의 픽셀과 직접 블렌딩 가능
+ * @order
+ * 1. Header (Semantic Top - Paint Level: 0)
+ * 2. Main (Semantic Mid - Paint Level: -1)
+ * 3. Footer (Semantic Bottom - Paint Level: 0)
  */
 const Layout = () => {
   return (
     <div 
       id="duxx-app-root" 
-      className="relative w-full h-screen overflow-hidden font-sans antialiased"
-      style={{ isolation: 'auto' }} // 격리 방지
+      className="relative w-full h-screen overflow-hidden font-sans antialiased text-theme-text-primary"
     >
-      {/* 
-        1. 메인 콘텐츠 (Backdrop)
-        DOM 순서가 앞서므로 가장 아래에 그려집니다.
-      */}
-      <main id="main-content" role="main" className="absolute inset-0">
+      {/* [Layer 1] 시맨틱 상단 헤더 (z-index 제거로 블렌딩 허용) */}
+      <Header />
+
+      {/* [Layer 2] 메인 콘텐츠 영역 (z-[-1]로 배경화) */}
+      <main 
+        id="main-content" 
+        role="main" 
+        className="absolute inset-0 z-[-1]"
+        aria-label="Interactive Map Area"
+      >
         <Outlet />
       </main>
 
-      {/* 
-        2. 인터페이스 (Header)
-        z-index 없이 DOM 순서에 의해 Main 위로 겹쳐집니다. (블렌딩 허용)
-      */}
-      <Header />
-
-      {/* 
-        3. 인터페이스 (Footer)
-        z-index 없이 DOM 순서에 의해 Main 위로 겹쳐집니다. (블렌딩 허용)
-      */}
+      {/* [Layer 3] 시맨틱 하단 푸터 (z-index 제거로 블렌딩 허용) */}
       <Footer />
     </div>
   );
