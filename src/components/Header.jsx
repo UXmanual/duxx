@@ -26,8 +26,8 @@ const Header = () => {
     <header className="fixed top-0 left-0 right-0 z-50 transition-all duration-500">
       <div className="w-full px-10 h-24 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          {/* Logo: font-size 24px, letter-spacing 0 */}
-          <span className="font-black text-[24px] tracking-[0] uppercase">DUXX</span>
+          {/* Logo: font-size 24px, letter-spacing 0, mix-blend-mode applied */}
+          <span className="font-black text-[24px] tracking-[0] uppercase mix-blend-difference text-theme-text-primary">DUXX</span>
         </div>
         
         <button 
