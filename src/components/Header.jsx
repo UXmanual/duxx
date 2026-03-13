@@ -5,10 +5,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 /**
  * [Component] 상단 헤더
- * @version 10.2.0
+ * @version 10.3.0
+ * @author Antigravity
  * @description 
- * - 로고에 'mix-blend-mode: difference'와 'text-white'를 적용하여 배경에 따라 색상이 반전되는 효과를 구현했습니다.
- * - 이 효과를 통해 지도가 움직일 때 로고 컬러가 동적으로 변하는 Photoshop의 블렌딩 모드 느낌을 줍니다.
+ * - 로고에 'mix-blend-mode: difference' 효과가 확실히 나타나도록 CSS 속성을 강화했습니다.
+ * - 'display: inline-block'과 'will-change'를 추가하여 브라우저의 전용 렌더링 레이어를 생성했습니다.
  */
 const Header = () => {
   const { isDark, toggleTheme } = useTheme();
@@ -27,8 +28,18 @@ const Header = () => {
     <header className="fixed top-0 left-0 right-0 z-50 transition-all duration-500 pointer-events-none">
       <div className="w-full px-10 h-24 flex items-center justify-between">
         <div className="flex items-center gap-2 pointer-events-auto">
-          {/* Logo: font-size 24px, letter-spacing 0, mix-blend-mode + text-white (배경반전 핵심) */}
-          <span className="font-black text-[24px] tracking-[0] uppercase mix-blend-difference text-white select-none">
+          {/* Logo: Photoshop의 '차이(Difference)' 모드 재현 */}
+          {/* isolation: auto와 inline-block을 통해 배경과 직접 연산되도록 유도 */}
+          <span 
+            className="font-black text-[24px] tracking-[0] uppercase select-none transition-transform active:scale-95"
+            style={{ 
+              mixBlendMode: 'difference',
+              color: 'white',
+              display: 'inline-block',
+              willChange: 'mix-blend-mode, transform',
+              WebkitFontSmoothing: 'antialiased'
+            }}
+          >
             DUXX
           </span>
         </div>
