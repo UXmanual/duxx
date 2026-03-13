@@ -68,19 +68,20 @@ const Main = () => {
     }
   }, [myLocation, map]);
 
-  // 한반도 영역 정의 (남서단, 북동단)
+  // 한반도 영역 정의 (남서단, 북동단) - 줌아웃 여백 방지용
   const KOREA_BOUNDS = {
-    sw: { lat: 33.0, lng: 124.0 },
-    ne: { lat: 39.0, lng: 132.0 }
+    sw: { lat: 32.0, lng: 123.0 },
+    ne: { lat: 40.0, lng: 133.0 }
   };
 
-  // 영역 제한 체크 로직
+  // 영역 제한 체크 로직 (최대 줌아웃 상태에서만 부드럽게 작동하도록 조정)
   const checkBounds = useCallback((mapInstance) => {
+    if (mapInstance.getLevel() < 10) return; // 줌인 상태에서는 자유롭게 이동
+
     const latlng = mapInstance.getCenter();
     let lat = latlng.getLat();
     let lng = latlng.getLng();
 
-    // 위도/경도가 범위를 벗어나면 강제로 조정
     if (lat < KOREA_BOUNDS.sw.lat) lat = KOREA_BOUNDS.sw.lat;
     if (lat > KOREA_BOUNDS.ne.lat) lat = KOREA_BOUNDS.ne.lat;
     if (lng < KOREA_BOUNDS.sw.lng) lng = KOREA_BOUNDS.sw.lng;
@@ -91,12 +92,12 @@ const Main = () => {
     }
   }, []);
 
-  // 줌 조절 (레벨 1~13 제한, 숫자 작을수록 확대)
+  // 줌 조절 (버튼용)
   const zoomIn = () => {
-    if (level > 1) setLevel(level - 1);
+    if (map) map.setLevel(map.getLevel() - 1, { animate: true });
   };
   const zoomOut = () => {
-    if (level < 13) setLevel(level + 1);
+    if (map && map.getLevel() < 13) map.setLevel(map.getLevel() + 1, { animate: true });
   };
 
   if (loading) {
@@ -137,7 +138,7 @@ const Main = () => {
         style={containerStyle}
         onDragStart={() => setIsFollowing(false)}
         onCenterChanged={(mapInstance) => {
-            checkBounds(mapInstance); // 영역 밖으로 나가는 것 방지
+            checkBounds(mapInstance);
             setCenter({
                 lat: mapInstance.getCenter().getLat(),
                 lng: mapInstance.getCenter().getLng(),
