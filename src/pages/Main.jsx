@@ -74,15 +74,7 @@ const Main = () => {
 
   if (loading) {
     return (
-      <div className="w-full h-full flex flex-col items-center justify-center bg-[#05070a] gap-6">
-        <div className="relative w-24 h-24">
-            <div className="absolute inset-0 border-4 border-blue-500/20 rounded-full"></div>
-            <div className="absolute inset-0 border-4 border-t-blue-500 rounded-full animate-spin"></div>
-        </div>
-        <div className="text-white/20 font-black text-4xl tracking-[0.2em] animate-pulse">
-          DUXX CORE LOADING
-        </div>
-      </div>
+      <div className={`w-full h-screen transition-colors duration-1000 ${isDark ? 'bg-[#05070a]' : 'bg-[#f4f7f9]'}`} />
     );
   }
 
