@@ -11,7 +11,7 @@ const Layout = () => {
   return (
     <div id="duxx-layout-root" className="min-h-screen bg-theme-bg text-theme-text-primary font-sans antialiased overflow-hidden">
       {/* 바닥 레이어: 메인 콘텐츠 (지도) */}
-      <main id="main-content" data-section="main-content" className="absolute inset-0 z-0">
+      <main id="main-content" data-section="main-content" className="absolute inset-0">
         <Outlet />
       </main>
 

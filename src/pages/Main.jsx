@@ -89,7 +89,7 @@ const Main = () => {
       </Map>
 
       {/* [Footer Aligned] 테마 대응 현위치 버튼 */}
-      <div className="fixed bottom-0 right-0 z-[100] pointer-events-none">
+      <div className="fixed bottom-0 right-0 z-[9999] pointer-events-none">
         <div className="w-full px-10 py-8">
           <div className="py-5 flex items-center justify-end pointer-events-auto">
             <button 
