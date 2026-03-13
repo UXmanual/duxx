@@ -25,7 +25,7 @@ const Header = () => {
   }, [isDark]);
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 pointer-events-none">
+    <header className="fixed top-0 left-0 right-0 z-10 pointer-events-none">
       <div className="w-full px-10 h-24 flex items-center justify-between">
         <div className="flex items-center gap-2 pointer-events-auto">
           {/* Logo: 배경 반전 효과를 위한 전용 스타일 */}

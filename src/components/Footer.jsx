@@ -9,7 +9,7 @@ import pkg from '../../package.json';
  */
 const Footer = () => {
   return (
-    <footer className="fixed bottom-0 left-0 right-0 z-50 pointer-events-none">
+    <footer className="fixed bottom-0 left-0 right-0 z-10 pointer-events-none">
       <div className="w-full px-10 py-8">
         <div className="flex flex-col items-start gap-1 py-5 inline-block pointer-events-auto">
           <div className="flex items-center gap-3 opacity-40">
@@ -18,7 +18,7 @@ const Footer = () => {
             </p>
             <span className="w-px h-3 bg-theme-text-secondary opacity-30" />
             <p className="text-theme-text-secondary text-[14px] font-bold tracking-[0]">
-              Last Deployed: 16:21 KST
+              Last Deployed: 16:24 KST
             </p>
           </div>
           {/* Logo: 배경 반전 텍스트 */}
