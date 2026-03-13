@@ -4,12 +4,12 @@ import { useTheme } from '../context/ThemeContext';
 import { Crosshair } from 'lucide-react';
 
 /**
- * [Page] 메인 페이지 (현위치 펄스 애니메이션 버전)
- * @version 9.3.0
+ * [Page] 메인 페이지 (마커 애니메이션 정밀 튜닝 버전)
+ * @version 9.4.0
  * @author Antigravity
  * @description 
- * - 현위치 마커 주변에 은은하게 퍼져나가는 반투명 펄스(Pulse) 애니메이션을 추가했습니다.
- * - 시각적으로 '현재 위치'임을 더욱 명확하게 인지할 수 있도록 돕습니다.
+ * - 현위치 마커의 펄스 애니메이션에서 불필요한 중앙 효과를 제거했습니다.
+ * - 외곽으로 퍼져나가는 모션의 범위를 기존의 절반 사이즈로 축소하여 더욱 절제된 느낌을 줍니다.
  */
 
 const Main = () => {
@@ -70,7 +70,7 @@ const Main = () => {
         style={{ width: '100%', height: '100%' }}
         className={isDark ? 'kakao-dark-theme' : ''}
       >
-        {/* 현위치 마커 + 펄스 애니메이션 */}
+        {/* 현위치 마커 + 정밀 펄스 애니메이션 */}
         {myLocation && (
           <CustomOverlayMap 
             position={myLocation} 
@@ -79,11 +79,10 @@ const Main = () => {
             yAnchor={0.5}
           >
             <div className="relative flex items-center justify-center pointer-events-none">
-              {/* 바깥쪽 퍼져나가는 펄스 효과 */}
-              <div className="absolute w-12 h-12 bg-[#FF4D00] rounded-full animate-ping opacity-20" />
-              <div className="absolute w-10 h-10 bg-[#FF4D00] rounded-full animate-pulse opacity-10" />
+              {/* 외곽으로만 살짝 퍼져나가는 펄스 효과 (사이즈 축소) */}
+              <div className="absolute w-8 h-8 bg-[#FF4D00] rounded-full animate-ping opacity-30" />
               
-              {/* 메인 마커 */}
+              {/* 메인 마커 소체 */}
               <div className="relative w-[24px] h-[24px] bg-[#FF4D00] border-2 border-white rounded-full flex items-center justify-center shadow-[0_2px_8px_rgba(0,0,0,0.3)]">
                 <div className="w-[6px] h-[6px] bg-white rounded-full" />
               </div>
@@ -113,8 +112,8 @@ const Main = () => {
         .kakao-dark-theme img { filter: none !important; }
         
         @keyframes custom-ping {
-          0% { transform: scale(1); opacity: 0.4; }
-          70%, 100% { transform: scale(2.5); opacity: 0; }
+          0% { transform: scale(0.8); opacity: 0.6; }
+          70%, 100% { transform: scale(1.6); opacity: 0; }
         }
         .animate-ping {
           animation: custom-ping 2s cubic-bezier(0, 0, 0.2, 1) infinite;
