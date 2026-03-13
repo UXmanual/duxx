@@ -17,11 +17,12 @@ const Footer = () => {
             </p>
             <span className="w-px h-3 bg-theme-text-secondary opacity-30" />
             <p className="text-theme-text-secondary text-[14px] font-bold tracking-[0]">
-              Last Deployed: 16:03 KST
+              Last Deployed: 16:05 KST
             </p>
           </div>
           {/* Copyright: font-size 14px, letter-spacing 0 */}
-          <p className="text-theme-text-primary font-black text-[14px] tracking-[0] opacity-80">
+          {/* mix-blend-mode를 적용하여 배경(지도)색상에 따라 로고 색상이 반전되는 효과를 줍니다. */}
+          <p className="text-theme-text-primary font-black text-[14px] tracking-[0] mix-blend-difference">
             ©DUXX
           </p>
         </div>
