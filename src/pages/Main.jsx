@@ -4,13 +4,13 @@ import { useTheme } from '../context/ThemeContext';
 import { Compass, Plus, Minus, Target, Navigation2 } from 'lucide-react';
 
 /**
- * [Page] 메인 페이지 (카카오 맵 엔진 순정 복구 버전)
- * @version 5.0.0
+ * [Page] 메인 페이지 (카카오 맵 엔진 클린 리빌드 버전)
+ * @version 5.1.0
  * @author Antigravity
  * @description 
- * - 카카오 맵 SDK의 모든 순정 인터랙션(드래그, 휠 줌 인/아웃)을 완벽히 복구했습니다.
- * - 초기 로드 시 사용자의 현위치를 감지하여 중심으로 설정합니다.
- * - 복잡한 제약 로직을 모두 제거하고 SDK 기본 동작에 충실하도록 재구현했습니다.
+ * - 모든 제약 로직을 삭제하고 카카오 맵 SDK 본연의 기능을 최대한 살려 다시 구현했습니다.
+ * - 초기 로드 시 사용자의 현위치를 우선적으로 표시합니다.
+ * - 줌 인/아웃 및 드래그가 제약 없이 완벽하게 작동하도록 설계했습니다.
  */
 
 const containerStyle = {
@@ -18,6 +18,7 @@ const containerStyle = {
   height: '100vh',
 };
 
+// 기본 중심 (서울시청)
 const defaultCenter = {
   lat: 37.5665,
   lng: 126.9780
@@ -26,6 +27,14 @@ const defaultCenter = {
 const Main = () => {
   const { isDark } = useTheme();
   const [map, setMap] = useState(null);
+  
+  // 지도의 실시간 상태관리
+  const [state, setState] = useState({
+    center: defaultCenter,
+    level: 4,
+    isPanto: false,
+  });
+
   const [myLocation, setMyLocation] = useState(null);
   const [isFollowing, setIsFollowing] = useState(false);
   const isInitialSet = useRef(false);
@@ -37,54 +46,58 @@ const Main = () => {
 
   // 사용자의 현위치 실시간 감지
   useEffect(() => {
-    let watchId;
     if (navigator.geolocation) {
-      watchId = navigator.geolocation.watchPosition(
+      const watchId = navigator.geolocation.watchPosition(
         (position) => {
           const { latitude, longitude } = position.coords;
           const newPos = { lat: latitude, lng: longitude };
           setMyLocation(newPos);
           
-          if (map) {
-            // 최초 로드 시 현위치로 중심 이동
-            if (!isInitialSet.current) {
-              map.setCenter(new window.kakao.maps.LatLng(latitude, longitude));
-              map.setLevel(4);
-              isInitialSet.current = true;
-            }
-            // 따라가기 활성화 시 부드러운 이동
-            if (isFollowing) {
-              map.panTo(new window.kakao.maps.LatLng(latitude, longitude));
-            }
+          // 최초 1회 현위치 설정
+          if (!isInitialSet.current) {
+            setState({
+              center: newPos,
+              level: 4,
+              isPanto: false
+            });
+            isInitialSet.current = true;
+          }
+
+          // 따라가기 모드 시 중심 이동
+          if (isFollowing) {
+            setState(prev => ({
+              ...prev,
+              center: newPos,
+              isPanto: true
+            }));
           }
         },
-        (err) => console.error("Location error:", err),
+        (err) => console.error("Geolocation Error:", err),
         { enableHighAccuracy: true }
       );
+      return () => navigator.geolocation.clearWatch(watchId);
     }
-    return () => navigator.geolocation.clearWatch(watchId);
-  }, [map, isFollowing]);
+  }, [isFollowing]);
 
-  // 버튼 인터랙션 (SDK 순정 레벨 조절)
+  // 버튼 인터랙션 전 전용 함수
   const zoomIn = () => {
-    if (map) map.setLevel(map.getLevel() - 1, { animate: true });
+    setState(prev => ({ ...prev, level: Math.max(prev.level - 1, 1), isPanto: false }));
   };
   
   const zoomOut = () => {
-    if (map) {
-      const currentLevel = map.getLevel();
-      if (currentLevel < 13) {
-        map.setLevel(currentLevel + 1, { animate: true });
-      }
-    }
+    setState(prev => ({ ...prev, level: Math.min(prev.level + 1, 13), isPanto: false }));
   };
 
   const moveToMyLocation = useCallback(() => {
-    if (myLocation && map) {
-      map.panTo(new window.kakao.maps.LatLng(myLocation.lat, myLocation.lng));
+    if (myLocation) {
+      setState(prev => ({
+        ...prev,
+        center: myLocation,
+        isPanto: true
+      }));
       setIsFollowing(true);
     }
-  }, [myLocation, map]);
+  }, [myLocation]);
 
   if (loading) {
     return (
@@ -95,10 +108,10 @@ const Main = () => {
   if (error || !import.meta.env.VITE_KAKAO_MAPS_API_KEY) {
     return (
       <div className="w-full h-full flex flex-col items-center justify-center bg-[#0a0c10] text-[#ff4b4b] p-10">
-        <div className="bg-red-500/10 p-8 rounded-3xl border border-red-500/20 backdrop-blur-xl flex flex-col items-center">
+        <div className="bg-red-500/10 p-8 rounded-3xl border border-red-500/20 backdrop-blur-xl flex flex-col items-center text-center">
             <Compass className="w-16 h-16 mb-6 animate-bounce" />
             <h2 className="text-3xl mb-4 font-black tracking-tighter uppercase text-red-500">System Failure</h2>
-            <p className="text-white/60 max-w-sm text-center font-mono text-sm leading-relaxed mb-4">
+            <p className="text-white/60 max-w-sm font-mono text-sm leading-relaxed">
               {!import.meta.env.VITE_KAKAO_MAPS_API_KEY ? 'Status: API KEY MISSING' : 'Status: KAKAO SDK LOAD FAILED'}
             </p>
         </div>
@@ -110,12 +123,29 @@ const Main = () => {
     <div className={`w-full h-screen relative overflow-hidden transition-colors duration-1000 ${isDark ? 'bg-[#05070a]' : 'bg-[#f4f7f9]'}`}>
       
       <Map
-        center={defaultCenter}
-        level={4}
+        center={state.center}
+        level={state.level}
+        isPanto={state.isPanto}
         onCreate={setMap}
         style={containerStyle}
-        maxLevel={13} // 줌아웃 최대치만 대한민국 전역으로 제한 (여백 방지)
         onDragStart={() => setIsFollowing(false)}
+        onCenterChanged={(mapInstance) => {
+          setState(prev => ({
+            ...prev,
+            center: {
+              lat: mapInstance.getCenter().getLat(),
+              lng: mapInstance.getCenter().getLng(),
+            },
+            isPanto: false
+          }));
+        }}
+        onZoomChanged={(mapInstance) => {
+          setState(prev => ({
+            ...prev,
+            level: mapInstance.getLevel(),
+            isPanto: false
+          }));
+        }}
         className={`transition-all duration-1000 ${isDark ? 'kakao-dark-theme' : ''}`}
       >
         {myLocation && (
@@ -142,11 +172,11 @@ const Main = () => {
 
       {/* Floating Control Interface */}
       <div className="absolute right-8 top-1/2 -translate-y-1/2 z-20 flex flex-col gap-4">
-        <div className="flex flex-col bg-black/40 backdrop-blur-2xl border border-white/10 rounded-2xl overflow-hidden shadow-2xl pointer-events-auto">
-            <button onClick={zoomIn} className="p-4 hover:bg-white/10 transition-colors text-white/70 hover:text-white border-b border-white/5">
+        <div className="flex flex-col bg-black/40 backdrop-blur-2xl border border-white/10 rounded-2xl overflow-hidden shadow-2xl pointer-events-auto text-white">
+            <button onClick={zoomIn} className="p-4 hover:bg-white/10 transition-colors border-b border-white/5 disabled:opacity-30">
                 <Plus size={20} />
             </button>
-            <button onClick={zoomOut} className="p-4 hover:bg-white/10 transition-colors text-white/70 hover:text-white">
+            <button onClick={zoomOut} className="p-4 hover:bg-white/10 transition-colors disabled:opacity-30">
                 <Minus size={20} />
             </button>
         </div>
