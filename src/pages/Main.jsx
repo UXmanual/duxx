@@ -4,13 +4,13 @@ import { useTheme } from '../context/ThemeContext';
 import { Compass, Plus, Minus, Target, Navigation2, Loader2 } from 'lucide-react';
 
 /**
- * [Page] 메인 페이지 (모바일 GPS 수신 최적화 버전)
- * @version 6.6.0
+ * [Page] 메인 페이지 (네이티브 프로프트 강제 활성화 버전)
+ * @version 6.7.0
  * @author Antigravity
  * @description 
- * - 모바일에서 '위치 정보를 사용할 수 없습니다' 에러(code 2) 발생 시 대응 로직을 강화했습니다.
- * - 수신 강도가 낮은 환경을 고려하여 Timeout을 늘리고, 정확도(Accuracy) 옵션을 유연하게 조정합니다.
- * - 버튼 클릭 시 즉각적인 시각 피드백을 유지하며, 위치 확보 성공률을 높였습니다.
+ * - iOS/Safari 등 모바일 브라우저에서 위치 권한 팝업(Native Prompt)이 반드시 뜨도록 호출 경로를 단순화했습니다.
+ * - 브라우저의 '사용자 제스처(User Activation)' 유효 시간 내에 즉시 API를 호출하여 무시되는 현상을 방지합니다.
+ * - maximumAge를 0으로 설정하여 캐시 대신 실시간 요청을 강제함으로써 시스템 팝업을 유도합니다.
  */
 
 const containerStyle = {
@@ -56,21 +56,18 @@ const Main = () => {
     if (isOutOfRange) mapInstance.setCenter(new window.kakao.maps.LatLng(targetLat, targetLng));
   }, []);
 
-  // 위치 확보 시도 함수 (실기기 대응 강화)
-  const fetchAndMove = useCallback((shouldAnimate = true, retryWithLowAccuracy = false) => {
+  // 현위치 버튼 핸들러 (최대한 단순하게 클릭 직후 호출)
+  const handleLocationRequest = (e) => {
+    if (e) e.stopPropagation();
+    
     if (!navigator.geolocation) {
       alert("이 브라우저는 위치 정보를 지원하지 않습니다.");
       return;
     }
 
     setIsLocating(true);
-    
-    const options = {
-      enableHighAccuracy: !retryWithLowAccuracy, // 고정확도 실패 시 저정확도로 재시도
-      timeout: retryWithLowAccuracy ? 10000 : 20000,
-      maximumAge: 30000 // 30초 이내의 캐시된 위치 허용 (반응 속도 향상)
-    };
 
+    // [중요] 사용자의 클릭 이벤트 직후에 즉시 호출하여 브라우저가 '사용자 조작'으로 인식하게 함
     navigator.geolocation.getCurrentPosition(
       (position) => {
         const { latitude, longitude } = position.coords;
@@ -79,48 +76,38 @@ const Main = () => {
         
         if (map) {
           const latlng = new window.kakao.maps.LatLng(latitude, longitude);
-          if (shouldAnimate) {
-            map.panTo(latlng);
-            setTimeout(() => {
-                if (map.getLevel() !== 4) map.setLevel(4, { animate: true });
-            }, 300);
-          } else {
-            map.setCenter(latlng);
-            map.setLevel(4);
-          }
+          map.panTo(latlng);
+          setTimeout(() => {
+            if (map.getLevel() !== 4) map.setLevel(4, { animate: true });
+          }, 300);
         }
         setIsFollowing(true);
         setIsLocating(false);
       },
       (err) => {
-        // 고정확도 환경에서 실패했을 경우, 일반 정확도로 1회 자동 재시도
-        if (!retryWithLowAccuracy && (err.code === 2 || err.code === 3)) {
-          fetchAndMove(shouldAnimate, true);
-          return;
-        }
-
         setIsLocating(false);
         setIsFollowing(false);
         
+        console.warn("Geolocation Native Error:", err.code, err.message);
+
+        // 에러 코드별 시스템 얼럿 출력
         if (err.code === 1) {
-          alert("위치 정보 권한이 거부되었습니다.\n설정 > 브라우저 > 위치 권한을 허용해 주세요.");
+          alert("위치 정보 권한이 거부되었습니다.\n브라우저 설정에서 위치 권한을 '허용'으로 변경해주세요.");
         } else if (err.code === 2) {
-          alert("GPS 신호를 잡을 수 없습니다.\n실외나 창가에서 다시 시도해 주세요.");
+          alert("위치 서비스를 사용할 수 없습니다.\n기기의 GPS가 켜져 있는지 확인해주세요.");
         } else if (err.code === 3) {
-          alert("위치 요청 시간이 초과되었습니다.\n다시 시도해 주세요.");
-        } else {
-          alert("위치 정보를 가져오는 중 오류가 발생했습니다.");
+          alert("위치 요청 시간이 초과되었습니다.\n다시 시도해주세요.");
         }
       },
-      options
+      { 
+        enableHighAccuracy: true, 
+        timeout: 10000, 
+        maximumAge: 0 // 캐시를 사용하지 않아야 시스템 팝업 수신율이 높음
+      }
     );
-  }, [map]);
+  };
 
-  const moveToMyLocation = useCallback(() => {
-    fetchAndMove(true);
-  }, [fetchAndMove]);
-
-  // 실시간 트래킹 (배터리 효율을 위해 maximumAge 설정)
+  // 배경에서 위치 변화 감지 (권한이 이미 있는 경우에만)
   useEffect(() => {
     if (!navigator.geolocation || !myLocation) return;
     const watchId = navigator.geolocation.watchPosition(
@@ -130,10 +117,17 @@ const Main = () => {
         if (isFollowing && map) map.panTo(new window.kakao.maps.LatLng(latitude, longitude));
       },
       null,
-      { enableHighAccuracy: true, maximumAge: 10000 }
+      { enableHighAccuracy: true }
     );
     return () => navigator.geolocation.clearWatch(watchId);
   }, [map, isFollowing, myLocation]);
+
+  // 지도 초기 로드 시 레이아웃 갱신
+  useEffect(() => {
+    if (map) {
+        setTimeout(() => map.relayout(), 100);
+    }
+  }, [map]);
 
   if (loading) return <div className={`w-full h-screen ${isDark ? 'bg-[#05070a]' : 'bg-[#f4f7f9]'}`} />;
 
@@ -145,7 +139,6 @@ const Main = () => {
         onCreate={(m) => {
           setMap(m);
           m.setMaxLevel(11);
-          setTimeout(() => m.relayout(), 100);
         }}
         style={containerStyle}
         onDragStart={() => setIsFollowing(false)}
@@ -163,29 +156,31 @@ const Main = () => {
         )}
       </Map>
 
-      {/* Control Panel */}
-      <div className="fixed right-6 bottom-32 sm:right-8 sm:top-1/2 sm:-translate-y-1/2 z-[999] flex flex-col gap-6">
-        <div className="flex flex-col bg-black/70 backdrop-blur-3xl border border-white/20 rounded-[24px] overflow-hidden shadow-2xl pointer-events-auto">
-          <button type="button" onClick={(e) => { e.stopPropagation(); map?.setLevel(map.getLevel() - 1, { animate: true }); }} className="p-6 sm:p-4 text-white active:bg-white/20 border-b border-white/10"><Plus size={28} className="sm:w-6 sm:h-6" /></button>
-          <button type="button" onClick={(e) => { e.stopPropagation(); if (map?.getLevel() < 11) map?.setLevel(map.getLevel() + 1, { animate: true }); }} className="p-6 sm:p-4 text-white/70 active:bg-white/20"><Minus size={28} className="sm:w-6 sm:h-6" /></button>
+      {/* Control Panel (Z-Index 최상위 유지) */}
+      <div className="fixed right-6 bottom-32 sm:right-8 sm:top-1/2 sm:-translate-y-1/2 z-[1000] flex flex-col gap-6">
+        <div className="flex flex-col bg-black/70 backdrop-blur-3xl border border-white/20 rounded-[28px] overflow-hidden shadow-2xl pointer-events-auto">
+          <button type="button" onClick={(e) => { e.stopPropagation(); map?.setLevel(map.getLevel() - 1, { animate: true }); }} className="p-6 sm:p-5 text-white active:bg-white/20 border-b border-white/10"><Plus size={28} className="sm:w-6 sm:h-6" /></button>
+          <button type="button" onClick={(e) => { e.stopPropagation(); if (map?.getLevel() < 11) map?.setLevel(map.getLevel() + 1, { animate: true }); }} className="p-6 sm:p-5 text-white/70 active:bg-white/20"><Minus size={28} className="sm:w-6 sm:h-6" /></button>
         </div>
+        
         <button 
           type="button"
-          onClick={(e) => { e.stopPropagation(); moveToMyLocation(); }}
+          onClick={handleLocationRequest}
           disabled={isLocating}
-          className={`p-6 sm:p-5 rounded-full backdrop-blur-3xl border transition-all duration-300 shadow-2xl flex items-center justify-center pointer-events-auto active:scale-95
+          className={`p-6 sm:p-6 rounded-full backdrop-blur-3xl border transition-all duration-300 shadow-2xl flex items-center justify-center pointer-events-auto active:scale-90
             ${isLocating ? 'bg-amber-500 border-amber-300 text-white' : isFollowing ? 'bg-blue-600 border-blue-400 text-white animate-pulse' : 'bg-black/70 border-white/20 text-white/80'}
           `}
         >
-          {isLocating ? <Loader2 size={32} className="animate-spin sm:w-7 sm:h-7" /> : <Target size={32} className="sm:w-7 sm:h-7" />}
+          {isLocating ? <Loader2 size={32} className="animate-spin sm:w-8 sm:h-8" /> : <Target size={32} className="sm:w-8 sm:h-8" />}
         </button>
       </div>
 
       <style>{`
         .kakao-dark-theme { filter: invert(100%) hue-rotate(180deg) brightness(0.95) contrast(1.1) grayscale(0.1); background-color: #05070a !important; }
         .kakao-dark-theme img[src*="dapi.kakao.com"] { filter: none !important; }
-        @media (max-width: 640px) { .kakao-copyright, .kakao-logo { transform: scale(0.85); transform-origin: bottom right; } }
+        @media (max-width: 640px) { .kakao-copyright, .kakao-logo { display: none !important; } }
         * { -webkit-tap-highlight-color: transparent; }
+        button { touch-action: manipulation; }
       `}</style>
     </div>
   );
