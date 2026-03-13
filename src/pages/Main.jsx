@@ -1,15 +1,15 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import { Map, MapMarker, useKakaoLoader } from 'react-kakao-maps-sdk';
 import { useTheme } from '../context/ThemeContext';
 import { Target } from 'lucide-react';
 
 /**
- * [Page] 메인 페이지 (기본 초경량 복구 버전)
- * @version 8.0.0
+ * [Page] 메인 페이지 (초기 안정화 버전 복구)
+ * @version 8.1.0
  * @author Antigravity
  * @description 
- * - 시스템 간섭을 최소화하기 위해 모든 복잡한 위치 추적 및 백그라운드 로직을 제거했습니다.
- * - 버튼 클릭 시에만 표준 브라우저 API를 통해 위치를 한 번 가져옵니다.
+ * - 모든 추가 로직을 배제하고, 카카오맵 초기 연동 시의 가장 깨끗한 소스 코드로 복구했습니다.
+ * - 버튼 클릭 시 브라우저 표준 위치 정보를 가져와 지도를 즉시 이동시킵니다.
  */
 
 const Main = () => {
@@ -22,60 +22,58 @@ const Main = () => {
     libraries: ['services', 'clusterer', 'drawing'],
   });
 
-  const moveToMyLocation = () => {
-    if (!navigator.geolocation) return;
-
-    // 표준 브라우저 기본 설정으로 호출
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const { latitude, longitude } = position.coords;
-        const pos = { lat: latitude, lng: longitude };
-        setMyLocation(pos);
-        
-        if (map) {
-          map.panTo(new window.kakao.maps.LatLng(latitude, longitude));
-          map.setLevel(4);
+  // 버튼 클릭 시 수행되는 가장 기본적인 위치 이동 함수
+  const handleMyLocation = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const lat = position.coords.latitude;
+          const lng = position.coords.longitude;
+          const newPos = { lat, lng };
+          
+          setMyLocation(newPos);
+          
+          if (map) {
+            // 지도를 해당 좌표로 부드럽게 이동시키고 줌 레벨을 4로 맞춤
+            map.panTo(new window.kakao.maps.LatLng(lat, lng));
+            map.setLevel(4);
+          }
+        },
+        (err) => {
+          console.error("Geolocation Error:", err);
         }
-      },
-      (err) => {
-        // 에러 시 최소한의 안내만 제공
-        if (err.code === 1) alert("위치 권한을 허용해 주세요.");
-      }
-    );
+      );
+    }
   };
 
   if (loading) return null;
 
   return (
-    <div className="w-full h-screen relative bg-white overflow-hidden">
+    <div className="w-full h-screen relative">
       <Map
         center={{ lat: 37.5665, lng: 126.9780 }}
         level={4}
-        onCreate={(m) => {
-          setMap(m);
-          m.setMaxLevel(11);
-          setTimeout(() => m.relayout(), 100);
-        }}
+        onCreate={setMap}
         style={{ width: '100%', height: '100%' }}
         className={isDark ? 'kakao-dark-theme' : ''}
       >
         {myLocation && <MapMarker position={myLocation} />}
       </Map>
 
-      {/* 단순 현위치 버튼 */}
-      <div className="absolute right-4 bottom-32 z-10">
+      {/* 우측 하단 기본 버튼 UI */}
+      <div className="absolute right-5 bottom-32 z-10">
         <button 
-          onClick={moveToMyLocation}
-          className="w-[48px] h-[48px] bg-white border border-gray-300 rounded-full shadow-xl flex items-center justify-center active:scale-90 text-gray-800"
+          onClick={handleMyLocation}
+          className="w-12 h-12 bg-white rounded-full shadow-lg flex items-center justify-center active:bg-gray-100 transition-colors"
         >
-          <Target size={24} />
+          <Target size={24} className="text-gray-800" />
         </button>
       </div>
 
       <style>{`
-        .kakao-dark-theme { filter: invert(100%) hue-rotate(180deg) brightness(0.9) grayscale(0.2); background-color: #fff !important; }
+        .kakao-dark-theme { filter: invert(100%) hue-rotate(180deg) brightness(0.9); background-color: #fff !important; }
         .kakao-dark-theme img { filter: none !important; }
-        * { -webkit-tap-highlight-color: transparent; }
+        @media (max-width: 640px) { .kakao-copyright, .kakao-logo { display: none !important; } }
       `}</style>
     </div>
   );
