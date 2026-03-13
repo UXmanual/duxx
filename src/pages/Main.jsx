@@ -1,48 +1,41 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Map, MapMarker, CustomOverlayMap, useKakaoLoader } from 'react-kakao-maps-sdk';
+import { Map, MapMarker, useKakaoLoader } from 'react-kakao-maps-sdk';
 import { useTheme } from '../context/ThemeContext';
-import { Compass, Plus, Minus, Target, Navigation2 } from 'lucide-react';
+import { Plus, Minus, Target } from 'lucide-react';
 
 /**
- * [Page] 메인 페이지 (제로-레이턴시 위치 이동 버전)
- * @version 6.8.0
+ * [Page] 메인 페이지 (네이티브 성능 최적화 버전)
+ * @version 6.9.0
  * @author Antigravity
  * @description 
- * - 버튼 클릭 시 발생하는 모든 스피너, 로딩 상태, 불필요한 이벤트를 제거했습니다.
- * - 위치 요청과 동시에 지도를 이동시키며, 화면 버벅임(Jank)을 방지하기 위해 렌더링 부하를 최소화했습니다.
- * - 버튼 인터랙션을 순수 CSS 호버/액티브로만 처리하여 즉각적인 반응을 보장합니다.
+ * - 모든 '이상한 효과' (스피너, 오버레이 레이어, 복잡한 상태)를 완전히 제거했습니다.
+ * - 버튼 클릭 시 어떠한 중간 단계 없이 즉시 시스템 위치 기능을 호출합니다.
+ * - '한 번 더 클릭해야 움직이는' 문제를 해결하기 위해 이벤트 전파와 레이어 스택을 단순화했습니다.
  */
-
-const containerStyle = {
-  width: '100%',
-  height: '100%',
-  position: 'absolute',
-  top: 0,
-  left: 0
-};
-
-const KOREA_BOUNDS = {
-  sw: { lat: 31.0, lng: 122.0 },
-  ne: { lat: 41.0, lng: 133.0 }
-};
-
-const defaultCenter = { lat: 37.5665, lng: 126.9780 };
 
 const Main = () => {
   const { isDark } = useTheme();
-  const [map, setMap] = useState(null);
+  const mapRef = useRef(null);
   const [myLocation, setMyLocation] = useState(null);
   const [isFollowing, setIsFollowing] = useState(false);
-  const isInitialSet = useRef(false);
+  const isMoving = useRef(false); // 수동 이동 중 영역 체크 일시 정지용
 
   const [loading, error] = useKakaoLoader({
     appkey: import.meta.env.VITE_KAKAO_MAPS_API_KEY,
     libraries: ['services', 'clusterer', 'drawing'],
   });
 
-  const handleBoundsCheck = useCallback((mapInstance) => {
-    if (!mapInstance) return;
-    const center = mapInstance.getCenter();
+  // 한반도 영역 가두기 (최적화)
+  const handleBoundsCheck = useCallback(() => {
+    const map = mapRef.current;
+    if (!map || isMoving.current) return;
+
+    const KOREA_BOUNDS = {
+      sw: { lat: 33.0, lng: 124.0 },
+      ne: { lat: 39.0, lng: 132.0 }
+    };
+
+    const center = map.getCenter();
     const lat = center.getLat();
     const lng = center.getLng();
     let targetLat = lat, targetLng = lng, isOutOfRange = false;
@@ -52,15 +45,14 @@ const Main = () => {
     if (lng < KOREA_BOUNDS.sw.lng) { targetLng = KOREA_BOUNDS.sw.lng; isOutOfRange = true; }
     if (lng > KOREA_BOUNDS.ne.lng) { targetLng = KOREA_BOUNDS.ne.lng; isOutOfRange = true; }
 
-    if (isOutOfRange) mapInstance.setCenter(new window.kakao.maps.LatLng(targetLat, targetLng));
+    if (isOutOfRange) {
+      map.setCenter(new window.kakao.maps.LatLng(targetLat, targetLng));
+    }
   }, []);
 
-  // [Zero-Lag] 위치 이동 함수
+  // 현위치 즉시 이동 (불필요한 효과 제거)
   const moveToMyLocation = () => {
     if (!navigator.geolocation) return;
-
-    // 위치 추적 상태로 즉시 변경 (버튼 색상 등 처리)
-    setIsFollowing(true);
 
     navigator.geolocation.getCurrentPosition(
       (position) => {
@@ -68,107 +60,103 @@ const Main = () => {
         const pos = { lat: latitude, lng: longitude };
         setMyLocation(pos);
         
+        const map = mapRef.current;
         if (map) {
+          isMoving.current = true;
           const latlng = new window.kakao.maps.LatLng(latitude, longitude);
-          // 즉시 부드럽게 이동
           map.panTo(latlng);
-          // 줌 레벨은 이동 완료 후 조용히 조절
-          setTimeout(() => {
-            if (map.getLevel() !== 4) map.setLevel(4, { animate: true });
-          }, 300);
+          map.setLevel(4, { animate: true });
+          setIsFollowing(true);
+          
+          // 이동 애니메이션 종료 후 영역 체크 재개
+          setTimeout(() => { isMoving.current = false; }, 500);
         }
       },
       (err) => {
-        setIsFollowing(false);
         if (err.code === 1) alert("위치 권한을 허용해 주세요.");
       },
       { enableHighAccuracy: true, timeout: 5000 }
     );
   };
 
+  // 실시간 추적
   useEffect(() => {
-    if (!myLocation) return;
+    if (!navigator.geolocation || !myLocation) return;
     const watchId = navigator.geolocation.watchPosition(
       (position) => {
         const { latitude, longitude } = position.coords;
-        setMyLocation({ lat: latitude, lng: longitude });
-        if (isFollowing && map) map.panTo(new window.kakao.maps.LatLng(latitude, longitude));
+        const pos = { lat: latitude, lng: longitude };
+        setMyLocation(pos);
+        if (isFollowing && mapRef.current) {
+          mapRef.current.panTo(new window.kakao.maps.LatLng(latitude, longitude));
+        }
       },
       null,
       { enableHighAccuracy: true }
     );
     return () => navigator.geolocation.clearWatch(watchId);
-  }, [map, isFollowing, myLocation]);
+  }, [isFollowing, myLocation]);
 
-  useEffect(() => {
-    if (map) setTimeout(() => map.relayout(), 100);
-  }, [map]);
-
-  if (loading) return <div className={`w-full h-screen ${isDark ? 'bg-[#05070a]' : 'bg-[#f4f7f9]'}`} />;
+  if (loading) return null;
 
   return (
-    <div className={`w-full h-screen relative overflow-hidden ${isDark ? 'bg-[#05070a]' : 'bg-[#f4f7f9]'}`}>
+    <div className="w-full h-screen relative bg-black">
       <Map
-        center={defaultCenter}
+        center={{ lat: 37.5665, lng: 126.9780 }}
         level={4}
-        onCreate={setMap}
-        style={containerStyle}
-        onDragStart={() => setIsFollowing(false)}
+        onCreate={(m) => {
+          mapRef.current = m;
+          m.setMaxLevel(11);
+        }}
+        style={{ width: '100%', height: '100%' }}
+        onDragStart={() => {
+            setIsFollowing(false);
+            isMoving.current = false;
+        }}
         onCenterChanged={handleBoundsCheck}
+        className={isDark ? 'kakao-dark-theme' : ''}
       >
         {myLocation && (
-          <CustomOverlayMap position={myLocation} zIndex={999}>
-            <div className="relative flex items-center justify-center pointer-events-none" style={{ transform: 'translate(0, -50%)' }}>
-              <div className="absolute w-16 h-16 bg-blue-500/20 rounded-full animate-ping"></div>
-              <div className="relative w-6 h-6 bg-blue-600 rounded-full border-2 border-white shadow-xl flex items-center justify-center">
-                <Navigation2 size={12} className="text-white fill-current" />
-              </div>
-            </div>
-          </CustomOverlayMap>
+          <MapMarker 
+            position={myLocation}
+            image={{
+                src: 'https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/markerStar.png',
+                size: { width: 24, height: 35 }
+            }}
+          />
         )}
       </Map>
 
-      {/* Control Panel (UI 최적화: Fixed & Layered) */}
-      <div className="fixed right-6 bottom-32 sm:right-8 sm:top-1/2 sm:-translate-y-1/2 z-[1000] flex flex-col gap-5">
-        
-        {/* Zoom Controls */}
-        <div className="flex flex-col bg-black/70 backdrop-blur-3xl border border-white/20 rounded-[28px] overflow-hidden shadow-2xl">
+      {/* Control UI (최대한 가볍게) */}
+      <div className="absolute right-6 top-1/2 -translate-y-1/2 z-10 flex flex-col gap-4 pointer-events-none">
+        <div className="flex flex-col bg-white/90 border border-gray-200 rounded-xl overflow-hidden shadow-lg pointer-events-auto">
           <button 
-            type="button" 
-            onClick={() => map?.setLevel(map.getLevel() - 1, { animate: true })} 
-            className="p-6 sm:p-5 text-white active:bg-white/20 border-b border-white/10 transition-colors"
+            onClick={() => mapRef.current?.setLevel(mapRef.current.getLevel() - 1, { animate: true })}
+            className="p-4 hover:bg-gray-100 active:bg-gray-200 border-b border-gray-200 transition-colors"
           >
-            <Plus size={24} className="sm:w-5 sm:h-5" />
+            <Plus size={20} className="text-gray-800" />
           </button>
           <button 
-            type="button" 
-            onClick={() => { if (map?.getLevel() < 11) map?.setLevel(map.getLevel() + 1, { animate: true }); }} 
-            className="p-6 sm:p-5 text-white/70 active:bg-white/20 transition-colors"
+            onClick={() => { if (mapRef.current?.getLevel() < 11) mapRef.current.setLevel(mapRef.current.getLevel() + 1, { animate: true }); }}
+            className="p-4 hover:bg-gray-100 active:bg-gray-200 transition-colors"
           >
-            <Minus size={24} className="sm:w-5 sm:h-5" />
+            <Minus size={20} className="text-gray-600" />
           </button>
         </div>
-        
-        {/* Single Target Button (No Spinner, No Delay) */}
         <button 
-          type="button"
           onClick={moveToMyLocation}
-          className={`p-6 sm:p-6 rounded-full backdrop-blur-3xl border transition-all duration-300 shadow-2xl flex items-center justify-center active:scale-90
-            ${isFollowing ? 'bg-blue-600 border-blue-400 text-white' : 'bg-black/70 border-white/20 text-white/80'}
+          className={`p-4 rounded-full shadow-xl pointer-events-auto transition-all active:scale-90
+            ${isFollowing ? 'bg-blue-600 text-white' : 'bg-white text-gray-800 border border-gray-200'}
           `}
         >
-          <Target size={32} className="sm:w-8 sm:h-8" />
+          <Target size={24} />
         </button>
       </div>
 
       <style>{`
-        .kakao-dark-theme { 
-            filter: invert(100%) hue-rotate(180deg) brightness(0.95) contrast(1.1) grayscale(0.1); 
-            background-color: #05070a !important; 
-        }
-        .kakao-dark-theme img[src*="dapi.kakao.com"] { filter: none !important; }
+        .kakao-dark-theme { filter: invert(100%) hue-rotate(180deg) brightness(0.9) grayscale(0.2); background-color: #000 !important; }
+        .kakao-dark-theme img { filter: none !important; }
         * { -webkit-tap-highlight-color: transparent; }
-        button { touch-action: manipulation; }
       `}</style>
     </div>
   );
