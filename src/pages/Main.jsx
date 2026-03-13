@@ -4,12 +4,12 @@ import { useTheme } from '../context/ThemeContext';
 import { Crosshair } from 'lucide-react';
 
 /**
- * [Page] 메인 페이지 (커스텀 오렌지 마커 적용 버전)
- * @version 8.5.0
+ * [Page] 메인 페이지 (마커 디자인 고도화 버전)
+ * @version 8.6.0
  * @author Antigravity
  * @description 
- * - 현위치 마커를 사용자 요청에 따라 심플한 원형 오렌지 컬러(#f57d00)로 변경했습니다.
- * - 마커 중앙에 작은 흰색 원을 배치하고, 흰색 테두리와 반투명 효과를 적용했습니다.
+ * - 현위치 마커의 오렌지 컬러(#f57d00)를 불투명하게 변경하고 사이즈를 키웠습니다.
+ * - 중앙 흰색 원과 대비를 강조하여 시인성을 높였습니다.
  */
 
 const Main = () => {
@@ -64,12 +64,12 @@ const Main = () => {
         style={{ width: '100%', height: '100%' }}
         className={isDark ? 'kakao-dark-theme' : ''}
       >
-        {/* 커스텀 오렌지 위치 마커 */}
+        {/* 커스텀 오렌지 위치 마커 (불투명 + 사이즈 확대) */}
         {myLocation && (
           <CustomOverlayMap position={myLocation} zIndex={999}>
             <div className="flex items-center justify-center transform -translate-y-1/2 pointer-events-none">
-              <div className="w-5 h-5 bg-[#f57d00]/80 border-2 border-white rounded-full flex items-center justify-center shadow-[0_2px_8px_rgba(0,0,0,0.3)]">
-                <div className="w-1.5 h-1.5 bg-white rounded-full shadow-sm" />
+              <div className="w-6 h-6 bg-[#f57d00] border-2 border-white rounded-full flex items-center justify-center shadow-[0_3px_12px_rgba(0,0,0,0.35)]">
+                <div className="w-2 h-2 bg-white rounded-full shadow-sm" />
               </div>
             </div>
           </CustomOverlayMap>
