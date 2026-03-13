@@ -1,16 +1,16 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Map, MapMarker, CustomOverlayMap, useKakaoLoader } from 'react-kakao-maps-sdk';
 import { useTheme } from '../context/ThemeContext';
-import { Compass, Plus, Minus, Target, Navigation2 } from 'lucide-react';
+import { Compass, Plus, Minus, Target, Navigation2, Loader2 } from 'lucide-react';
 
 /**
- * [Page] 메인 페이지 (iOS/모바일 실기기 완전 대응 버전)
- * @version 6.1.0
+ * [Page] 메인 페이지 (iOS 실기기 완벽 터치 & Geolocation 복구 버전)
+ * @version 6.2.0
  * @author Antigravity
  * @description 
- * - iOS Safari에서 Geolocation 권한 요청 및 마커 렌더링 문제를 해결했습니다.
- * - 지도의 다크 테두리 필터가 모바일에서 마커를 가리는 현상을 방지하기 위해 스타일을 조정했습니다.
- * - 버튼 클릭 시 즉각적인 피드백을 강화했습니다.
+ * - iOS Safari에서 버튼 터치가 먹통이 되는 현상을 방지하기 위해 CSS Z-Index와 터치 이벤트를 전면 재설계했습니다.
+ * - 버튼 클릭 시 즉각적인 시각적 피드백(Loading 상태)을 추가하여 인터랙션 유무를 명확히 했습니다.
+ * - Geolocation 요청 시 타임아웃 및 에러 처리를 강화하고, 사용자에게 알림(Alert)을 통해 상태를 전달합니다.
  */
 
 const containerStyle = {
@@ -33,6 +33,7 @@ const Main = () => {
   const [map, setMap] = useState(null);
   const [myLocation, setMyLocation] = useState(null);
   const [isFollowing, setIsFollowing] = useState(false);
+  const [isLocating, setIsLocating] = useState(false); // GPS 로딩 상태
   const isInitialSet = useRef(false);
 
   const [loading, error] = useKakaoLoader({
@@ -58,9 +59,14 @@ const Main = () => {
     }
   }, []);
 
-  // 위치 요청 및 지도 반영 통합 로직
-  const fetchAndApplyLocation = useCallback((shouldAnimate = true) => {
-    if (!navigator.geolocation) return;
+  // 현위치 호출 및 지도 반영 (에러 헨들링 강화)
+  const fetchLocation = useCallback((shouldAnimate = true) => {
+    if (!navigator.geolocation) {
+      alert("브라우저가 위치 정보를 지원하지 않습니다.");
+      return;
+    }
+
+    setIsLocating(true);
 
     navigator.geolocation.getCurrentPosition(
       (position) => {
@@ -73,34 +79,42 @@ const Main = () => {
           if (shouldAnimate) {
             map.panTo(latlng);
             setTimeout(() => {
-                if (map.getLevel() !== 4) map.setLevel(4, { animate: true });
+              map.setLevel(4, { animate: true });
             }, 300);
           } else {
             map.setCenter(latlng);
             map.setLevel(4);
           }
-          setIsFollowing(true);
         }
+        setIsFollowing(true);
+        setIsLocating(false);
       },
       (err) => {
-        console.warn("Location error:", err);
-        // iOS에서 최초 거부 후 버튼 클릭 시 안내를 위해 alert는 최소화합니다.
+        setIsLocating(false);
+        let errorMsg = "위치 정보를 가져올 수 없습니다.";
+        if (err.code === 1) errorMsg = "위치 권한이 거부되었습니다. 설정에서 허용해 주세요.";
+        else if (err.code === 2) errorMsg = "네트워크 문제로 위치를 찾을 수 없습니다.";
+        else if (err.code === 3) errorMsg = "위치 정보 요청 시간이 초과되었습니다.";
+        console.error("GeoError:", err);
+        alert(errorMsg);
       },
-      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+      { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 }
     );
   }, [map]);
 
-  // 초기 로드 시 현위치 시도
+  // 초기 로드 시 시도
   useEffect(() => {
     if (map && !isInitialSet.current) {
-        fetchAndApplyLocation(false);
-        isInitialSet.current = true;
-        // 모바일 브레이크 방지를 위한 강제 리아웃
-        setTimeout(() => map.relayout(), 100);
+      // 렌더링 안정성을 위해 약간 지연 후 요청
+      setTimeout(() => {
+        fetchLocation(false);
+        map.relayout();
+      }, 500);
+      isInitialSet.current = true;
     }
-  }, [map, fetchAndApplyLocation]);
+  }, [map, fetchLocation]);
 
-  // 실시간 위치 추적 (Background)
+  // 실시간 트래킹
   useEffect(() => {
     if (!navigator.geolocation) return;
     const watchId = navigator.geolocation.watchPosition(
@@ -112,15 +126,10 @@ const Main = () => {
         }
       },
       null,
-      { enableHighAccuracy: true, maximumAge: 0 }
+      { enableHighAccuracy: true }
     );
     return () => navigator.geolocation.clearWatch(watchId);
   }, [map, isFollowing]);
-
-  const zoomIn = () => map?.setLevel(map.getLevel() - 1, { animate: true });
-  const zoomOut = () => {
-    if (map && map.getLevel() < 11) map.setLevel(map.getLevel() + 1, { animate: true });
-  };
 
   if (loading) return <div className={`w-full h-screen ${isDark ? 'bg-[#05070a]' : 'bg-[#f4f7f9]'}`} />;
 
@@ -133,20 +142,15 @@ const Main = () => {
         style={containerStyle}
         onDragStart={() => setIsFollowing(false)}
         onCenterChanged={handleBoundsCheck}
-        onTileLoaded={(m) => m.setMaxLevel(11)}
-        className={isDark ? 'kakao-dark-theme' : ''}
       >
-        {/* iOS 실기기에서 마커 유실 방지를 위해 CustomOverlay 옵션 최적화 */}
         {myLocation && (
           <CustomOverlayMap 
             position={myLocation} 
-            zIndex={100} 
-            clickable={false}
+            zIndex={999} 
           >
-            <div className="relative flex items-center justify-center pointer-events-none">
+            <div className="relative flex items-center justify-center pointer-events-none" style={{ transform: 'translate(0, -50%)' }}>
               <div className="absolute w-20 h-20 bg-blue-500/20 rounded-full animate-ping"></div>
-              <div className="absolute w-12 h-12 bg-blue-400/30 rounded-full animate-ping" style={{ animationDelay: '0.4s' }}></div>
-              <div className="relative w-7 h-7 bg-blue-600 rounded-full border-[3px] border-white shadow-[0_0_20px_rgba(37,99,235,1)] flex items-center justify-center">
+              <div className="relative w-7 h-7 bg-blue-600 rounded-full border-[3px] border-white shadow-2xl flex items-center justify-center">
                 <Navigation2 size={14} className="text-white fill-current" />
               </div>
             </div>
@@ -154,29 +158,45 @@ const Main = () => {
         )}
       </Map>
 
-      {/* Control Panel (터치 지연 방지를 위해 active 스타일과 pointer-events 최적화) */}
-      <div className="absolute right-6 bottom-32 sm:right-8 sm:top-1/2 sm:-translate-y-1/2 z-50 flex flex-col gap-5">
-        <div className="flex flex-col bg-black/60 backdrop-blur-3xl border border-white/10 rounded-[28px] overflow-hidden shadow-2xl pointer-events-auto">
+      {/* Control Panel (Z-Index 최상위 배치 및 터치 미스 방지) */}
+      <div className="fixed right-6 bottom-32 sm:right-8 sm:top-1/2 sm:-translate-y-1/2 z-[9999] flex flex-col gap-6">
+        
+        {/* Zoom Controls */}
+        <div className="flex flex-col bg-black/70 backdrop-blur-3xl border border-white/20 rounded-[24px] overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
           <button 
-            onClick={zoomIn} 
-            className="p-6 sm:p-5 hover:bg-white/10 border-b border-white/5 text-white active:bg-blue-500/20 transition-all touch-manipulation"
+            type="button"
+            onClick={(e) => { e.stopPropagation(); map?.setLevel(map.getLevel() - 1, { animate: true }); }}
+            className="p-6 sm:p-4 text-white active:bg-white/20 transition-all border-b border-white/10"
           >
-            <Plus size={28} className="sm:w-5 sm:h-5" />
+            <Plus size={28} className="sm:w-6 sm:h-6" />
           </button>
           <button 
-            onClick={zoomOut} 
-            className="p-6 sm:p-5 hover:bg-white/10 text-white active:bg-blue-500/20 transition-all touch-manipulation"
+            type="button"
+            onClick={(e) => { e.stopPropagation(); if (map?.getLevel() < 11) map?.setLevel(map.getLevel() + 1, { animate: true }); }}
+            className="p-6 sm:p-4 text-white/70 active:bg-white/20 transition-all"
           >
-            <Minus size={28} className="sm:w-5 sm:h-5" />
+            <Minus size={28} className="sm:w-6 sm:h-6" />
           </button>
         </div>
+
+        {/* My Location Button */}
         <button 
-          onClick={() => fetchAndApplyLocation(true)} 
-          className={`p-6 sm:p-5 rounded-full backdrop-blur-3xl border transition-all duration-500 shadow-2xl flex items-center justify-center pointer-events-auto touch-manipulation
-            ${isFollowing ? 'bg-blue-600 border-blue-400 text-white animate-pulse' : 'bg-black/60 border-white/10 text-white/80'}
-          `}
+          type="button"
+          onClick={(e) => { e.stopPropagation(); fetchLocation(true); }}
+          disabled={isLocating}
+          className={`p-6 sm:p-5 rounded-full backdrop-blur-3xl border transition-all duration-300 shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex items-center justify-center active:scale-90
+            ${isLocating 
+              ? 'bg-amber-500 border-amber-300 text-white' 
+              : isFollowing 
+                ? 'bg-blue-600 border-blue-400 text-white animate-pulse' 
+                : 'bg-black/70 border-white/20 text-white/80'
+            }`}
         >
-          <Target size={32} className="sm:w-6 sm:h-6" />
+          {isLocating ? (
+            <Loader2 size={32} className="animate-spin sm:w-7 sm:h-7" />
+          ) : (
+            <Target size={32} className="sm:w-7 sm:h-7" />
+          )}
         </button>
       </div>
 
@@ -185,17 +205,12 @@ const Main = () => {
             filter: invert(100%) hue-rotate(180deg) brightness(0.95) contrast(1.1) grayscale(0.1); 
             background-color: #05070a !important; 
         }
-        /* Safari에서 필터 적용 시 겹침 현상 방지 */
-        .kakao-dark-theme img {
-            -webkit-user-drag: none;
-            -webkit-user-select: none;
-        }
         .kakao-dark-theme img[src*="dapi.kakao.com"] { filter: none !important; }
-        .kakao-dark-theme .kakao-copyright, .kakao-dark-theme .kakao-logo { filter: invert(100%) hue-rotate(180deg) !important; opacity: 0.3; }
         
-        .touch-manipulation {
-            touch-action: manipulation;
+        button {
             -webkit-tap-highlight-color: transparent;
+            cursor: pointer;
+            pointer-events: auto !important;
         }
 
         @media (max-width: 640px) { 
