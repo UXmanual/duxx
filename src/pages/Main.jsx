@@ -107,6 +107,7 @@ const Main = () => {
   const moveToMyLocation = useCallback(() => {
     if (myLocation && map) {
       map.panTo(new window.kakao.maps.LatLng(myLocation.lat, myLocation.lng));
+      map.setLevel(4, { animate: true });
       setIsFollowing(true);
     }
   }, [myLocation, map]);
