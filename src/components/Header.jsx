@@ -5,10 +5,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 /**
  * [Component] 상단 헤더
- * @version 11.3.0
+ * @version 11.4.0
+ * @author Antigravity
  * @description
- * - 'display: contents'를 사용하여 시맨틱 태그는 유지하되 레이아웃 엔진에서는 하위 요소를 루트로 승격시켰습니다.
- * - 이로써 로고가 지도와 직접 블렌딩(Overlay)될 수 있는 환경을 선사합니다.
+ * - 로고의 부모 컨테이너에 직접 블렌딩 모드를 적용하여 효과를 극대화했습니다.
+ * - 지도의 배경색이 투명하게 투영되도록 컬러 설정을 최적화했습니다.
  */
 const Header = () => {
   const { isDark, toggleTheme } = useTheme();
@@ -27,14 +28,14 @@ const Header = () => {
     <header style={{ display: 'contents' }}>
       {/* 
         [Logo Layer] 
-        z-index: 10으로 지도 위에 뜨면서도, 
-        부모의 스태킹 격리가 없어 지도 배경과 Overlay 블렌딩이 작동합니다.
+        사용자 피드백을 반영하여 부모 div에 'overlay' 블렌딩을 적용했습니다. 
+        이로써 로고 텍스트가 배경 지도와 훨씬 강력하고 자연스럽게 결합됩니다.
       */}
-      <div className="absolute top-0 left-0 px-10 h-24 flex items-center z-10 pointer-events-none">
-        <span 
-          className="font-black text-[24px] tracking-[0] uppercase select-none pointer-events-auto"
-          style={{ mixBlendMode: 'overlay', color: 'inherit' }}
-        >
+      <div 
+        className="absolute top-0 left-0 px-10 h-24 flex items-center z-10 pointer-events-none"
+        style={{ mixBlendMode: 'overlay' }}
+      >
+        <span className="font-black text-[24px] tracking-[0] uppercase select-none pointer-events-auto">
           DUXX
         </span>
       </div>
