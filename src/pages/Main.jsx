@@ -1,15 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Map, MapMarker, ZoomControl, MapTypeControl, useKakaoLoader } from 'react-kakao-maps-sdk';
+import { Map, MapMarker, useKakaoLoader } from 'react-kakao-maps-sdk';
 import { useTheme } from '../context/ThemeContext';
 import { Target } from 'lucide-react';
 
 /**
- * [Page] 메인 페이지 (카카오 공식 컨트롤 통합 버전)
- * @version 7.1.0
+ * [Page] 메인 페이지 (현위치 전용 미니멀 버전)
+ * @version 7.2.0
  * @author Antigravity
  * @description 
- * - 모든 커스텀 UI를 삭제하고 카카오맵 SDK 표준 컨트롤(ZoomControl)을 적용했습니다.
- * - '현위치' 버튼은 카카오맵 공식 디자인 가이드를 준수하여 최소화된 형태로 구현했습니다.
+ * - 사용자의 요청에 따라 줌 컨트롤, 지도 타입 컨트롤을 모두 삭제했습니다.
+ * - 오직 '현위치' 버튼만 우측 하단에 유지합니다.
  */
 
 const Main = () => {
@@ -23,7 +23,6 @@ const Main = () => {
     libraries: ['services', 'clusterer', 'drawing'],
   });
 
-  // 현위치 이동 로직 (엔진 직결)
   const moveToMyLocation = () => {
     if (!navigator.geolocation) return;
     navigator.geolocation.getCurrentPosition(
@@ -67,35 +66,27 @@ const Main = () => {
         level={4}
         onCreate={(m) => {
           mapRef.current = m;
-          // 최대 줌아웃 제한
           m.setMaxLevel(11);
-          // 드래그 시 추적 해제
           window.kakao.maps.event.addListener(m, 'dragstart', () => setIsFollowing(false));
         }}
         style={{ width: '100%', height: '100%' }}
         className={isDark ? 'kakao-dark-theme' : ''}
       >
-        {/* 카카오 공식 줌 컨트롤 */}
-        <ZoomControl position={window.kakao.maps.ControlPosition.RIGHT} />
-        
-        {/* 카카오 공식 지도 타입 컨트롤 */}
-        <MapTypeControl position={window.kakao.maps.ControlPosition.TOPRIGHT} />
-
         {myLocation && (
           <MapMarker position={myLocation} />
         )}
       </Map>
 
-      {/* 공식 스타일 현위치 버튼 (카카오맵 표준 디자인 모사) */}
-      <div className="absolute right-[11px] bottom-[110px] z-10">
+      {/* 현위치 버튼만 유지 */}
+      <div className="absolute right-4 bottom-32 z-10">
         <button 
           onClick={moveToMyLocation}
-          className={`w-[36px] h-[36px] bg-white border border-gray-300 rounded shadow-sm flex items-center justify-center active:bg-gray-100 transition-colors
+          className={`w-[42px] h-[42px] bg-white border border-gray-300 rounded-lg shadow-lg flex items-center justify-center active:bg-gray-100 transition-all
             ${isFollowing ? 'text-blue-500' : 'text-gray-700'}
           `}
           title="현위치"
         >
-          <Target size={20} fill={isFollowing ? "currentColor" : "none"} />
+          <Target size={24} fill={isFollowing ? "currentColor" : "none"} />
         </button>
       </div>
 
@@ -104,11 +95,8 @@ const Main = () => {
           filter: invert(100%) hue-rotate(180deg) brightness(0.9) grayscale(0.2); 
           background-color: #fff !important; 
         }
-        /* 다크모드 시 마커/로고 속성 보호 */
         .kakao-dark-theme img { filter: none !important; }
         .kakao-dark-theme .kakao-logo, .kakao-dark-theme .kakao-copyright { filter: invert(100%) hue-rotate(180deg) !important; opacity: 0.4; }
-        
-        /* 모바일에서 불필요한 레이아웃 보정 */
         * { -webkit-tap-highlight-color: transparent; }
       `}</style>
     </div>
