@@ -190,8 +190,8 @@ const Main = () => {
             yAnchor={1.2}
             zIndex={10}
           >
-            <div className={`relative px-4 py-2.5 bg-white border-2 border-[#FF4D00] rounded-[18px] shadow-lg flex items-center gap-2 group animate-pop-in ${isDark ? 'custom-marker-original-color' : ''}`}>
-              <span className="text-[14px] font-bold text-black whitespace-nowrap">
+            <div className={`relative px-3.5 py-2 bg-white border-[1.5px] border-[#FF4D00] rounded-[14px] shadow-lg flex items-center gap-2 group animate-pop-in ${isDark ? 'custom-marker-original-color' : ''}`}>
+              <span className="text-[13px] font-bold text-black whitespace-nowrap leading-none tracking-tight">
                 {memo.text}
               </span>
               <button 
@@ -199,14 +199,19 @@ const Main = () => {
                   e.stopPropagation();
                   handleDeleteMemo(memo.id);
                 }}
-                className="w-5 h-5 rounded-full bg-gray-100 flex items-center justify-center text-gray-400 hover:text-[#FF4D00] transition-colors"
+                className="w-4 h-4 rounded-full bg-gray-50 flex items-center justify-center text-gray-300 hover:text-[#FF4D00] transition-colors"
                 aria-label="메모 삭제"
               >
-                <X size={12} strokeWidth={3} />
+                <X size={10} strokeWidth={3} />
               </button>
               
-              {/* 말풍선 꼬리 */}
-              <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-white border-r-2 border-b-2 border-[#FF4D00] rotate-45 transform" />
+              {/* [Refined Tail] 라운드 시작점과 매끄럽게 연결되는 SVG 꼬리 */}
+              <div className="absolute -bottom-[8px] left-1/2 -translate-x-1/2 w-4 h-2">
+                <svg width="16" height="8" viewBox="0 0 16 8" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M8 8L0 0H16L8 8Z" fill="white"/>
+                  <path d="M0 0L8 8L16 0" stroke="#FF4D00" strokeWidth="1.5"/>
+                </svg>
+              </div>
             </div>
           </CustomOverlayMap>
         ))}
