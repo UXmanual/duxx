@@ -4,18 +4,24 @@ import { useTheme } from '../context/ThemeContext';
 import { Compass, Plus, Minus, Target, Navigation2 } from 'lucide-react';
 
 /**
- * [Page] 메인 페이지 (카카오 맵 완전 순정 복구 버전)
- * @version 5.3.0
+ * [Page] 메인 페이지 (카카오 맵 영역 가두기 버전)
+ * @version 5.4.0
  * @author Antigravity
  * @description 
- * - 사용자의 강력한 요청에 따라 카카오 맵의 모든 순정 인터랙션을 완벽하게 복구했습니다.
- * - 줌인/줌아웃/드래그 시 리액트 상태가 간섭하지 않도록 설계를 단순화했습니다.
- * - 초기 로드 시 현위치(레벨 4)를 우선 표시하며, 최대 줌아웃만 레벨 11로 제한합니다.
+ * - 줌인(Zoom-in)은 절대 막지 않으며, 모든 확대 기능을 순정 상태로 유지합니다.
+ * - 지도를 드래그할 때 한반도 영역을 벗어나 흰 배경이 보이는 것을 방지하는 가두기 로직을 탑재했습니다.
+ * - 초기 로드 시 현위치(레벨 4)를 우선 표시하며, 최대 줌아웃은 레벨 11로 제한합니다.
  */
 
 const containerStyle = {
   width: '100%',
   height: '100vh',
+};
+
+// 한반도 유효 영역 (드래그 제한용)
+const KOREA_BOUNDS = {
+  sw: { lat: 31.0, lng: 122.0 },
+  ne: { lat: 40.5, lng: 134.0 }
 };
 
 const defaultCenter = {
@@ -30,14 +36,32 @@ const Main = () => {
   const [isFollowing, setIsFollowing] = useState(false);
   const isInitialSet = useRef(false);
 
-  // 초기값으로만 사용하고, 이후에는 map 인스턴스를 직접 제어하여 성능과 인터랙션을 보장합니다.
-  const [initialCenter] = useState(defaultCenter);
-  const [initialLevel] = useState(4);
-
   const [loading, error] = useKakaoLoader({
     appkey: import.meta.env.VITE_KAKAO_MAPS_API_KEY,
     libraries: ['services', 'clusterer', 'drawing'],
   });
+
+  // 영역 가두기 로직 (드래그 시 호출)
+  const handleBoundsCheck = useCallback((mapInstance) => {
+    if (!mapInstance) return;
+    
+    const center = mapInstance.getCenter();
+    const lat = center.getLat();
+    const lng = center.getLng();
+    
+    let targetLat = lat;
+    let targetLng = lng;
+    let isOutOfRange = false;
+
+    if (lat < KOREA_BOUNDS.sw.lat) { targetLat = KOREA_BOUNDS.sw.lat; isOutOfRange = true; }
+    if (lat > KOREA_BOUNDS.ne.lat) { targetLat = KOREA_BOUNDS.ne.lat; isOutOfRange = true; }
+    if (lng < KOREA_BOUNDS.sw.lng) { targetLng = KOREA_BOUNDS.sw.lng; isOutOfRange = true; }
+    if (lng > KOREA_BOUNDS.ne.lng) { targetLng = KOREA_BOUNDS.ne.lng; isOutOfRange = true; }
+
+    if (isOutOfRange) {
+      mapInstance.setCenter(new window.kakao.maps.LatLng(targetLat, targetLng));
+    }
+  }, []);
 
   // 현위치 실시간 감지 및 초기 위치 설정
   useEffect(() => {
@@ -49,13 +73,11 @@ const Main = () => {
           setMyLocation(pos);
           
           if (map) {
-            // 최초 로드 시 현위치로 이동
             if (!isInitialSet.current) {
               map.setCenter(new window.kakao.maps.LatLng(latitude, longitude));
               map.setLevel(4);
               isInitialSet.current = true;
             }
-            // 따라가기 모드 시 이동
             if (isFollowing) {
               map.panTo(new window.kakao.maps.LatLng(latitude, longitude));
             }
@@ -68,7 +90,7 @@ const Main = () => {
     }
   }, [map, isFollowing]);
 
-  // 버튼 인터랙션 (SDK 순정 방식)
+  // 버튼 인터랙션 (명령형 접근으로 리액트 상태 충돌 방지)
   const zoomIn = () => {
     if (map) map.setLevel(map.getLevel() - 1, { animate: true });
   };
@@ -110,14 +132,15 @@ const Main = () => {
     <div className={`w-full h-screen relative overflow-hidden transition-colors duration-1000 ${isDark ? 'bg-[#05070a]' : 'bg-[#f4f7f9]'}`}>
       
       <Map
-        center={initialCenter}
-        level={initialLevel}
+        center={defaultCenter}
+        level={4}
         onCreate={(m) => {
           setMap(m);
-          m.setMaxLevel(11); // 축소 한도 11로 설정
+          m.setMaxLevel(11);
         }}
         style={containerStyle}
         onDragStart={() => setIsFollowing(false)}
+        onCenterChanged={handleBoundsCheck} // 드래그 시 마다 영역 이탈 체크
         className={`transition-all duration-1000 ${isDark ? 'kakao-dark-theme' : ''}`}
       >
         {myLocation && (
@@ -148,7 +171,7 @@ const Main = () => {
             <button onClick={zoomIn} className="p-4 hover:bg-white/10 transition-colors border-b border-white/5">
                 <Plus size={20} />
             </button>
-            <button onClick={zoomOut} className="p-4 hover:bg-white/10 transition-colors">
+            <button onClick={zoomOut} className="p-4 hover:bg-white/10 transition-colors text-white/70 hover:text-white">
                 <Minus size={20} />
             </button>
         </div>
