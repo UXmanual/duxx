@@ -12,20 +12,14 @@ import Footer from './Footer';
  */
 const Layout = () => {
   return (
-    <div 
-      id="duxx-layout-root" 
-      className="min-h-screen text-theme-text-primary font-sans antialiased overflow-hidden relative"
-      style={{ isolation: 'isolate' }}
-    >
-      {/* 1. 상단 헤더 (UI Layer) */}
-      <Header />
-
-      {/* 2. 메인 콘텐츠 (Map Backdrop Layer) */}
-      <main id="main-content" data-section="main-content" className="absolute inset-0 z-0">
+    <div id="duxx-layout-root" className="relative w-full h-screen overflow-hidden">
+      {/* 1. 메인 콘텐츠 (Backdrop) */}
+      <main id="main-content" className="absolute inset-0 z-0">
         <Outlet />
       </main>
 
-      {/* 3. 하단 푸터 (UI Layer) */}
+      {/* 2. 인터페이스 레이어 (Foreground / Blending) */}
+      <Header />
       <Footer />
     </div>
   );

@@ -4,12 +4,12 @@ import { Sun, Moon, MoonStar } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 /**
- * [Component] 상단 헤더 (배경 반전 강화 버전)
- * @version 10.4.0
+ * [Component] 상단 헤더 (레이어 통합 버전)
+ * @version 10.6.0
  * @author Antigravity
  * @description 
- * - 레이어 분리를 유발하는 transition을 제거하고 순수 CSS 블렌딩에 집중했습니다.
- * - 지도의 픽셀과 직접 연산될 수 있도록 최상위 레이아웃 컨텍스트를 활용합니다.
+ * - 'fixed' 대신 'absolute'를 사용하여 지도와 동일한 렌더링 레이어에 배치했습니다.
+ * - 이로써 'mix-blend-mode: difference'가 지도 배경과 직접 연산될 수 있도록 개선했습니다.
  */
 const Header = () => {
   const { isDark, toggleTheme } = useTheme();
@@ -25,15 +25,15 @@ const Header = () => {
   }, [isDark]);
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-10 pointer-events-none">
+    <header className="absolute top-0 left-0 right-0 z-50 pointer-events-none">
       <div className="w-full px-10 h-24 flex items-center justify-between">
         <div className="flex items-center gap-2 pointer-events-auto">
-          {/* Logo: 배경 반전 효과를 위한 전용 스타일 */}
+          {/* Logo: 배경 반전 효과 (absolute 환경에서 작동 극대화) */}
           <span 
             className="font-black text-[24px] tracking-[0] uppercase select-none"
             style={{ 
               mixBlendMode: 'difference',
-              color: '#ffffff',
+              color: '#ffffff', // 화이트일 때 배경색 반전이 가장 명확함
               display: 'block'
             }}
           >
