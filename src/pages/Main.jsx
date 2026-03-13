@@ -4,13 +4,13 @@ import { useTheme } from '../context/ThemeContext';
 import { Compass, Plus, Minus, Target, Navigation2, Loader2 } from 'lucide-react';
 
 /**
- * [Page] 메인 페이지 (수동 위치 권한 요청 버전)
- * @version 6.5.0
+ * [Page] 메인 페이지 (모바일 GPS 수신 최적화 버전)
+ * @version 6.6.0
  * @author Antigravity
  * @description 
- * - 사이트 진입 시 자동으로 위치 정보를 요청하지 않습니다.
- * - 반드시 사용자가 '현위치 버튼'을 눌렀을 때만 권한을 체크하고 요청합니다.
- * - 권한 거부 시 시스템 고유의 Alert 창을 통해 안내합니다.
+ * - 모바일에서 '위치 정보를 사용할 수 없습니다' 에러(code 2) 발생 시 대응 로직을 강화했습니다.
+ * - 수신 강도가 낮은 환경을 고려하여 Timeout을 늘리고, 정확도(Accuracy) 옵션을 유연하게 조정합니다.
+ * - 버튼 클릭 시 즉각적인 시각 피드백을 유지하며, 위치 확보 성공률을 높였습니다.
  */
 
 const containerStyle = {
@@ -56,14 +56,21 @@ const Main = () => {
     if (isOutOfRange) mapInstance.setCenter(new window.kakao.maps.LatLng(targetLat, targetLng));
   }, []);
 
-  // 실제 위치를 받아와서 지도를 이동시키는 공통 함수
-  const fetchAndMove = useCallback((shouldAnimate = true) => {
+  // 위치 확보 시도 함수 (실기기 대응 강화)
+  const fetchAndMove = useCallback((shouldAnimate = true, retryWithLowAccuracy = false) => {
     if (!navigator.geolocation) {
       alert("이 브라우저는 위치 정보를 지원하지 않습니다.");
       return;
     }
 
     setIsLocating(true);
+    
+    const options = {
+      enableHighAccuracy: !retryWithLowAccuracy, // 고정확도 실패 시 저정확도로 재시도
+      timeout: retryWithLowAccuracy ? 10000 : 20000,
+      maximumAge: 30000 // 30초 이내의 캐시된 위치 허용 (반응 속도 향상)
+    };
+
     navigator.geolocation.getCurrentPosition(
       (position) => {
         const { latitude, longitude } = position.coords;
@@ -74,7 +81,9 @@ const Main = () => {
           const latlng = new window.kakao.maps.LatLng(latitude, longitude);
           if (shouldAnimate) {
             map.panTo(latlng);
-            setTimeout(() => map.setLevel(4, { animate: true }), 300);
+            setTimeout(() => {
+                if (map.getLevel() !== 4) map.setLevel(4, { animate: true });
+            }, 300);
           } else {
             map.setCenter(latlng);
             map.setLevel(4);
@@ -84,26 +93,34 @@ const Main = () => {
         setIsLocating(false);
       },
       (err) => {
+        // 고정확도 환경에서 실패했을 경우, 일반 정확도로 1회 자동 재시도
+        if (!retryWithLowAccuracy && (err.code === 2 || err.code === 3)) {
+          fetchAndMove(shouldAnimate, true);
+          return;
+        }
+
         setIsLocating(false);
         setIsFollowing(false);
+        
         if (err.code === 1) {
-          alert("위치 정보 권한이 거부되었습니다. 원활한 서비를 위해 설정에서 위치 권한을 허용해 주세요.");
+          alert("위치 정보 권한이 거부되었습니다.\n설정 > 브라우저 > 위치 권한을 허용해 주세요.");
         } else if (err.code === 2) {
-          alert("위치 정보를 사용할 수 없습니다. GPS 연결을 확인해 주세요.");
+          alert("GPS 신호를 잡을 수 없습니다.\n실외나 창가에서 다시 시도해 주세요.");
         } else if (err.code === 3) {
-          alert("위치 정보 요청 시간이 초과되었습니다.");
+          alert("위치 요청 시간이 초과되었습니다.\n다시 시도해 주세요.");
+        } else {
+          alert("위치 정보를 가져오는 중 오류가 발생했습니다.");
         }
       },
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+      options
     );
   }, [map]);
 
   const moveToMyLocation = useCallback(() => {
-    // 버튼 클릭 시 권한 체크 및 요청 실행
     fetchAndMove(true);
   }, [fetchAndMove]);
 
-  // 실시간 트래킹 (이미 권한이 있고 위치가 있을 때만 작동하도록 제한)
+  // 실시간 트래킹 (배터리 효율을 위해 maximumAge 설정)
   useEffect(() => {
     if (!navigator.geolocation || !myLocation) return;
     const watchId = navigator.geolocation.watchPosition(
@@ -113,7 +130,7 @@ const Main = () => {
         if (isFollowing && map) map.panTo(new window.kakao.maps.LatLng(latitude, longitude));
       },
       null,
-      { enableHighAccuracy: true }
+      { enableHighAccuracy: true, maximumAge: 10000 }
     );
     return () => navigator.geolocation.clearWatch(watchId);
   }, [map, isFollowing, myLocation]);
@@ -133,7 +150,6 @@ const Main = () => {
         style={containerStyle}
         onDragStart={() => setIsFollowing(false)}
         onCenterChanged={handleBoundsCheck}
-        className={isDark ? 'kakao-dark-theme' : ''}
       >
         {myLocation && (
           <CustomOverlayMap position={myLocation} zIndex={999}>
@@ -168,7 +184,7 @@ const Main = () => {
       <style>{`
         .kakao-dark-theme { filter: invert(100%) hue-rotate(180deg) brightness(0.95) contrast(1.1) grayscale(0.1); background-color: #05070a !important; }
         .kakao-dark-theme img[src*="dapi.kakao.com"] { filter: none !important; }
-        @media (max-width: 640px) { .kakao-copyright, .kakao-logo { display: none !important; } }
+        @media (max-width: 640px) { .kakao-copyright, .kakao-logo { transform: scale(0.85); transform-origin: bottom right; } }
         * { -webkit-tap-highlight-color: transparent; }
       `}</style>
     </div>
