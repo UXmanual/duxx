@@ -19,7 +19,7 @@ const Footer = () => {
             </p>
             <span className="w-px h-3 bg-current opacity-30" />
             <p className="text-[14px] font-bold tracking-[0]">
-              Last Deployed: 17:05 KST
+              Last Deployed: 17:08 KST
             </p>
           </div>
           {/* 

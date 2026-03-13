@@ -27,7 +27,7 @@ const Layout = () => {
       <main 
         id="main-content" 
         role="main" 
-        className="relative w-full h-full z-0"
+        className="relative w-full h-full"
         aria-label="Interactive Map"
       >
         <Outlet />
