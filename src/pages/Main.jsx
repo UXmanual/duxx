@@ -4,12 +4,12 @@ import { useTheme } from '../context/ThemeContext';
 import { Crosshair } from 'lucide-react';
 
 /**
- * [Page] 메인 페이지 (마커 컬러 및 사이즈 정밀 튜닝 버전)
- * @version 9.0.0
+ * [Page] 메인 페이지 (마커 센터링 정밀 수정 버전)
+ * @version 9.1.0
  * @author Antigravity
  * @description 
- * - 현위치 마커의 메인 컬러를 #FF4D00으로 변경했습니다.
- * - 마커 전체 사이즈를 컴팩트하게 축소하여 세련미를 더했습니다.
+ * - 현위치 마커의 중앙 흰색 점이 어긋나 보이던 문제를 픽셀 정렬(Pixel Alignment)을 통해 해결했습니다.
+ * - xAnchor, yAnchor를 0.5로 설정하여 맵 좌표와 마커 중심을 완벽히 일치시켰습니다.
  */
 
 const Main = () => {
@@ -64,12 +64,18 @@ const Main = () => {
         style={{ width: '100%', height: '100%' }}
         className={isDark ? 'kakao-dark-theme' : ''}
       >
-        {/* 커스텀 위치 마커 (#FF4D00 + 컴팩트 사이즈) */}
+        {/* 현위치 마커 (픽셀 완벽 센터링) */}
         {myLocation && (
-          <CustomOverlayMap position={myLocation} zIndex={999}>
-            <div className="flex items-center justify-center transform -translate-y-1/2 pointer-events-none">
+          <CustomOverlayMap 
+            position={myLocation} 
+            zIndex={999}
+            xAnchor={0.5}
+            yAnchor={0.5}
+          >
+            <div className="flex items-center justify-center pointer-events-none">
               <div className="w-[24px] h-[24px] bg-[#FF4D00] border-2 border-white rounded-full flex items-center justify-center shadow-[0_2px_6px_rgba(0,0,0,0.25)]">
-                <div className="w-[5px] h-[5px] bg-white rounded-full shadow-inner" />
+                {/* 짝수 사이즈(24px)에 맞춰 흰색 점도 짝수(6px)로 조정하여 1px 오차 차단 */}
+                <div className="w-[6px] h-[6px] bg-white rounded-full" />
               </div>
             </div>
           </CustomOverlayMap>
