@@ -4,12 +4,12 @@ import { useTheme } from '../context/ThemeContext';
 import { Crosshair } from 'lucide-react';
 
 /**
- * [Page] 메인 페이지 (마커 컬러 및 사이즈 정밀 조정 버전)
- * @version 8.7.0
+ * [Page] 메인 페이지 (마커 그림자 미세 조정 버전)
+ * @version 8.8.0
  * @author Antigravity
  * @description 
- * - 현위치 마커의 컬러를 더 선명한 오렌지(#FF6A00)로 변경했습니다.
- * - 마커 사이즈를 조금 더 키워 시인성을 극대화했습니다.
+ * - 현위치 마커의 드롭쉐도우를 더 얇고 좁게 조정하여 깔끔한 디자인을 완성했습니다.
+ * - 오렌지 컬러(#FF6A00)와 사이즈(30px)는 유지하되, 그림자 가독성을 높였습니다.
  */
 
 const Main = () => {
@@ -64,11 +64,11 @@ const Main = () => {
         style={{ width: '100%', height: '100%' }}
         className={isDark ? 'kakao-dark-theme' : ''}
       >
-        {/* 커스텀 오렌지 위치 마커 (컬러 수정 + 사이즈 확대) */}
+        {/* 커스텀 오렌지 위치 마커 (그림자 정밀 조정) */}
         {myLocation && (
           <CustomOverlayMap position={myLocation} zIndex={999}>
             <div className="flex items-center justify-center transform -translate-y-1/2 pointer-events-none">
-              <div className="w-[30px] h-[30px] bg-[#FF6A00] border-[2.5px] border-white rounded-full flex items-center justify-center shadow-[0_4px_15px_rgba(0,0,0,0.4)]">
+              <div className="w-[30px] h-[30px] bg-[#FF6A00] border-[2.5px] border-white rounded-full flex items-center justify-center shadow-[0_2px_6px_rgba(0,0,0,0.25)]">
                 <div className="w-[10px] h-[10px] bg-white rounded-full shadow-sm" />
               </div>
             </div>
@@ -80,7 +80,7 @@ const Main = () => {
       <div className="fixed right-6 bottom-32 z-[9999]">
         <button 
           onPointerDown={handleMyLocation}
-          className={`w-10 h-10 rounded-full shadow-lg flex items-center justify-center active:scale-90 transition-all border
+          className={`w-10 h-10 rounded-full shadow-md flex items-center justify-center active:scale-90 transition-all border
             ${isDark 
               ? 'bg-[#1a1c1e]/90 border-white/10 text-white' 
               : 'bg-white border-gray-200 text-[#1a1c1e]'}
