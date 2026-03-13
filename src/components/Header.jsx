@@ -4,12 +4,12 @@ import { Sun, Moon, MoonStar } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 /**
- * [Component] 상단 헤더 (Overlay 블렌딩 버전)
- * @version 10.8.0
+ * [Component] 상단 헤더
+ * @version 10.9.0
  * @author Antigravity
  * @description 
- * - 블렌딩 모드를 'overlay'로 변경하고 로고의 화이트 컬러를 제거했습니다.
- * - 지도의 배경색이 투명하게 비치며 로고가 배경의 톤을 따라가는 효과를 구현했습니다.
+ * - 로고에만 'overlay' 블렌딩을 적용하여 토글 버튼은 효과에서 제외했습니다.
+ * - 버튼 클릭성을 위해 pointer-events를 최적화했습니다.
  */
 const Header = () => {
   const { isDark, toggleTheme } = useTheme();
@@ -25,21 +25,21 @@ const Header = () => {
   }, [isDark]);
 
   return (
-    <header 
-      className="absolute top-0 left-0 right-0 z-50 pointer-events-none"
-      style={{ mixBlendMode: 'overlay' }}
-    >
+    <header className="absolute top-0 left-0 right-0 z-50 pointer-events-none">
       <div className="w-full px-10 h-24 flex items-center justify-between">
         <div className="flex items-center gap-2 pointer-events-auto">
-          {/* Logo: Overlay 블렌딩 적용, 명시적 컬러 제거 */}
-          <span className="font-black text-[24px] tracking-[0] uppercase select-none">
+          {/* Logo: 개별 블렌딩 적용 (토글 아이콘 보호) */}
+          <span 
+            className="font-black text-[24px] tracking-[0] uppercase select-none"
+            style={{ mixBlendMode: 'overlay' }}
+          >
             DUXX
           </span>
         </div>
         
         <button 
           onClick={toggleTheme}
-          className="p-3 rounded-2xl bg-theme-accent/5 hover:bg-theme-accent/10 transition-all duration-500 group relative flex items-center justify-center w-12 h-12 pointer-events-auto"
+          className="p-3 rounded-2xl bg-theme-card/30 hover:bg-theme-accent/10 transition-colors duration-500 group relative flex items-center justify-center w-12 h-12 pointer-events-auto"
           aria-label="Toggle Theme"
         >
           <AnimatePresence mode="wait">

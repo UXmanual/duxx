@@ -14,7 +14,7 @@ const Layout = () => {
   return (
     <div id="duxx-layout-root" className="relative w-full h-screen overflow-hidden">
       {/* 1. 메인 콘텐츠 (Backdrop) */}
-      <main id="main-content" className="absolute inset-0 z-0">
+      <main id="main-content" className="absolute inset-0">
         <Outlet />
       </main>
 
