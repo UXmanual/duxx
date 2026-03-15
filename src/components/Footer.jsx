@@ -21,12 +21,12 @@ const Footer = () => {
             </p>
             <span className="w-px h-3 bg-black opacity-100" />
             <p className="text-[14px] font-bold tracking-[0]">
-              Last Deployed: 18:13 KST
+              Last Deployed: 08:54 KST
             </p>
           </div>
           {/* 저작권: 블랙 0.3 */}
           <p className="font-black text-[14px] tracking-[0] select-none">
-            ©DUXX
+            ©Babble
           </p>
         </div>
       </div>

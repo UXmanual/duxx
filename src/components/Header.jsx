@@ -35,7 +35,7 @@ const Header = () => {
         style={{ mixBlendMode: 'color-burn' }}
       >
         <span className="font-black text-[24px] tracking-[0] uppercase select-none pointer-events-auto">
-          DUXX
+          BABBLE
         </span>
       </div>
 
