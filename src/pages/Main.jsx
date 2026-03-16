@@ -17,7 +17,7 @@ const formatDateTime = (dateString) => {
 
 /**
  * [Page] 메인 페이지 (지도 메모 기능 통합 버전)
- * @version 15.6
+ * @version 15.7
  * @author Antigravity
  * @description 
  * - Supabase 백엔드를 연동하여 지도 위에 말풍선 메모를 남기는 기능을 구현했습니다.
@@ -38,7 +38,7 @@ const Main = () => {
 
   // 스타벅스 리저브 관련 상태
   const [starbucksPlaces, setStarbucksPlaces] = useState([]);
-  const [isStarbucksVisible, setIsStarbucksVisible] = useState(false);
+  const [isStarbucksVisible, setIsStarbucksVisible] = useState(true);
 
   const [loading, error] = useKakaoLoader({
     appkey: import.meta.env.VITE_KAKAO_MAPS_API_KEY,
@@ -135,7 +135,7 @@ const Main = () => {
       sort: window.kakao.maps.services.SortBy.DISTANCE
     } : {};
 
-    ps.keywordSearch('스타벅스', (data, status) => {
+    ps.keywordSearch('스타벅스 리저브', (data, status) => {
       if (status === window.kakao.maps.services.Status.OK) {
         // 리저브 매장 필터링: '리저브', 'Reserve', 또는 ' R' (R점 등) 포함
         const filtered = data.filter(place => 
@@ -148,8 +148,7 @@ const Main = () => {
       }
     }, {
       ...options,
-      radius: 20000, // 20km로 대폭 확대
-      size: 15
+      radius: 20000 // 20km
     });
   };
 
@@ -439,21 +438,6 @@ const Main = () => {
       {/* [Interface Layer] 우측 컨트롤 스택 */}
       <div className="fixed bottom-6 right-6 z-[9999] pointer-events-none">
         <div className="flex flex-col items-center justify-end gap-3 pointer-events-auto">
-          {/* 스타벅스 리저브 토글 버튼 */}
-          <button 
-            onClick={() => setIsStarbucksVisible(!isStarbucksVisible)}
-            className={`w-12 h-12 rounded-full flex items-center justify-center active:scale-90 transition-all 
-              ${isStarbucksVisible 
-                ? 'bg-[#006241] text-white animate-btn-pulse-green' 
-                : (isDark 
-                  ? 'bg-[#1a1c1e]/90 text-white' 
-                  : 'bg-white text-[#1a1c1e]')}
-            `}
-            aria-label="스타벅스 리저브 표시"
-          >
-            <Coffee size={24} fill={isStarbucksVisible ? "white" : "none"} />
-          </button>
-
           {/* 메모 작성 모드 버튼 */}
           <button 
             onClick={() => setIsMemoMode(!isMemoMode)}
