@@ -3,7 +3,7 @@ import pkg from '../../package.json';
 
 /**
  * [Component] 푸터
- * @version 16.2
+ * @version 16.3
  * @author Antigravity
  * @description 
  * - 푸터의 모든 텍스트 드래그(선택)를 방지하는 select-none 속성을 추가했습니다.
@@ -12,7 +12,7 @@ import pkg from '../../package.json';
 const Footer = () => {
   return (
     <footer style={{ display: 'contents' }}>
-      <div className="absolute bottom-0 left-0 w-full px-10 py-8 z-10 pointer-events-none">
+      <div className="absolute bottom-0 left-0 px-10 py-8 z-10 pointer-events-none">
         <div className="flex flex-col items-start gap-1 py-5 inline-block pointer-events-auto text-black opacity-30 select-none">
           {/* 시스템 정보: 블랙 0.3 */}
           <div className="flex items-center gap-3">
@@ -21,7 +21,7 @@ const Footer = () => {
             </p>
             <span className="w-px h-3 bg-black opacity-100" />
             <p className="text-[14px] font-bold tracking-[0]">
-              Last Deployed: 2026.03.16 13:05
+              Last Deployed: 2026.03.16 13:08
             </p>
           </div>
           {/* 저작권: 블랙 0.3 */}
