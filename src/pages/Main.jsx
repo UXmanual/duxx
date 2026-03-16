@@ -18,10 +18,10 @@ const formatDateTime = (dateString) => {
 
 /**
  * [Page] 메인 페이지 (지도 메모 기능 통합 버전)
- * @version 18.0
+ * @version 18.1
  * @author Antigravity
  * @description 
- * - 사이트 진입 시 스켈레톤 UI를 지도 아이콘과 브랜드 컬러가 조화된 프리미엄 디자인으로 개선했습니다.
+ * - 스켈레톤 UI를 미니멀한 그레이 톤으로 정제하여 콘텐츠 로딩 상태를 더 차분하고 전문적으로 표현했습니다.
  * - 초기 로딩 시 현위치를 정교하게 포착하여 자연스러운 시작 환경을 제공합니다.
  */
 
@@ -250,14 +250,14 @@ const Main = () => {
         </div>
         
         {/* 중앙 로딩 요소 */}
-        <div className="flex flex-col items-center gap-6 animate-pop-in">
+        <div className="flex flex-col items-center gap-4 animate-pop-in">
           <div className="relative">
-            {/* 파동 애니메이션 */}
-            <div className="absolute inset-0 bg-[#FF4D00] rounded-full animate-ping opacity-20" />
+            {/* 파동 애니메이션 (연한 회색) */}
+            <div className="absolute inset-0 bg-gray-200 rounded-full animate-ping opacity-40" />
             
-            {/* 아이콘 컨테이너 */}
-            <div className="relative w-24 h-24 bg-white border-[3px] border-[#FF4D00] rounded-[24px] flex items-center justify-center shadow-xl rotate-3">
-              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#FF4D00" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            {/* 아이콘 컨테이너 (테두리 제거, 아이콘만 노출) */}
+            <div className="relative flex items-center justify-center">
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#D1D5DB" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M14.106 5.553a2 2 0 0 0 1.788 0l3.659-1.83a1 1 0 0 1 1.447.894v11.549a2 2 0 0 1-1.106 1.789l-4.553 2.276a2 2 0 0 1-1.788 0l-4.553-2.276a2 2 0 0 0-1.788 0l-3.659 1.83A1 1 0 0 1 2 18.894V7.345a2 2 0 0 1 1.106-1.789l4.553-2.276a2 2 0 0 1 1.788 0l4.553 2.276Z" />
                 <path d="M15 5.5v13" />
                 <path d="M9 5.5v13" />
@@ -265,13 +265,13 @@ const Main = () => {
             </div>
           </div>
           
-          {/* 로딩 텍스트 */}
-          <div className="flex flex-col items-center gap-2">
-            <h2 className="text-[#FF4D00] text-[18px] font-black tracking-tight uppercase italic underline-offset-4 decoration-4">
-              Loading Map...
-            </h2>
-            <div className="w-32 h-[3px] bg-zinc-100 rounded-full overflow-hidden">
-              <div className="w-full h-full bg-[#FF4D00] origin-left animate-shimmer-progress" />
+          {/* 로딩 텍스트 (차분한 그레이, 프리텐다드) */}
+          <div className="flex flex-col items-center gap-3">
+            <span className="text-[#9CA3AF] text-[15px] font-semibold tracking-tight">
+              Loading Map
+            </span>
+            <div className="w-24 h-[2px] bg-zinc-100 rounded-full overflow-hidden">
+              <div className="w-full h-full bg-[#D1D5DB] origin-left animate-shimmer-progress" />
             </div>
           </div>
         </div>
@@ -283,7 +283,7 @@ const Main = () => {
             100% { transform: scaleX(1); }
           }
           .animate-shimmer-progress {
-            animation: shimmer-progress 3s ease-in-out infinite;
+            animation: shimmer-progress 2.5s ease-in-out infinite;
           }
         `}</style>
       </div>
