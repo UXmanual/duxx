@@ -481,16 +481,16 @@ const Main = () => {
                       className={`relative px-3 py-2 border-[1.5px] border-[#FF4D00] rounded-[8px] shadow-lg flex flex-col gap-1 w-max min-w-[120px] max-w-[240px] select-none ${hiddenCount > 0 ? 'cursor-pointer' : ''} ${isGroupExpanded ? 'bg-[#FF4D00]' : 'bg-white'} [touch-action:manipulation]`}
                       onClick={(e) => {
                         e.stopPropagation();
+                        // 1. 클릭 시 지도를 해당 위치로 중앙 정렬 (스타벅스 마커와 동일한 동작)
+                        if (map) {
+                          map.panTo(new window.kakao.maps.LatLng(anchorMemo.lat, anchorMemo.lng));
+                        }
+
+                        // 2. 그룹 상태 및 스타벅스 선택 상태 처리
                         if (hiddenCount > 0) {
                           toggleGroupExpand(anchorMemo.id, e);
-                        } else if (map) {
-                          const proj = map.getProjection();
-                          if (proj) {
-                            const point = proj.pointFromLatLng(new window.kakao.maps.LatLng(anchorMemo.lat, anchorMemo.lng));
-                            point.x += 90;
-                            map.panTo(proj.latLngFromPoint(point));
-                          }
-                          setSelectedStarbucksId(null); // 단일 메모 클릭 시에도 스타벅스 말풍선 처리
+                        } else {
+                          setSelectedStarbucksId(null); 
                         }
                       }}
                       onDoubleClick={(e) => e.stopPropagation()}
