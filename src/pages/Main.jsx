@@ -18,7 +18,7 @@ const formatDateTime = (dateString) => {
 };
 /**
  * [Page] 메인 페이지 (지도 메모 기능 통합 버전)
- * @version 21.9
+ * @version 22.0
  * @author Antigravity
  * @description 
  * - 바블 리스트 간격 복구 및 닉네임 하단 여백 최적화 버전입니다.
@@ -50,6 +50,7 @@ const Main = () => {
   const [memos, setMemos] = useState([]);
   const [isMemoMode, setIsMemoMode] = useState(false);
   const [expandedGroupIds, setExpandedGroupIds] = useState([]); 
+  const [showReplyIds, setShowReplyIds] = useState([]); // 답글 펼침 상태 관리
   const [replyTargetId, setReplyTargetId] = useState(null); // 답글 작성 중인 메모 ID
   const [replyText, setReplyText] = useState(''); // 답글 입력 텍스트
 
@@ -513,27 +514,56 @@ const Main = () => {
                                 </span>
                               </div>
 
-                              {/* [추가] 각 메모별 답글 리스트 */}
+                              {/* [개선] 그룹 내 메모별 답글 접기/펴기 & 개수 표시 */}
                               {(() => {
                                 const memoReplies = memos.filter(r => r.parent_id === memo.id);
-                                if (memoReplies.length === 0 && replyTargetId !== memo.id) return null;
+                                const hasReplies = memoReplies.length > 0;
+                                const isShowing = showReplyIds.includes(memo.id);
+
                                 return (
-                                  <div className="mt-2 flex flex-col gap-2 p-2 rounded-lg bg-gray-50 max-h-[150px] overflow-y-auto">
-                                    {memoReplies.map(reply => (
-                                      <div key={reply.id} className="flex flex-col border-b border-black/5 last:border-0 pb-1 mb-1">
-                                        <span className="text-[10px] font-bold text-[#FF4D00]">
-                                          {reply.nickname}
-                                        </span>
-                                        <span className="text-[12px] text-zinc-700">
-                                          {reply.text}
-                                        </span>
+                                  <div className="mt-2 flex flex-col gap-1.5 p-2 rounded-lg bg-gray-50 shadow-sm">
+                                    <div className="flex items-center justify-between px-1">
+                                      <button 
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setShowReplyIds(prev => 
+                                            prev.includes(memo.id) 
+                                              ? prev.filter(id => id !== memo.id) 
+                                              : [...prev, memo.id]
+                                          );
+                                        }}
+                                        className="text-[11px] font-bold flex items-center gap-1 text-[#FF4D00]/70 hover:opacity-100 transition-opacity"
+                                      >
+                                        <MessageSquare size={11} fill={hasReplies ? "currentColor" : "none"} />
+                                        {hasReplies ? `답글 ${memoReplies.length}개` : '답글 달기'}
+                                        {hasReplies && (
+                                          <span className="ml-1 text-[9px] opacity-60">
+                                            {isShowing ? '▲ 접기' : '▼ 보기'}
+                                          </span>
+                                        )}
+                                      </button>
+                                    </div>
+
+                                    {isShowing && hasReplies && (
+                                      <div className="flex flex-col gap-2 mt-1 max-h-[120px] overflow-y-auto pr-1">
+                                        {memoReplies.map(reply => (
+                                          <div key={reply.id} className="flex flex-col border-b border-black/5 last:border-0 pb-1.5 break-all">
+                                            <span className="text-[10px] font-bold text-[#FF4D00]">
+                                              {reply.nickname}
+                                            </span>
+                                            <span className="text-[12px] text-zinc-700 leading-snug">
+                                              {reply.text}
+                                            </span>
+                                          </div>
+                                        ))}
                                       </div>
-                                    ))}
+                                    )}
+
                                     {replyTargetId === memo.id ? (
                                       <div className="flex flex-col gap-1 mt-1">
                                         <input 
                                           autoFocus
-                                          className="w-full text-[12px] px-2 py-1 rounded border border-gray-200 outline-none focus:border-[#FF4D00]"
+                                          className="w-full text-[12px] px-2 py-1.5 rounded border border-gray-200 outline-none focus:border-[#FF4D00] shadow-inner"
                                           placeholder="답글 남기기..."
                                           value={replyText}
                                           onChange={(e) => setReplyText(e.target.value)}
@@ -543,17 +573,19 @@ const Main = () => {
                                           }}
                                         />
                                         <div className="flex justify-end gap-1">
-                                          <button onClick={() => setReplyTargetId(null)} className="text-[10px] text-gray-400">취소</button>
-                                          <button onClick={() => handleReplySubmit(memo.id)} className="text-[10px] font-bold text-[#FF4D00]">등록</button>
+                                          <button onClick={() => setReplyTargetId(null)} className="text-[10px] text-gray-400 px-2 py-1">취소</button>
+                                          <button onClick={() => handleReplySubmit(memo.id)} className="text-[10px] font-bold text-white bg-[#FF4D00] px-2 py-0.5 rounded">등록</button>
                                         </div>
                                       </div>
                                     ) : (
-                                      <button 
-                                        onClick={(e) => { e.stopPropagation(); setReplyTargetId(memo.id); }}
-                                        className="text-[11px] font-bold flex items-center gap-1 text-[#FF4D00]/60 hover:text-[#FF4D00]"
-                                      >
-                                        <MessageSquare size={12} /> 답글 달기
-                                      </button>
+                                      !isShowing && hasReplies ? null : (
+                                        <button 
+                                          onClick={(e) => { e.stopPropagation(); setReplyTargetId(memo.id); }}
+                                          className="text-[10px] font-medium self-end px-2 py-1 opacity-60 hover:opacity-100 text-zinc-500"
+                                        >
+                                          + 쓰기
+                                        </button>
+                                      )
                                     )}
                                   </div>
                                 );
@@ -599,30 +631,60 @@ const Main = () => {
                         </span>
                       </div>
 
-                      {/* 답글 리스트 표시 영역 */}
+                      {/* 답글 리스트 및 개수 표시 영역 */}
                       {(() => {
                         const memoReplies = memos.filter(r => r.parent_id === anchorMemo.id);
-                        if (memoReplies.length === 0 && replyTargetId !== anchorMemo.id) return null;
+                        const hasReplies = memoReplies.length > 0;
+                        const isShowing = showReplyIds.includes(anchorMemo.id);
+
                         return (
-                          <div className={`mt-2 flex flex-col gap-2 p-2 rounded-lg ${isGroupExpanded ? 'bg-black/10' : 'bg-gray-50'}`}>
-                            {memoReplies.map(reply => (
-                              <div key={reply.id} className="flex flex-col border-b border-black/5 last:border-0 pb-1 mb-1">
-                                <span className={`text-[10px] font-bold ${isGroupExpanded ? 'text-white/70' : 'text-[#FF4D00]'}`}>
-                                  {reply.nickname}
-                                </span>
-                                <span className={`text-[12px] ${isGroupExpanded ? 'text-white/90' : 'text-zinc-700'}`}>
-                                  {reply.text}
-                                </span>
+                          <div className={`mt-2 flex flex-col gap-1.5 p-2 rounded-lg ${isGroupExpanded ? 'bg-black/10' : 'bg-gray-50'}`}>
+                            {/* 상단: 개수 표시 및 접기/펴기 버튼 */}
+                            <div className="flex items-center justify-between px-1">
+                              <button 
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setShowReplyIds(prev => 
+                                    prev.includes(anchorMemo.id) 
+                                      ? prev.filter(id => id !== anchorMemo.id) 
+                                      : [...prev, anchorMemo.id]
+                                  );
+                                }}
+                                className={`text-[11px] font-bold flex items-center gap-1 transition-opacity ${isGroupExpanded ? 'text-white/70' : 'text-[#FF4D00]/70'} hover:opacity-100`}
+                              >
+                                <MessageSquare size={12} fill={hasReplies ? "currentColor" : "none"} />
+                                {hasReplies ? `답글 ${memoReplies.length}개` : '답글 달기'}
+                                {hasReplies && (
+                                  <span className="ml-1 text-[9px] opacity-60">
+                                    {isShowing ? '▲ 접기' : '▼ 보기'}
+                                  </span>
+                                )}
+                              </button>
+                            </div>
+
+                            {/* 답글 리스트 (펼쳐졌을 때만 노출) */}
+                            {isShowing && hasReplies && (
+                              <div className="flex flex-col gap-2 mt-1 max-h-[150px] overflow-y-auto pr-1">
+                                {memoReplies.map(reply => (
+                                  <div key={reply.id} className="flex flex-col border-b border-black/5 last:border-0 pb-1.5 break-all">
+                                    <span className={`text-[10px] font-bold ${isGroupExpanded ? 'text-white/70' : 'text-[#FF4D00]'}`}>
+                                      {reply.nickname}
+                                    </span>
+                                    <span className={`text-[12px] leading-snug ${isGroupExpanded ? 'text-white/90' : 'text-zinc-700'}`}>
+                                      {reply.text}
+                                    </span>
+                                  </div>
+                                ))}
                               </div>
-                            ))}
+                            )}
                             
-                            {/* 답글 입력창 */}
+                            {/* 답글 입력창 (버튼 클릭 시에만 노출) */}
                             {replyTargetId === anchorMemo.id ? (
                               <div className="flex flex-col gap-1 mt-1">
                                 <input 
                                   autoFocus
-                                  className="w-full text-[12px] px-2 py-1 rounded border border-gray-200 outline-none focus:border-[#FF4D00]"
-                                  placeholder="소중한 답글을 남겨주세요..."
+                                  className="w-full text-[12px] px-2 py-1.5 rounded border border-gray-200 outline-none focus:border-[#FF4D00] shadow-inner"
+                                  placeholder="대화에 참여해보세요..."
                                   value={replyText}
                                   onChange={(e) => setReplyText(e.target.value)}
                                   onKeyDown={(e) => {
@@ -631,17 +693,19 @@ const Main = () => {
                                   }}
                                 />
                                 <div className="flex justify-end gap-1">
-                                  <button onClick={() => setReplyTargetId(null)} className="text-[10px] text-gray-400">취소</button>
-                                  <button onClick={() => handleReplySubmit(anchorMemo.id)} className="text-[10px] font-bold text-[#FF4D00]">등록</button>
+                                  <button onClick={() => setReplyTargetId(null)} className="text-[10px] text-gray-400 px-2 py-1">취소</button>
+                                  <button onClick={() => handleReplySubmit(anchorMemo.id)} className="text-[10px] font-bold text-white bg-[#FF4D00] px-2 py-1 rounded">등록</button>
                                 </div>
                               </div>
                             ) : (
-                              <button 
-                                onClick={(e) => { e.stopPropagation(); setReplyTargetId(anchorMemo.id); }}
-                                className={`text-[11px] font-bold flex items-center gap-1 ${isGroupExpanded ? 'text-white/60 hover:text-white' : 'text-[#FF4D00]/60 hover:text-[#FF4D00]'}`}
-                              >
-                                <MessageSquare size={12} /> 답글 달기
-                              </button>
+                              !isShowing && hasReplies ? null : (
+                                <button 
+                                  onClick={(e) => { e.stopPropagation(); setReplyTargetId(anchorMemo.id); }}
+                                  className={`text-[10px] font-medium self-end px-2 py-1 opacity-60 hover:opacity-100 ${isGroupExpanded ? 'text-white' : 'text-zinc-500'}`}
+                                >
+                                  + 쓰기
+                                </button>
+                              )
                             )}
                           </div>
                         );
