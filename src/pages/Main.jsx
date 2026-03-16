@@ -17,7 +17,7 @@ const formatDateTime = (dateString) => {
 
 /**
  * [Page] 메인 페이지 (지도 메모 기능 통합 버전)
- * @version 15.12
+ * @version 15.13
  * @author Antigravity
  * @description 
  * - Supabase 백엔드를 연동하여 지도 위에 말풍선 메모를 남기는 기능을 구현했습니다.
@@ -290,7 +290,7 @@ const Main = () => {
                   <div className={`absolute bottom-0 left-0 -translate-x-[50%] flex flex-col pb-[6px] pointer-events-auto ${isDark ? 'custom-marker-original-color' : ''}`}>
                     
                     <div 
-                      className={`relative px-3 py-2 bg-white border-[1.5px] border-[#FF4D00] rounded-[8px] shadow-lg flex flex-col gap-1 w-max min-w-[120px] max-w-[280px] ${hiddenCount > 0 ? 'cursor-pointer' : ''}`}
+                      className={`relative px-3 py-2 border-[1.5px] border-[#FF4D00] rounded-[8px] shadow-lg flex flex-col gap-1 w-max min-w-[120px] max-w-[280px] select-none ${hiddenCount > 0 ? 'cursor-pointer' : ''} ${isGroupExpanded ? 'bg-[#FF4D00]' : 'bg-white'}`}
                       onClick={(e) => {
                         if (hiddenCount > 0) toggleGroupExpand(anchorMemo.id, e);
                       }}
@@ -298,7 +298,7 @@ const Main = () => {
                       
                       {/* 펼쳐진 이전 메모들 (최신 메모 왼쪽 모서리에 딱 맞춤) */}
                       {hiddenCount > 0 && isGroupExpanded && (
-                        <div className="absolute bottom-full left-[-1.5px] mb-[6px] flex flex-col items-start gap-[6px] cursor-default" onClick={(e) => e.stopPropagation()}>
+                        <div className="absolute bottom-full left-[-1.5px] mb-[6px] flex flex-col items-start gap-[6px] cursor-default select-none" onClick={(e) => e.stopPropagation()}>
                           {group.slice(0, hiddenCount).map(memo => (
                             <div key={memo.id} className="relative px-3 py-2 bg-white border-[1.5px] border-[#FF4D00] rounded-[8px] shadow-lg flex flex-col gap-1 w-max min-w-[120px] max-w-[280px] animate-pop-in">
                               <div className="w-full relative z-10 text-left">
@@ -334,21 +334,21 @@ const Main = () => {
 
                       {/* 기준 최신 메모 상단 텍스트 영역 */}
                       <div className="w-full relative z-10 text-left">
-                        <span className="text-[14px] font-medium text-black leading-tight tracking-tight break-all whitespace-pre-wrap line-clamp-2">
+                        <span className={`text-[14px] font-medium leading-tight tracking-tight break-all whitespace-pre-wrap line-clamp-2 ${isGroupExpanded ? 'text-white' : 'text-black'}`}>
                           {anchorMemo.text}
                         </span>
                       </div>
                       
                       {/* 기준 최신 메모 하단 날짜 + 삭제 버튼 */}
-                      <div className="text-[10px] text-zinc-400 font-medium tracking-wide relative z-10 text-left flex items-center gap-1 mt-0.5">
+                      <div className={`text-[10px] font-medium tracking-wide relative z-10 text-left flex items-center gap-1 mt-0.5 ${isGroupExpanded ? 'text-white/80' : 'text-zinc-400'}`}>
                         <span>{formatDateTime(anchorMemo.created_at)}</span>
-                        <span className="text-zinc-300">|</span>
+                        <span className={isGroupExpanded ? 'text-white/50' : 'text-zinc-300'}>|</span>
                         <button 
                           onClick={(e) => {
                             e.stopPropagation();
                             handleDeleteMemo(anchorMemo.id);
                           }}
-                          className="hover:text-[#FF4D00] transition-colors"
+                          className={`transition-colors ${isGroupExpanded ? 'hover:text-white' : 'hover:text-[#FF4D00]'}`}
                           aria-label="메모 삭제"
                         >
                           삭제
@@ -358,7 +358,7 @@ const Main = () => {
                       {/* SVG 기반 완벽한 꼬리 연결 (가장 하단의 최신 메모에만 항상 존재) */}
                       <div className="absolute top-[calc(100%-1.5px)] left-1/2 -translate-x-[50%] w-[12px] h-[8px] z-20 pointer-events-none overflow-visible">
                         <svg width="12" height="8" viewBox="0 0 12 8" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <path d="M1.5 0 H10.5 L6 6 Z" fill="white" />
+                          <path d="M1.5 0 H10.5 L6 6 Z" fill={isGroupExpanded ? "#FF4D00" : "white"} />
                           <path d="M1.5 1.5 L6 6.5 L10.5 1.5" stroke="#FF4D00" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                         </svg>
                       </div>
