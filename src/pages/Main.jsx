@@ -17,7 +17,7 @@ const formatDateTime = (dateString) => {
 };
 /**
  * [Page] 메인 페이지 (지도 메모 기능 통합 버전)
- * @version 21.1
+ * @version 21.2
  * @author Antigravity
  * @description 
  * - 바블 리스트 간격 복구 및 닉네임 하단 여백 최적화 버전입니다.
@@ -640,7 +640,10 @@ const Main = () => {
       </div>
 
       <style>{`
-        .kakao-dark-theme { filter: invert(100%) hue-rotate(180deg) brightness(0.9) grayscale(0.2); background-color: #fff !important; }
+        .kakao-dark-theme { 
+          filter: invert(95%) hue-rotate(180deg) brightness(1.05) contrast(1.1) grayscale(0.1); 
+          background-color: #1a1c1e !important; 
+        }
         .kakao-dark-theme img { filter: none !important; }
         
         .custom-marker-original-color {

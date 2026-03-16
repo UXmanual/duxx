@@ -17,8 +17,11 @@ const Footer = () => {
           {/* 시스템 정보: 블랙 0.3 */}
           <div className="flex items-center gap-3">
             <p className="text-[14px] font-bold tracking-[0]">
-              Build v{pkg.version.split('.').slice(0, 2).join('.')}
+              Build v{pkg.version}
             </p>
+            <span className="text-[12px] opacity-60">
+              Last Deployed: 2026.03.16 23:45
+            </span>
           </div>
           {/* 저작권: 블랙 0.3 */}
           <p className="font-black text-[14px] tracking-[0] select-none">
