@@ -17,10 +17,10 @@ const formatDateTime = (dateString) => {
 };
 /**
  * [Page] 메인 페이지 (지도 메모 기능 통합 버전)
- * @version 19.9
+ * @version 20.0
  * @author Antigravity
  * @description 
- * - 푸터의 버전을 19.9로 업데이트했습니다.
+ * - 푸터의 버전을 20.0으로 업데이트했습니다.
  */
 
 // 닉네임 조합용 상수
@@ -477,7 +477,7 @@ const Main = () => {
                   <div className={`absolute bottom-0 left-[-18px] flex flex-col pb-[6px] pointer-events-auto ${isDark ? 'custom-marker-original-color' : ''}`}>
                     
                     <div 
-                      className={`relative px-3 py-2 border-[1.5px] border-[#FF4D00] rounded-[8px] shadow-lg flex flex-col gap-1 w-max min-w-[120px] max-w-[240px] select-none ${hiddenCount > 0 ? 'cursor-pointer' : ''} ${isGroupExpanded ? 'bg-[#FF4D00]' : 'bg-white'} [touch-action:manipulation]`}
+                      className={`relative px-3 py-2 border-[1.5px] border-[#FF4D00] rounded-[8px] shadow-lg flex flex-col gap-0 w-max min-w-[120px] max-w-[240px] select-none ${hiddenCount > 0 ? 'cursor-pointer' : ''} ${isGroupExpanded ? 'bg-[#FF4D00]' : 'bg-white'} [touch-action:manipulation]`}
                       onClick={(e) => {
                         e.stopPropagation();
                         if (hiddenCount > 0) {
@@ -499,13 +499,13 @@ const Main = () => {
                       {/* 펼쳐진 이전 메모들 (왼쪽 정렬 복구) */}
                       {hiddenCount > 0 && isGroupExpanded && (
                         <div 
-                          className="absolute bottom-full left-[-1.5px] mb-[6px] flex flex-col items-start gap-[6px] cursor-default select-none [touch-action:manipulation]" 
+                          className="absolute bottom-full left-[-1.5px] mb-[6px] flex flex-col items-start cursor-default select-none [touch-action:manipulation]" 
                           onClick={(e) => e.stopPropagation()}
                           onDoubleClick={(e) => e.stopPropagation()}
                           onTouchStart={(e) => e.stopPropagation()}
                         >
                            {group.slice(0, hiddenCount).map(memo => (
-                            <div key={memo.id} className="relative px-3 py-2 bg-white border-[1.5px] border-[#FF4D00] rounded-[8px] shadow-lg flex flex-col gap-0.5 w-max min-w-[120px] max-w-[240px] animate-pop-in">
+                            <div key={memo.id} className="relative px-3 py-2 bg-white border-[1.5px] border-[#FF4D00] rounded-[8px] shadow-lg flex flex-col gap-0 w-max min-w-[120px] max-w-[240px] animate-pop-in">
                               {/* 닉네임 (동네+성격+접미사) */}
                               <div className="w-full text-left">
                                 <span className="text-[11px] font-bold text-[#FF4D00] opacity-80 tracking-tight">
@@ -544,7 +544,7 @@ const Main = () => {
                       )}
 
                        {/* 닉네임 (동네+성격+접미사) */}
-                      <div className="w-full text-left mb-0.5">
+                      <div className="w-full text-left">
                         <span className={`text-[11px] font-bold tracking-tight ${isGroupExpanded ? 'text-white/70' : 'text-[#FF4D00] opacity-80'}`}>
                           {anchorMemo.nickname || getVirtualNickname(anchorMemo.id)}
                         </span>
