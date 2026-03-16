@@ -22,7 +22,7 @@ const formatDateTime = (dateString) => {
  * @author Antigravity
  * @description 
  * - 말풍선 클릭 인터랙션 버그 수정을 위해 CustomOverlayMap에 clickable={true} 속성을 추가하여 상호작용 기능을 복구했습니다.
- * - 오프셋 기반 센터링과 왼쪽 꼬리 정렬 디자인 시스템을 안정화했습니다.
+ * - 리스트 상호작용성 확보를 위해 센터링 로직을 제거하고 안정적인 리스트 노출에 집중했습니다.
  */
 
 const Main = () => {
@@ -226,16 +226,8 @@ const Main = () => {
   };
 
   // 말풍선 그룹 확장 토글 처리
-  const toggleGroupExpand = (id, lat, lng, e) => {
+  const toggleGroupExpand = (id, e) => {
     e.stopPropagation();
-    if (map) {
-      // 말풍선의 가로 중앙이 화면 중앙에 오도록 오프셋 계산 (꼬리가 왼쪽에 있으므로 지도를 오른쪽으로 이동)
-      const proj = map.getProjection();
-      const point = proj.pointFromLatLng(new window.kakao.maps.LatLng(lat, lng));
-      point.x += 90; // 말풍선의 평균적인 너비를 고려한 오프셋 (약 90px)
-      const newCenter = proj.latLngFromPoint(point);
-      map.panTo(newCenter);
-    }
     setExpandedGroupIds(prev => {
       const isExpanding = !prev.includes(id);
       if (isExpanding) {
@@ -359,6 +351,7 @@ const Main = () => {
                 position={{ lat: place.lat, lng: place.lng }} 
                 yAnchor={1.5} 
                 zIndex={1000}
+                clickable={true}
               >
                 <div 
                   className="bg-white px-3 py-1.5 rounded-full border-2 border-[#00704a] shadow-lg flex items-center gap-1.5 relative select-none cursor-pointer animate-pop-in"
@@ -418,6 +411,7 @@ const Main = () => {
                 xAnchor={0}
                 yAnchor={0}
                 zIndex={isGroupExpanded ? 999 : 10}
+                clickable={true}
               >
                 {/* 0x0 크기의 앵커 기준점 */}
                 <div className="relative w-0 h-0 group animate-pop-in pointer-events-none">
@@ -429,7 +423,7 @@ const Main = () => {
                       onClick={(e) => {
                         e.stopPropagation();
                         if (hiddenCount > 0) {
-                          toggleGroupExpand(anchorMemo.id, anchorMemo.lat, anchorMemo.lng, e);
+                          toggleGroupExpand(anchorMemo.id, e);
                         } else if (map) {
                           const proj = map.getProjection();
                           if (proj) {
