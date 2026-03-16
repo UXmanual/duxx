@@ -17,7 +17,7 @@ const formatDateTime = (dateString) => {
 
 /**
  * [Page] 메인 페이지 (지도 메모 기능 통합 버전)
- * @version 15.4
+ * @version 15.5
  * @author Antigravity
  * @description 
  * - Supabase 백엔드를 연동하여 지도 위에 말풍선 메모를 남기는 기능을 구현했습니다.
@@ -135,16 +135,22 @@ const Main = () => {
       sort: window.kakao.maps.services.SortBy.DISTANCE
     } : {};
 
-    ps.keywordSearch('스타벅스 리저브', (data, status) => {
+    ps.keywordSearch('스타벅스', (data, status) => {
       if (status === window.kakao.maps.services.Status.OK) {
-        // 이름 기반 필터링: 리저브 또는 Reserve 포함 지점만
+        // 리저브 매장 필터링: '리저브', 'Reserve', 또는 ' R' (R점 등) 포함
         const filtered = data.filter(place => 
           place.place_name.includes('리저브') || 
-          place.place_name.toLowerCase().includes('reserve')
+          place.place_name.toLowerCase().includes('reserve') ||
+          place.place_name.includes(' R') ||
+          /R점$/.test(place.place_name)
         );
         setStarbucksPlaces(filtered);
       }
-    }, options);
+    }, {
+      ...options,
+      radius: 20000, // 20km로 대폭 확대
+      size: 15
+    });
   };
 
   useEffect(() => {
@@ -283,14 +289,13 @@ const Main = () => {
             position={{ lat: place.y, lng: place.x }}
             image={{
               src: 'data:image/svg+xml;base64,' + btoa(`
-                <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <circle cx="20" cy="20" r="18" fill="#2D2926" stroke="#CBA052" stroke-width="2"/>
-                  <path d="M20 8L22.5 15.5H30L24 20L26.5 27.5L20 23L13.5 27.5L16 20L10 15.5H17.5L20 8Z" fill="#CBA052"/>
-                  <text x="20" y="34" fill="#CBA052" font-family="Arial" font-size="8" font-weight="bold" text-anchor="middle">R</text>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <circle cx="12" cy="12" r="10" fill="#006241" stroke="white" stroke-width="2"/>
+                  <path d="M12 7L13.5 11.5H18L14.5 14L15.5 18.5L12 16L8.5 18.5L9.5 14L6 11.5H10.5L12 7Z" fill="white"/>
                 </svg>
               `),
-              size: { width: 32, height: 32 },
-              options: { offset: { x: 16, y: 16 } }
+              size: { width: 24, height: 24 },
+              options: { offset: { x: 12, y: 12 } }
             }}
             title={place.place_name}
             onClick={() => {
