@@ -17,7 +17,7 @@ const formatDateTime = (dateString) => {
 
 /**
  * [Page] 메인 페이지 (지도 메모 기능 통합 버전)
- * @version 15.17
+ * @version 15.19
  * @author Antigravity
  * @description 
  * - Supabase 백엔드를 연동하여 지도 위에 말풍선 메모를 남기는 기능을 구현했습니다.
@@ -282,7 +282,7 @@ const Main = () => {
                 position={{ lat: anchorMemo.lat, lng: anchorMemo.lng }}
                 xAnchor={0}
                 yAnchor={0}
-                zIndex={10}
+                zIndex={isGroupExpanded ? 999 : 10}
               >
                 {/* 0x0 크기의 앵커 기준점 */}
                 <div className="relative w-0 h-0 group animate-pop-in pointer-events-none">
