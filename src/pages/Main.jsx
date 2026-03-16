@@ -17,7 +17,7 @@ const formatDateTime = (dateString) => {
 
 /**
  * [Page] 메인 페이지 (지도 메모 기능 통합 버전)
- * @version 15.13
+ * @version 15.14
  * @author Antigravity
  * @description 
  * - Supabase 백엔드를 연동하여 지도 위에 말풍선 메모를 남기는 기능을 구현했습니다.
@@ -184,7 +184,7 @@ const Main = () => {
   const toggleGroupExpand = (id, e) => {
     e.stopPropagation();
     setExpandedGroupIds(prev => 
-      prev.includes(id) ? prev.filter(gid => gid !== id) : [...prev, id]
+      prev.includes(id) ? [] : [id]
     );
   };
 
@@ -287,7 +287,7 @@ const Main = () => {
                 {/* 0x0 크기의 앵커 기준점 */}
                 <div className="relative w-0 h-0 group animate-pop-in pointer-events-none">
                   {/* 기준(최신) 말풍선을 감싸는 Wrapper */}
-                  <div className={`absolute bottom-0 left-0 -translate-x-[50%] flex flex-col pb-[6px] pointer-events-auto ${isDark ? 'custom-marker-original-color' : ''}`}>
+                  <div className={`absolute bottom-0 left-[-18px] flex flex-col pb-[6px] pointer-events-auto ${isDark ? 'custom-marker-original-color' : ''}`}>
                     
                     <div 
                       className={`relative px-3 py-2 border-[1.5px] border-[#FF4D00] rounded-[8px] shadow-lg flex flex-col gap-1 w-max min-w-[120px] max-w-[280px] select-none ${hiddenCount > 0 ? 'cursor-pointer' : ''} ${isGroupExpanded ? 'bg-[#FF4D00]' : 'bg-white'}`}
@@ -356,7 +356,7 @@ const Main = () => {
                       </div>
 
                       {/* SVG 기반 완벽한 꼬리 연결 (가장 하단의 최신 메모에만 항상 존재) */}
-                      <div className="absolute top-[calc(100%-1.5px)] left-1/2 -translate-x-[50%] w-[12px] h-[8px] z-20 pointer-events-none overflow-visible">
+                      <div className="absolute top-[calc(100%-1.5px)] left-[12px] w-[12px] h-[8px] z-20 pointer-events-none overflow-visible">
                         <svg width="12" height="8" viewBox="0 0 12 8" fill="none" xmlns="http://www.w3.org/2000/svg">
                           <path d="M1.5 0 H10.5 L6 6 Z" fill={isGroupExpanded ? "#FF4D00" : "white"} />
                           <path d="M1.5 1.5 L6 6.5 L10.5 1.5" stroke="#FF4D00" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
