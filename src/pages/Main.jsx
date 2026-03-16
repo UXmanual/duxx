@@ -18,11 +18,11 @@ const formatDateTime = (dateString) => {
 
 /**
  * [Page] 메인 페이지 (지도 메모 기능 통합 버전)
- * @version 18.4
+ * @version 18.4.1
  * @author Antigravity
  * @description 
- * - 말풍선 클릭 인식율을 높이기 위해 CustomOverlayMap에 clickable 속성을 추가했습니다.
- * - 오프셋 기반 센터링과 왼쪽 꼬리 정렬 디자인을 유지하며 인터랙션 안정성을 강화했습니다.
+ * - 말풍선 클릭 인터랙션 버그 수정을 위해 CustomOverlayMap의 clickable 속성을 제거하고 이벤트 전파 로직을 최적화했습니다.
+ * - 오프셋 기반 센터링과 왼쪽 꼬리 정렬 디자인 시스템을 안정화했습니다.
  */
 
 const Main = () => {
@@ -359,7 +359,6 @@ const Main = () => {
                 position={{ lat: place.lat, lng: place.lng }} 
                 yAnchor={1.5} 
                 zIndex={1000}
-                clickable={true}
               >
                 <div 
                   className="bg-white px-3 py-1.5 rounded-full border-2 border-[#00704a] shadow-lg flex items-center gap-1.5 relative select-none cursor-pointer animate-pop-in"
@@ -419,7 +418,6 @@ const Main = () => {
                 xAnchor={0}
                 yAnchor={0}
                 zIndex={isGroupExpanded ? 999 : 10}
-                clickable={true}
               >
                 {/* 0x0 크기의 앵커 기준점 */}
                 <div className="relative w-0 h-0 group animate-pop-in pointer-events-none">
