@@ -21,7 +21,7 @@ const formatDateTime = (dateString) => {
  * @version 18.5
  * @author Antigravity
  * @description 
- * - 말풍선 인터랙션 최적화: 말풍선 영역 내 더블클릭 시 지도가 확대되는 현상을 방지하기 위해 이벤트 전파 차단 처리를 강화했습니다.
+ * - 모바일 접근성 최적화: 말풍선 영역 내 더블터치 시 지도가 확대되는 현상을 방지하기 위해 터치 이벤트 전파 차단 및 touch-action 속성을 적용했습니다.
  */
 
 const Main = () => {
@@ -353,12 +353,13 @@ const Main = () => {
                 clickable={true}
               >
                 <div 
-                  className="bg-white px-3 py-1.5 rounded-full border-2 border-[#00704a] shadow-lg flex items-center gap-1.5 relative select-none cursor-pointer animate-pop-in"
+                  className="bg-white px-3 py-1.5 rounded-full border-2 border-[#00704a] shadow-lg flex items-center gap-1.5 relative select-none cursor-pointer animate-pop-in [touch-action:manipulation]"
                   onClick={(e) => {
                     e.stopPropagation();
                     setSelectedStarbucksId(null);
                   }}
                   onDoubleClick={(e) => e.stopPropagation()}
+                  onTouchStart={(e) => e.stopPropagation()}
                 >
                   <span className="text-[13px] font-bold text-[#00704a] whitespace-nowrap">
                     {place.name}
@@ -419,7 +420,7 @@ const Main = () => {
                   <div className={`absolute bottom-0 left-[-18px] flex flex-col pb-[6px] pointer-events-auto ${isDark ? 'custom-marker-original-color' : ''}`}>
                     
                     <div 
-                      className={`relative px-3 py-2 border-[1.5px] border-[#FF4D00] rounded-[8px] shadow-lg flex flex-col gap-1 w-max min-w-[120px] max-w-[240px] select-none ${hiddenCount > 0 ? 'cursor-pointer' : ''} ${isGroupExpanded ? 'bg-[#FF4D00]' : 'bg-white'}`}
+                      className={`relative px-3 py-2 border-[1.5px] border-[#FF4D00] rounded-[8px] shadow-lg flex flex-col gap-1 w-max min-w-[120px] max-w-[240px] select-none ${hiddenCount > 0 ? 'cursor-pointer' : ''} ${isGroupExpanded ? 'bg-[#FF4D00]' : 'bg-white'} [touch-action:manipulation]`}
                       onClick={(e) => {
                         e.stopPropagation();
                         if (hiddenCount > 0) {
@@ -435,14 +436,16 @@ const Main = () => {
                         }
                       }}
                       onDoubleClick={(e) => e.stopPropagation()}
+                      onTouchStart={(e) => e.stopPropagation()}
                     >
                       
                       {/* 펼쳐진 이전 메모들 (왼쪽 정렬 복구) */}
                       {hiddenCount > 0 && isGroupExpanded && (
                         <div 
-                          className="absolute bottom-full left-[-1.5px] mb-[6px] flex flex-col items-start gap-[6px] cursor-default select-none" 
+                          className="absolute bottom-full left-[-1.5px] mb-[6px] flex flex-col items-start gap-[6px] cursor-default select-none [touch-action:manipulation]" 
                           onClick={(e) => e.stopPropagation()}
                           onDoubleClick={(e) => e.stopPropagation()}
+                          onTouchStart={(e) => e.stopPropagation()}
                         >
                           {group.slice(0, hiddenCount).map(memo => (
                             <div key={memo.id} className="relative px-3 py-2 bg-white border-[1.5px] border-[#FF4D00] rounded-[8px] shadow-lg flex flex-col gap-1 w-max min-w-[120px] max-w-[240px] animate-pop-in">
