@@ -17,7 +17,7 @@ const formatDateTime = (dateString) => {
 
 /**
  * [Page] 메인 페이지 (지도 메모 기능 통합 버전)
- * @version 15.16
+ * @version 15.17
  * @author Antigravity
  * @description 
  * - Supabase 백엔드를 연동하여 지도 위에 말풍선 메모를 남기는 기능을 구현했습니다.
@@ -373,37 +373,35 @@ const Main = () => {
       </Map>
 
       {/* [Interface Layer] 우측 컨트롤 스택 */}
-      <div className="fixed bottom-0 right-0 z-[9999] pointer-events-none">
-        <div className="w-full px-10 py-8">
-          <div className="flex flex-col items-center justify-end gap-3 pointer-events-auto">
-            {/* 메모 작성 모드 버튼 */}
-            <button 
-              onClick={() => setIsMemoMode(!isMemoMode)}
-              className={`w-12 h-12 rounded-full flex items-center justify-center active:scale-90 transition-all border shadow-lg
-                ${isMemoMode 
-                  ? 'bg-[#FF4D00] border-[#FF4D00] text-white' 
-                  : (isDark 
-                    ? 'bg-[#1a1c1e]/90 border-white/10 text-white' 
-                    : 'bg-white border-gray-200 text-[#1a1c1e]')}
-              `}
-              aria-label="메모 작성 모드"
-            >
-              <MessageSquare size={22} fill={isMemoMode ? "currentColor" : "none"} />
-            </button>
-
-            {/* 현위치 버튼 */}
-            <button 
-              onPointerDown={handleMyLocationBtn}
-              className={`w-12 h-12 rounded-full flex items-center justify-center active:scale-90 transition-all border shadow-lg
-                ${isDark 
+      <div className="fixed bottom-6 right-6 z-[9999] pointer-events-none">
+        <div className="flex flex-col items-center justify-end gap-3 pointer-events-auto">
+          {/* 메모 작성 모드 버튼 */}
+          <button 
+            onClick={() => setIsMemoMode(!isMemoMode)}
+            className={`w-12 h-12 rounded-full flex items-center justify-center active:scale-90 transition-all border
+              ${isMemoMode 
+                ? 'bg-[#FF4D00] border-[#FF4D00] text-white' 
+                : (isDark 
                   ? 'bg-[#1a1c1e]/90 border-white/10 text-white' 
-                  : 'bg-white border-gray-200 text-[#1a1c1e]'}
-              `}
-              aria-label="현위치"
-            >
-              <Crosshair size={22} strokeWidth={1.5} />
-            </button>
-          </div>
+                  : 'bg-white border-gray-200 text-[#1a1c1e]')}
+            `}
+            aria-label="메모 작성 모드"
+          >
+            <MessageSquare size={22} fill={isMemoMode ? "currentColor" : "none"} />
+          </button>
+
+          {/* 현위치 버튼 */}
+          <button 
+            onPointerDown={handleMyLocationBtn}
+            className={`w-12 h-12 rounded-full flex items-center justify-center active:scale-90 transition-all border
+              ${isDark 
+                ? 'bg-[#1a1c1e]/90 border-white/10 text-white' 
+                : 'bg-white border-gray-200 text-[#1a1c1e]'}
+            `}
+            aria-label="현위치"
+          >
+            <Crosshair size={22} strokeWidth={1.5} />
+          </button>
         </div>
       </div>
 
