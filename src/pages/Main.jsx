@@ -17,7 +17,7 @@ const formatDateTime = (dateString) => {
 
 /**
  * [Page] 메인 페이지 (지도 메모 기능 통합 버전)
- * @version 15.19
+ * @version 15.20
  * @author Antigravity
  * @description 
  * - Supabase 백엔드를 연동하여 지도 위에 말풍선 메모를 남기는 기능을 구현했습니다.
@@ -378,25 +378,29 @@ const Main = () => {
           {/* 메모 작성 모드 버튼 */}
           <button 
             onClick={() => setIsMemoMode(!isMemoMode)}
-            className={`w-12 h-12 rounded-full flex items-center justify-center active:scale-90 transition-all border
+            className={`w-12 h-12 rounded-full flex items-center justify-center active:scale-90 transition-all 
               ${isMemoMode 
-                ? 'bg-[#FF4D00] border-[#FF4D00] text-white' 
+                ? 'bg-[#FF4D00] text-white' 
                 : (isDark 
-                  ? 'bg-[#1a1c1e]/90 border-white/10 text-white' 
-                  : 'bg-white border-gray-200 text-[#1a1c1e]')}
+                  ? 'bg-[#1a1c1e]/90 text-white' 
+                  : 'bg-white text-[#1a1c1e]')}
             `}
             aria-label="메모 작성 모드"
           >
-            <MessageSquare size={22} fill={isMemoMode ? "currentColor" : "none"} />
+            <MessageSquare 
+              size={22} 
+              fill={isMemoMode ? "currentColor" : "none"} 
+              className={!isMemoMode ? "animate-memo-icon" : ""}
+            />
           </button>
 
           {/* 현위치 버튼 */}
           <button 
             onPointerDown={handleMyLocationBtn}
-            className={`w-12 h-12 rounded-full flex items-center justify-center active:scale-90 transition-all border
+            className={`w-12 h-12 rounded-full flex items-center justify-center active:scale-90 transition-all
               ${isDark 
-                ? 'bg-[#1a1c1e]/90 border-white/10 text-white' 
-                : 'bg-white border-gray-200 text-[#1a1c1e]'}
+                ? 'bg-[#1a1c1e]/90 text-white' 
+                : 'bg-white text-[#1a1c1e]'}
             `}
             aria-label="현위치"
           >
@@ -419,6 +423,23 @@ const Main = () => {
         }
         .animate-pop-in {
           animation: pop-in 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .animate-memo-icon {
+          animation: memo-bounce 3s infinite ease-in-out;
+        }
+        .animate-memo-icon path {
+          stroke-dasharray: 100;
+          animation: memo-draw 3s infinite cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        @keyframes memo-bounce {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-3px) scale(1.05); text-shadow: 0px 5px 10px rgba(255, 77, 0, 0.3); }
+        }
+        @keyframes memo-draw {
+          0% { stroke-dashoffset: 100; }
+          40%, 60% { stroke-dashoffset: 0; }
+          100% { stroke-dashoffset: -100; }
         }
       `}</style>
     </div>
