@@ -359,7 +359,6 @@ const Main = () => {
                 position={{ lat: place.lat, lng: place.lng }} 
                 yAnchor={1.5} 
                 zIndex={1000}
-                clickable={true}
               >
                 <div 
                   className="bg-white px-3 py-1.5 rounded-full border-2 border-[#00704a] shadow-lg flex items-center gap-1.5 relative select-none cursor-pointer animate-pop-in"
@@ -419,7 +418,6 @@ const Main = () => {
                 xAnchor={0}
                 yAnchor={0}
                 zIndex={isGroupExpanded ? 999 : 10}
-                clickable={true}
               >
                 {/* 0x0 크기의 앵커 기준점 */}
                 <div className="relative w-0 h-0 group animate-pop-in pointer-events-none">

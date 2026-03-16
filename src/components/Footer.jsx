@@ -21,7 +21,7 @@ const Footer = () => {
             </p>
             <span className="w-px h-3 bg-black opacity-100" />
             <p className="text-[14px] font-bold tracking-[0]">
-              Last Deployed: 2026.03.16 15:25
+              Last Deployed: 2026.03.16 15:35
             </p>
           </div>
           {/* 저작권: 블랙 0.3 */}
