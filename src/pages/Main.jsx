@@ -17,7 +17,7 @@ const formatDateTime = (dateString) => {
 
 /**
  * [Page] 메인 페이지 (지도 메모 기능 통합 버전)
- * @version 15.11
+ * @version 15.12
  * @author Antigravity
  * @description 
  * - Supabase 백엔드를 연동하여 지도 위에 말풍선 메모를 남기는 기능을 구현했습니다.
@@ -290,7 +290,7 @@ const Main = () => {
                   <div className={`absolute bottom-0 left-0 -translate-x-[50%] flex flex-col pb-[6px] pointer-events-auto ${isDark ? 'custom-marker-original-color' : ''}`}>
                     
                     <div 
-                      className={`relative px-3 py-2 bg-white border-[1.5px] border-[#FF4D00] rounded-[8px] shadow-lg flex flex-col gap-1 w-max min-w-[120px] max-w-[280px] transition-transform ${hiddenCount > 0 ? 'cursor-pointer hover:-translate-y-0.5' : ''}`}
+                      className={`relative px-3 py-2 bg-white border-[1.5px] border-[#FF4D00] rounded-[8px] shadow-lg flex flex-col gap-1 w-max min-w-[120px] max-w-[280px] ${hiddenCount > 0 ? 'cursor-pointer' : ''}`}
                       onClick={(e) => {
                         if (hiddenCount > 0) toggleGroupExpand(anchorMemo.id, e);
                       }}
@@ -329,13 +329,6 @@ const Main = () => {
                       {hiddenCount > 0 && !isGroupExpanded && (
                         <div className="absolute -top-[10px] -right-[12px] bg-white text-[#FF4D00] text-[13px] font-extrabold px-1.5 py-0.5 rounded-full border-2 border-[#FF4D00] shadow-md z-30 flex items-center justify-center leading-none min-w-[32px] pointer-events-none">
                           +{hiddenCount}
-                        </div>
-                      )}
-
-                      {/* 확장 되었을 때 X 뱃지 */}
-                      {hiddenCount > 0 && isGroupExpanded && (
-                        <div className="absolute -top-[10px] -right-[12px] bg-white text-[#FF4D00] rounded-full border-2 border-[#FF4D00] shadow-md z-30 flex items-center justify-center w-[30px] h-[30px] pointer-events-none">
-                          <X size={18} strokeWidth={3} />
                         </div>
                       )}
 
