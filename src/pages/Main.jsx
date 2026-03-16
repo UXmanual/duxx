@@ -18,7 +18,7 @@ const formatDateTime = (dateString) => {
 
 /**
  * [Page] 메인 페이지 (지도 메모 기능 통합 버전)
- * @version 17.5
+ * @version 17.6
  * @author Antigravity
  * @description 
  * - Supabase 백엔드를 연동하여 지도 위에 말풍선 메모를 남기는 기능을 구현했습니다.
@@ -448,7 +448,7 @@ const Main = () => {
           {/* 메모 작성 안내 말풍선 */}
           {isMemoMode && (
             <div className="absolute bottom-[calc(100%+12px)] right-0 animate-pop-in pointer-events-none">
-              <div className="bg-[#FF4D00] text-white text-[12px] font-bold px-3 py-2 rounded-full shadow-lg whitespace-nowrap relative">
+              <div className="bg-[#FF4D00] text-white text-[12px] font-bold px-3 py-2 rounded-full whitespace-nowrap relative">
                 메모를 남길 위치를 눌러주세요
                 {/* 말풍선 꼬리 */}
                 <div className="absolute top-full right-[18px] w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px] border-t-[#FF4D00]" />

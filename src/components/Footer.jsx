@@ -3,7 +3,7 @@ import pkg from '../../package.json';
 
 /**
  * [Component] 푸터
- * @version 17.5
+ * @version 17.6
  * @author Antigravity
  * @description 
  * - 푸터의 모든 텍스트 드래그(선택)를 방지하는 select-none 속성을 추가했습니다.
