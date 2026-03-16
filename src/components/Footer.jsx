@@ -20,7 +20,7 @@ const Footer = () => {
               Build v{pkg.version}
             </p>
             <span className="text-[12px] opacity-60">
-              Last Deployed: 2026.03.16 23:45
+              Last Deployed: 2026.03.16 23:50
             </span>
           </div>
           {/* 저작권: 블랙 0.3 */}
