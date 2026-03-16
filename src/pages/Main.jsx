@@ -21,8 +21,7 @@ const formatDateTime = (dateString) => {
  * @version 18.5
  * @author Antigravity
  * @description 
- * - 말풍선 클릭 인터랙션 버그 수정을 완료하고 리스트 노출 기능을 안정화했습니다.
- * - iOS Safari 호환성 강화: 양수 기반 전진 루프(300-200-100)를 통해 애니메이션 생략 문제를 해결했습니다.
+ * - 말풍선 인터랙션 최적화: 말풍선 영역 내 더블클릭 시 지도가 확대되는 현상을 방지하기 위해 이벤트 전파 차단 처리를 강화했습니다.
  */
 
 const Main = () => {
@@ -359,6 +358,7 @@ const Main = () => {
                     e.stopPropagation();
                     setSelectedStarbucksId(null);
                   }}
+                  onDoubleClick={(e) => e.stopPropagation()}
                 >
                   <span className="text-[13px] font-bold text-[#00704a] whitespace-nowrap">
                     {place.name}
@@ -434,11 +434,16 @@ const Main = () => {
                           setSelectedStarbucksId(null); // 단일 메모 클릭 시에도 스타벅스 말풍선 처리
                         }
                       }}
+                      onDoubleClick={(e) => e.stopPropagation()}
                     >
                       
                       {/* 펼쳐진 이전 메모들 (왼쪽 정렬 복구) */}
                       {hiddenCount > 0 && isGroupExpanded && (
-                        <div className="absolute bottom-full left-[-1.5px] mb-[6px] flex flex-col items-start gap-[6px] cursor-default select-none" onClick={(e) => e.stopPropagation()}>
+                        <div 
+                          className="absolute bottom-full left-[-1.5px] mb-[6px] flex flex-col items-start gap-[6px] cursor-default select-none" 
+                          onClick={(e) => e.stopPropagation()}
+                          onDoubleClick={(e) => e.stopPropagation()}
+                        >
                           {group.slice(0, hiddenCount).map(memo => (
                             <div key={memo.id} className="relative px-3 py-2 bg-white border-[1.5px] border-[#FF4D00] rounded-[8px] shadow-lg flex flex-col gap-1 w-max min-w-[120px] max-w-[240px] animate-pop-in">
                               <div className="w-full relative z-10 text-left">
