@@ -21,8 +21,8 @@ const formatDateTime = (dateString) => {
  * @version 18.5
  * @author Antigravity
  * @description 
- * - 말풍선 클릭 인터랙션 버그 수정을 위해 CustomOverlayMap에 clickable={true} 속성을 추가하여 상호작용 기능을 복구했습니다.
- * - 리스트 상호작용성 확보를 위해 센터링 로직을 제거하고 안정적인 리스트 노출에 집중했습니다.
+ * - 말풍선 클릭 인터랙션 버그 수정을 완료하고 리스트 노출 기능을 안정화했습니다.
+ * - iOS Safari 애니메이션 호환성 이슈 해결: 메모 아이콘 애니메이션을 비점프(Non-jump) 방식으로 루프 부드러움을 개선했습니다.
  */
 
 const Main = () => {
@@ -600,16 +600,16 @@ const Main = () => {
           95% { -webkit-transform: scale(1.1) rotate(-5deg); }
         }
         @keyframes memo-draw {
-          0% { stroke-dashoffset: 100; }
-          45% { stroke-dashoffset: 0; }
-          55% { stroke-dashoffset: 0; }
-          100% { stroke-dashoffset: -100; }
+          0% { stroke-dashoffset: 110; }
+          40% { stroke-dashoffset: 0; }
+          60% { stroke-dashoffset: 0; }
+          100% { stroke-dashoffset: 110; }
         }
         @-webkit-keyframes memo-draw {
-          0% { stroke-dashoffset: 100; }
-          45% { stroke-dashoffset: 0; }
-          55% { stroke-dashoffset: 0; }
-          100% { stroke-dashoffset: -100; }
+          0% { stroke-dashoffset: 110; }
+          40% { stroke-dashoffset: 0; }
+          60% { stroke-dashoffset: 0; }
+          100% { stroke-dashoffset: 110; }
         }
         @keyframes btn-pulse-light {
           0%, 100% { box-shadow: 0 0 0 0 rgba(0, 0, 0, 0.05); }
