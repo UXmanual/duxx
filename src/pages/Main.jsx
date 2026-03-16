@@ -17,7 +17,7 @@ const formatDateTime = (dateString) => {
 
 /**
  * [Page] 메인 페이지 (지도 메모 기능 통합 버전)
- * @version 15.7
+ * @version 15.8
  * @author Antigravity
  * @description 
  * - Supabase 백엔드를 연동하여 지도 위에 말풍선 메모를 남기는 기능을 구현했습니다.
@@ -39,6 +39,7 @@ const Main = () => {
   // 스타벅스 리저브 관련 상태
   const [starbucksPlaces, setStarbucksPlaces] = useState([]);
   const [isStarbucksVisible, setIsStarbucksVisible] = useState(true);
+  const [selectedStarbucksId, setSelectedStarbucksId] = useState(null);
 
   const [loading, error] = useKakaoLoader({
     appkey: import.meta.env.VITE_KAKAO_MAPS_API_KEY,
@@ -283,27 +284,41 @@ const Main = () => {
 
         {/* 스타벅스 리저브 마커 레이어 */}
         {isStarbucksVisible && starbucksPlaces.map((place) => (
-          <MapMarker
-            key={`starbucks-${place.id}`}
-            position={{ lat: place.y, lng: place.x }}
-            image={{
-              src: 'data:image/svg+xml;base64,' + btoa(`
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <circle cx="12" cy="12" r="10" fill="#006241" stroke="white" stroke-width="2"/>
-                  <path d="M12 7L13.5 11.5H18L14.5 14L15.5 18.5L12 16L8.5 18.5L9.5 14L6 11.5H10.5L12 7Z" fill="white"/>
-                </svg>
-              `),
-              size: { width: 24, height: 24 },
-              options: { offset: { x: 12, y: 12 } }
-            }}
-            title={place.place_name}
-            onClick={() => {
-              if (map) {
-                map.panTo(new window.kakao.maps.LatLng(place.y, place.x));
-                map.setLevel(3);
-              }
-            }}
-          />
+          <React.Fragment key={`starbucks-group-${place.id}`}>
+            <MapMarker
+              position={{ lat: place.y, lng: place.x }}
+              image={{
+                src: 'data:image/svg+xml;base64,' + btoa(`
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="12" cy="12" r="10" fill="#00704a" stroke="white" stroke-width="2"/>
+                    <path d="M12 6.25L13.5 10.75H18L14.5 13.25L15.5 17.75L12 15.25L8.5 17.75L9.5 13.25L6 10.75H10.5L12 6.25Z" fill="white"/>
+                  </svg>
+                `),
+                size: { width: 24, height: 24 },
+                options: { offset: { x: 12, y: 12 } }
+              }}
+              onClick={() => {
+                if (map) {
+                  map.panTo(new window.kakao.maps.LatLng(place.y, place.x));
+                  setSelectedStarbucksId(selectedStarbucksId === place.id ? null : place.id);
+                }
+              }}
+            />
+            {selectedStarbucksId === place.id && (
+              <CustomOverlayMap position={{ lat: place.y, lng: place.x }} yAnchor={1.8} zIndex={1000}>
+                <div 
+                  className="bg-white px-3 py-1.5 rounded-full border-2 border-[#00704a] shadow-lg flex items-center gap-1.5 relative select-none cursor-pointer animate-pop-in"
+                  onClick={() => setSelectedStarbucksId(null)}
+                >
+                  <span className="text-[13px] font-bold text-[#00704a] whitespace-nowrap">
+                    {place.place_name}
+                  </span>
+                  {/* 말풍선 꼬리 */}
+                  <div className="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px] border-t-[#00704a]" />
+                </div>
+              </CustomOverlayMap>
+            )}
+          </React.Fragment>
         ))}
 
         {/* 지도 메모 표시 로직: 줌 레벨에 따른 동적 렌더링 (레벨 6 이상일 때 숫자 뱃지로 축약) */}
