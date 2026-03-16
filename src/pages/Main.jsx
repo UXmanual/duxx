@@ -17,7 +17,7 @@ const formatDateTime = (dateString) => {
 };
 /**
  * [Page] 메인 페이지 (지도 메모 기능 통합 버전)
- * @version 20.2
+ * @version 20.3
  * @author Antigravity
  * @description 
  * - 바블 리스트 간격 복구 및 닉네임 하단 여백 최적화 버전입니다.
@@ -368,7 +368,7 @@ const Main = () => {
             xAnchor={0.5}
             yAnchor={0.5}
           >
-            <div className={`relative flex items-center justify-center pointer-events-none ${isDark ? 'custom-marker-original-color' : ''}`}>
+            <div className={`relative flex items-center justify-center pointer-events-none select-none ${isDark ? 'custom-marker-original-color' : ''}`}>
               <div className="absolute w-8 h-8 bg-[#FF4D00] rounded-full animate-ping opacity-30" />
               <div className="relative w-[24px] h-[24px] bg-[#FF4D00] border-2 border-white rounded-full flex items-center justify-center shadow-[0_2px_8px_rgba(0,0,0,0.3)]">
                 <div className="w-[6px] h-[6px] bg-white rounded-full" />
