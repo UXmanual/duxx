@@ -3,6 +3,7 @@ import { Map, CustomOverlayMap, MapMarker, MarkerClusterer, useKakaoLoader } fro
 import { useTheme } from '../context/ThemeContext';
 import { Crosshair, MessageSquare, X, Coffee } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
+import { starbucksReserveStores } from '../data/starbucksReserve';
 
 const formatDateTime = (dateString) => {
   if (!dateString) return '';
@@ -17,7 +18,7 @@ const formatDateTime = (dateString) => {
 
 /**
  * [Page] 메인 페이지 (지도 메모 기능 통합 버전)
- * @version 16.0
+ * @version 16.1
  * @author Antigravity
  * @description 
  * - Supabase 백엔드를 연동하여 지도 위에 말풍선 메모를 남기는 기능을 구현했습니다.
@@ -37,7 +38,7 @@ const Main = () => {
   const [expandedGroupIds, setExpandedGroupIds] = useState([]); // 그룹핑된 말풍선 확장 상태 추적
 
   // 스타벅스 리저브 관련 상태
-  const [starbucksPlaces, setStarbucksPlaces] = useState([]);
+  const [starbucksPlaces, setStarbucksPlaces] = useState(starbucksReserveStores);
   const [isStarbucksVisible, setIsStarbucksVisible] = useState(true);
   const [selectedStarbucksId, setSelectedStarbucksId] = useState(null);
 
@@ -125,45 +126,12 @@ const Main = () => {
     }
   };
 
-  // 스타벅스 리저브 지점 검색
-  const fetchStarbucksReserve = (location) => {
-    if (!window.kakao || !window.kakao.maps.services) return;
-    
-    const ps = new window.kakao.maps.services.Places();
-    const options = location ? {
-      location: new window.kakao.maps.LatLng(location.lat, location.lng),
-      radius: 10000, // 10km 이내
-      sort: window.kakao.maps.services.SortBy.DISTANCE
-    } : {};
-
-    ps.keywordSearch('스타벅스 리저브', (data, status) => {
-      if (status === window.kakao.maps.services.Status.OK) {
-        // 리저브 매장 필터링: '리저브', 'Reserve', ' R', '별다방', '광화문점' 포함
-        const filtered = data.filter(place => 
-          place.place_name.includes('리저브') || 
-          place.place_name.toLowerCase().includes('reserve') ||
-          place.place_name.includes(' R') ||
-          place.place_name.includes('별다방') ||
-          place.place_name.includes('광화문점') ||
-          /R점$/.test(place.place_name)
-        );
-        setStarbucksPlaces(filtered);
-      }
-    }); // 위치/반경 제한 제거하여 전국 대상 검색 가능성 확대
-  };
-
   useEffect(() => {
     if (map) {
       if (!myLocation) requestLocation(true);
       fetchMemos();
     }
   }, [map]);
-
-  useEffect(() => {
-    if (map && myLocation) {
-      fetchStarbucksReserve(myLocation);
-    }
-  }, [map, myLocation]);
 
   const handleMyLocationBtn = (e) => {
     if (e) {
