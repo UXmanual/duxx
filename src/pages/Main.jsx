@@ -17,7 +17,7 @@ const formatDateTime = (dateString) => {
 };
 /**
  * [Page] 메인 페이지 (지도 메모 기능 통합 버전)
- * @version 19.7
+ * @version 19.8
  * @author Antigravity
  * @description 
  * - 모바일 접근성 최적화: 말풍선 영역 내 더블터치 시 지도가 확대되는 현상을 방지하기 위해 터치 이벤트 전파 차단 및 touch-action 속성을 적용했습니다.
@@ -497,7 +497,7 @@ const Main = () => {
                               {/* 닉네임 (동네+성격+접미사) */}
                               <div className="w-full text-left">
                                 <span className="text-[11px] font-bold text-[#FF4D00] opacity-80 tracking-tight">
-                                  {memo.nickname || '익명의 바블러'}
+                                  {memo.nickname || '바블동네 신비로운 바블러'}
                                 </span>
                               </div>
                               <div className="w-full relative z-10 text-left">
@@ -534,7 +534,7 @@ const Main = () => {
                        {/* 닉네임 (동네+성격+접미사) */}
                       <div className="w-full text-left mb-0.5">
                         <span className={`text-[11px] font-bold tracking-tight ${isGroupExpanded ? 'text-white/70' : 'text-[#FF4D00] opacity-80'}`}>
-                          {anchorMemo.nickname || '익명의 바블러'}
+                          {anchorMemo.nickname || '바블동네 신비로운 바블러'}
                         </span>
                       </div>
                       
