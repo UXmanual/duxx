@@ -17,7 +17,7 @@ const formatDateTime = (dateString) => {
 
 /**
  * [Page] 메인 페이지 (지도 메모 기능 통합 버전)
- * @version 15.9
+ * @version 15.10
  * @author Antigravity
  * @description 
  * - Supabase 백엔드를 연동하여 지도 위에 말풍선 메모를 남기는 기능을 구현했습니다.
@@ -35,6 +35,7 @@ const Main = () => {
   const [memos, setMemos] = useState([]);
   const [isMemoMode, setIsMemoMode] = useState(false);
   const [expandedMemoIds, setExpandedMemoIds] = useState([]); // 확장된 메모 ID 목록 추적
+  const [expandedGroupIds, setExpandedGroupIds] = useState([]); // 그룹핑된 말풍선 확장 상태 추적
 
   const [loading, error] = useKakaoLoader({
     appkey: import.meta.env.VITE_KAKAO_MAPS_API_KEY,
@@ -190,6 +191,14 @@ const Main = () => {
     );
   };
 
+  // 말풍선 그룹 확장 토글 처리
+  const toggleGroupExpand = (id, e) => {
+    e.stopPropagation();
+    setExpandedGroupIds(prev => 
+      prev.includes(id) ? prev.filter(gid => gid !== id) : [...prev, id]
+    );
+  };
+
   if (loading) {
     return (
       <div className="w-full h-screen bg-[#f8f9fa] relative overflow-hidden flex items-center justify-center">
@@ -275,6 +284,9 @@ const Main = () => {
         ) : (
           groupedMemos.map((group) => {
             const anchorMemo = group[group.length - 1]; // 그룹의 기준 좌표는 가장 하단에 렌더링될 최신 메모
+            const hiddenCount = group.length - 1;
+            const isGroupExpanded = expandedGroupIds.includes(anchorMemo.id);
+
             return (
               <CustomOverlayMap
                 key={`group-${anchorMemo.id}`}
@@ -285,51 +297,96 @@ const Main = () => {
               >
                 {/* 0x0 크기의 앵커 기준점 */}
                 <div className="relative w-0 h-0 group animate-pop-in pointer-events-none">
-                  {/* 말풍선 스택 Wrapper */}
-                  <div className={`absolute bottom-0 left-0 -translate-x-[50%] flex flex-col items-center pb-[6px] pointer-events-auto ${isDark ? 'custom-marker-original-color' : ''}`}>
-                    {/* 여러 개의 메모를 세로로 스택 (위: 과거, 아래: 최신) */}
-                    <div className="flex flex-col items-center gap-[6px]">
-                      {group.map((memo, idx) => {
-                        const isLast = idx === group.length - 1; // 꼬리는 마지막(최신) 메모에만 표시
-                        return (
-                          <div key={memo.id} className="relative px-3 py-2 bg-white border-[1.5px] border-[#FF4D00] rounded-[8px] shadow-lg flex flex-col gap-1 w-max min-w-[120px] max-w-[280px]">
-                            {/* 상단 텍스트 영역: 내용이 길 경우 가로로 길어지다 최대 넓이 초과 시 줄바꿈 처리 */}
-                            <div className="flex items-start justify-between gap-3 w-full relative z-10 text-left">
-                              <span 
-                                onClick={(e) => toggleMemoExpand(memo.id, e)}
-                                className={`text-[14px] font-medium text-black leading-tight tracking-tight break-all whitespace-pre-wrap flex-1 cursor-pointer transition-all ${!expandedMemoIds.includes(memo.id) ? 'line-clamp-1' : ''}`}
-                                title={!expandedMemoIds.includes(memo.id) ? "클릭하여 더보기" : ""}
-                              >
-                                {memo.text}
-                              </span>
-                              <button 
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleDeleteMemo(memo.id);
-                                }}
-                                className="flex-shrink-0 flex items-center justify-center text-zinc-400 hover:text-[#FF4D00] transition-colors mt-0.5"
-                                aria-label="메모 삭제"
-                              >
-                                <X size={12} strokeWidth={2.5} />
-                              </button>
-                            </div>
-                            {/* [Date Row] 하단 날짜, 폰트사이즈 10px */}
-                            <span className="text-[10px] text-zinc-400 font-medium tracking-wide relative z-10 text-left">
-                              {formatDateTime(memo.created_at)}
-                            </span>
-
-                            {/* SVG 기반 완벽한 꼬리 연결 (마지막 아이템에만 부착) */}
-                            {isLast && (
-                              <div className="absolute top-[calc(100%-1.5px)] left-1/2 -translate-x-[50%] w-[12px] h-[8px] z-20 pointer-events-none overflow-visible">
-                                <svg width="12" height="8" viewBox="0 0 12 8" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                  <path d="M1.5 0 H10.5 L6 6 Z" fill="white" />
-                                  <path d="M1.5 1.5 L6 6.5 L10.5 1.5" stroke="#FF4D00" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                                </svg>
+                  {/* 기준(최신) 말풍선을 감싸는 Wrapper */}
+                  <div className={`absolute bottom-0 left-0 -translate-x-[50%] flex flex-col pb-[6px] pointer-events-auto ${isDark ? 'custom-marker-original-color' : ''}`}>
+                    
+                    <div className="relative px-3 py-2 bg-white border-[1.5px] border-[#FF4D00] rounded-[8px] shadow-lg flex flex-col gap-1 w-max min-w-[120px] max-w-[280px]">
+                      
+                      {/* 펼쳐진 이전 메모들 (최신 메모 왼쪽 모서리에 딱 맞춤) */}
+                      {hiddenCount > 0 && isGroupExpanded && (
+                        <div className="absolute bottom-full left-[-1.5px] mb-[6px] flex flex-col items-start gap-[6px]">
+                          {group.slice(0, hiddenCount).map(memo => (
+                            <div key={memo.id} className="relative px-3 py-2 bg-white border-[1.5px] border-[#FF4D00] rounded-[8px] shadow-lg flex flex-col gap-1 w-max min-w-[120px] max-w-[280px] animate-pop-in">
+                              <div className="flex items-start justify-between gap-3 w-full relative z-10 text-left">
+                                <span 
+                                  onClick={(e) => toggleMemoExpand(memo.id, e)}
+                                  className={`text-[14px] font-medium text-black leading-tight tracking-tight break-all whitespace-pre-wrap flex-1 cursor-pointer transition-all ${!expandedMemoIds.includes(memo.id) ? 'line-clamp-1' : ''}`}
+                                  title={!expandedMemoIds.includes(memo.id) ? "클릭하여 더보기" : ""}
+                                >
+                                  {memo.text}
+                                </span>
+                                <button 
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleDeleteMemo(memo.id);
+                                  }}
+                                  className="flex-shrink-0 flex items-center justify-center text-zinc-400 hover:text-[#FF4D00] transition-colors mt-0.5"
+                                  aria-label="메모 삭제"
+                                >
+                                  <X size={12} strokeWidth={2.5} />
+                                </button>
                               </div>
-                            )}
-                          </div>
-                        );
-                      })}
+                              <span className="text-[10px] text-zinc-400 font-medium tracking-wide relative z-10 text-left">
+                                {formatDateTime(memo.created_at)}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* 확장 안 되었을 때 +N 뱃지 */}
+                      {hiddenCount > 0 && !isGroupExpanded && (
+                        <div 
+                          className="absolute -top-[10px] -right-[12px] bg-white text-[#FF4D00] text-[13px] font-extrabold px-1.5 py-0.5 rounded-full border-2 border-[#FF4D00] cursor-pointer hover:scale-105 transition-transform shadow-md z-30 flex items-center justify-center leading-none min-w-[32px]"
+                          onClick={(e) => toggleGroupExpand(anchorMemo.id, e)}
+                        >
+                          +{hiddenCount}
+                        </div>
+                      )}
+
+                      {/* 확장 되었을 때 X 뱃지 */}
+                      {hiddenCount > 0 && isGroupExpanded && (
+                        <div 
+                          className="absolute -top-[10px] -right-[12px] bg-white text-[#FF4D00] rounded-full border-2 border-[#FF4D00] cursor-pointer hover:scale-105 transition-transform shadow-md z-30 flex items-center justify-center w-[30px] h-[30px]"
+                          onClick={(e) => toggleGroupExpand(anchorMemo.id, e)}
+                        >
+                          <X size={18} strokeWidth={3} />
+                        </div>
+                      )}
+
+                      {/* 기준 최신 메모 상단 텍스트 영역 */}
+                      <div className="flex items-start justify-between gap-3 w-full relative z-10 text-left">
+                        <span 
+                          onClick={(e) => toggleMemoExpand(anchorMemo.id, e)}
+                          className={`text-[14px] font-medium text-black leading-tight tracking-tight break-all whitespace-pre-wrap flex-1 cursor-pointer transition-all ${!expandedMemoIds.includes(anchorMemo.id) ? 'line-clamp-1' : ''}`}
+                          title={!expandedMemoIds.includes(anchorMemo.id) ? "클릭하여 더보기" : ""}
+                        >
+                          {anchorMemo.text}
+                        </span>
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteMemo(anchorMemo.id);
+                          }}
+                          className="flex-shrink-0 flex items-center justify-center text-zinc-400 hover:text-[#FF4D00] transition-colors mt-0.5"
+                          aria-label="메모 삭제"
+                        >
+                          <X size={12} strokeWidth={2.5} />
+                        </button>
+                      </div>
+                      
+                      {/* 기준 최신 메모 하단 날짜 */}
+                      <span className="text-[10px] text-zinc-400 font-medium tracking-wide relative z-10 text-left">
+                        {formatDateTime(anchorMemo.created_at)}
+                      </span>
+
+                      {/* SVG 기반 완벽한 꼬리 연결 (가장 하단의 최신 메모에만 항상 존재) */}
+                      <div className="absolute top-[calc(100%-1.5px)] left-1/2 -translate-x-[50%] w-[12px] h-[8px] z-20 pointer-events-none overflow-visible">
+                        <svg width="12" height="8" viewBox="0 0 12 8" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M1.5 0 H10.5 L6 6 Z" fill="white" />
+                          <path d="M1.5 1.5 L6 6.5 L10.5 1.5" stroke="#FF4D00" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -337,6 +394,7 @@ const Main = () => {
             );
           })
         )}
+
       </Map>
 
       {/* [Interface Layer] 우측 컨트롤 스택 */}
