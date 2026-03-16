@@ -18,7 +18,7 @@ const formatDateTime = (dateString) => {
 
 /**
  * [Page] 메인 페이지 (지도 메모 기능 통합 버전)
- * @version 16.6
+ * @version 16.7
  * @author Antigravity
  * @description 
  * - Supabase 백엔드를 연동하여 지도 위에 말풍선 메모를 남기는 기능을 구현했습니다.
@@ -272,7 +272,7 @@ const Main = () => {
               }}
             />
             {selectedStarbucksId === place.id && (
-              <CustomOverlayMap position={{ lat: place.lat, lng: place.lng }} yAnchor={1.4} zIndex={1000}>
+              <CustomOverlayMap position={{ lat: place.lat, lng: place.lng }} yAnchor={1.5} zIndex={1000}>
                 <div 
                   className="bg-white px-3 py-1.5 rounded-full border-2 border-[#00704a] shadow-lg flex items-center gap-1.5 relative select-none cursor-pointer animate-pop-in"
                   onClick={() => setSelectedStarbucksId(null)}
