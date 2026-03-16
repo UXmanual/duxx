@@ -1,21 +1,34 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Map, CustomOverlayMap, useKakaoLoader } from 'react-kakao-maps-sdk';
+import { Map, CustomOverlayMap, MapMarker, MarkerClusterer, useKakaoLoader } from 'react-kakao-maps-sdk';
 import { useTheme } from '../context/ThemeContext';
 import { Crosshair, MessageSquare, X } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 
+const formatDateTime = (dateString) => {
+  if (!dateString) return '';
+  const date = new Date(dateString);
+  const yyyy = date.getFullYear();
+  const mm = String(date.getMonth() + 1).padStart(2, '0');
+  const dd = String(date.getDate()).padStart(2, '0');
+  const hh = String(date.getHours()).padStart(2, '0');
+  const min = String(date.getMinutes()).padStart(2, '0');
+  return `${yyyy}.${mm}.${dd} ${hh}:${min}`;
+};
+
 /**
  * [Page] 메인 페이지 (지도 메모 기능 통합 버전)
- * @version 12.0.0
+ * @version 15.5.0
  * @author Antigravity
  * @description 
  * - Supabase 백엔드를 연동하여 지도 위에 말풍선 메모를 남기는 기능을 구현했습니다.
- * - 화이트 배경에 주황색 테두리가 있는 프리미엄 말풍선 UI를 적용했습니다.
+ * - 줌 레벨 기반 메모 표시 최적화: 레벨 6~11에서는 말풍선을 숫자 원형 뱃지로 축약하여 표시합니다.
+ * - 개별 말풍선 하단에 생성 날짜와 시간을 표기했습니다.
  */
 
 const Main = () => {
   const { isDark } = useTheme();
   const [map, setMap] = useState(null);
+  const [mapLevel, setMapLevel] = useState(4);
   const [myLocation, setMyLocation] = useState(null);
   
   // 메모 관련 상태
@@ -159,8 +172,10 @@ const Main = () => {
         onCreate={(m) => {
           setMap(m);
           m.setMaxLevel(11);
+          setMapLevel(m.getLevel());
           setTimeout(() => m.relayout(), 100);
         }}
+        onZoomChanged={(m) => setMapLevel(m.getLevel())}
         onClick={handleMapClick}
         style={{ width: '100%', height: '100%' }}
         className={isDark ? 'kakao-dark-theme' : ''}
@@ -182,39 +197,73 @@ const Main = () => {
           </CustomOverlayMap>
         )}
 
-        {/* 지도 메모 말풍선 UI */}
-        {memos.map((memo) => (
-          <CustomOverlayMap
-            key={memo.id}
-            position={{ lat: memo.lat, lng: memo.lng }}
-            yAnchor={1.2}
-            zIndex={10}
+        {/* 지도 메모 표시 로직: 줌 레벨에 따른 동적 렌더링 (레벨 6 이상일 때 숫자 뱃지로 축약) */}
+        {mapLevel >= 6 ? (
+          <MarkerClusterer
+            averageCenter={true}
+            minLevel={6} // 레벨 6 이상에서만 클러스터링
+            minClusterSize={1} // 1개의 마커도 숫자 뱃지로 변환
+            disableClickZoom={false}
+            styles={[{
+              width: '32px', height: '32px',
+              background: '#FF4D00',
+              color: '#fff',
+              textAlign: 'center',
+              fontWeight: 'bold',
+              lineHeight: '28px', // 테두리 두께 보정
+              borderRadius: '50%',
+              border: '2px solid white',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+              fontSize: '14px'
+            }]}
           >
-            <div className={`relative px-2.5 py-1.5 bg-white border-[1.5px] border-[#FF4D00] rounded-[8px] shadow-lg flex items-center gap-1.5 group animate-pop-in ${isDark ? 'custom-marker-original-color' : ''}`}>
-              <span className="text-[14px] font-medium text-black whitespace-nowrap leading-none tracking-tight">
-                {memo.text}
-              </span>
-              <button 
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleDeleteMemo(memo.id);
-                }}
-                className="flex items-center justify-center text-zinc-400 hover:text-[#FF4D00] transition-colors"
-                aria-label="메모 삭제"
-              >
-                <X size={12} strokeWidth={2.5} />
-              </button>
-              
-              {/* [Simplified Tail] 가로 폭을 줄여 더 심플해진 SVG 꼬리 */}
-              <div className="absolute -bottom-[8px] left-1/2 -translate-x-1/2 w-[10px] h-2">
-                <svg width="10" height="8" viewBox="0 0 10 8" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M5 8L0 0H10L5 8Z" fill="white"/>
-                  <path d="M0 0L5 8L10 0" stroke="#FF4D00" strokeWidth="1.5"/>
-                </svg>
+            {memos.map((memo) => (
+              <MapMarker 
+                key={memo.id} 
+                position={{ lat: memo.lat, lng: memo.lng }} 
+              />
+            ))}
+          </MarkerClusterer>
+        ) : (
+          memos.map((memo) => (
+            <CustomOverlayMap
+              key={memo.id}
+              position={{ lat: memo.lat, lng: memo.lng }}
+              yAnchor={1.2}
+              zIndex={10}
+            >
+              <div className={`relative px-3 py-2 bg-white border-[1.5px] border-[#FF4D00] rounded-[8px] shadow-lg flex flex-col gap-1 group animate-pop-in ${isDark ? 'custom-marker-original-color' : ''}`}>
+                <div className="flex items-start justify-between gap-3">
+                  <span className="text-[14px] font-medium text-black leading-tight tracking-tight max-w-[150px] break-words">
+                    {memo.text}
+                  </span>
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeleteMemo(memo.id);
+                    }}
+                    className="flex items-center justify-center text-zinc-400 hover:text-[#FF4D00] transition-colors mt-0.5"
+                    aria-label="메모 삭제"
+                  >
+                    <X size={12} strokeWidth={2.5} />
+                  </button>
+                </div>
+                {/* [Date Row] 하단 날짜, 폰트사이즈 10px */}
+                <span className="text-[10px] text-zinc-400 font-medium tracking-wide">
+                  {formatDateTime(memo.created_at)}
+                </span>
+                
+                {/* [Simplified Tail] */}
+                <div className="absolute -bottom-[8px] left-1/2 -translate-x-1/2 w-[10px] h-2">
+                  <svg width="10" height="8" viewBox="0 0 10 8" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M5 8L0 0H10L5 8Z" fill="white"/>
+                    <path d="M0 0L5 8L10 0" stroke="#FF4D00" strokeWidth="1.5"/>
+                  </svg>
+                </div>
               </div>
-            </div>
-          </CustomOverlayMap>
-        ))}
+            </CustomOverlayMap>
+          ))
+        )}
       </Map>
 
       {/* [Interface Layer] 우측 컨트롤 스택 */}
