@@ -17,7 +17,7 @@ const formatDateTime = (dateString) => {
 };
 /**
  * [Page] 메인 페이지 (지도 메모 기능 통합 버전)
- * @version 20.8
+ * @version 20.9
  * @author Antigravity
  * @description 
  * - 바블 리스트 간격 복구 및 닉네임 하단 여백 최적화 버전입니다.
@@ -508,7 +508,7 @@ const Main = () => {
                            {group.slice(0, hiddenCount).map(memo => (
                             <div key={memo.id} className="relative px-3 py-2 bg-white border-[1.5px] border-[#FF4D00] rounded-[8px] shadow-lg flex flex-col gap-1 w-max min-w-[120px] max-w-[240px] animate-pop-in">
                               {/* 닉네임 (동네+성격+접미사) */}
-                              <div className="w-full text-left leading-none">
+                              <div className="w-full text-left leading-none mb-0.5">
                                 <span className="text-[11px] font-bold text-[#FF4D00] opacity-80 tracking-tight">
                                   {memo.nickname || getVirtualNickname(memo.id)}
                                 </span>
@@ -545,7 +545,7 @@ const Main = () => {
                       )}
 
                        {/* 닉네임 (동네+성격+접미사) */}
-                      <div className="w-full text-left leading-none">
+                      <div className="w-full text-left leading-none mb-0.5">
                         <span className={`text-[11px] font-bold tracking-tight ${isGroupExpanded ? 'text-white/70' : 'text-[#FF4D00] opacity-80'}`}>
                           {anchorMemo.nickname || getVirtualNickname(anchorMemo.id)}
                         </span>
