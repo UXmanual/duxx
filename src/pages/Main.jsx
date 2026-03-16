@@ -17,7 +17,7 @@ const formatDateTime = (dateString) => {
 
 /**
  * [Page] 메인 페이지 (지도 메모 기능 통합 버전)
- * @version 15.20
+ * @version 15.21
  * @author Antigravity
  * @description 
  * - Supabase 백엔드를 연동하여 지도 위에 말풍선 메모를 남기는 기능을 구현했습니다.
@@ -378,12 +378,12 @@ const Main = () => {
           {/* 메모 작성 모드 버튼 */}
           <button 
             onClick={() => setIsMemoMode(!isMemoMode)}
-            className={`w-12 h-12 rounded-full flex items-center justify-center active:scale-90 transition-all 
+            className={`w-12 h-12 rounded-full flex items-center justify-center active:scale-90 transition-all relative
               ${isMemoMode 
                 ? 'bg-[#FF4D00] text-white' 
                 : (isDark 
-                  ? 'bg-[#1a1c1e]/90 text-white' 
-                  : 'bg-white text-[#1a1c1e]')}
+                  ? 'bg-[#1a1c1e]/90 text-white animate-btn-pulse-dark' 
+                  : 'bg-white text-[#1a1c1e] animate-btn-pulse-light')}
             `}
             aria-label="메모 작성 모드"
           >
@@ -426,21 +426,35 @@ const Main = () => {
         }
 
         .animate-memo-icon {
-          animation: memo-bounce 3s infinite ease-in-out;
+          animation: memo-wiggle 4s infinite ease-in-out;
         }
         .animate-memo-icon path {
-          stroke-dasharray: 100;
-          animation: memo-draw 3s infinite cubic-bezier(0.4, 0, 0.2, 1);
+          stroke-dasharray: 200;
+          animation: memo-draw 4s infinite ease-in-out;
         }
-        @keyframes memo-bounce {
-          0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(-3px) scale(1.05); text-shadow: 0px 5px 10px rgba(255, 77, 0, 0.3); }
+        @keyframes memo-wiggle {
+          0%, 80%, 100% { transform: scale(1) rotate(0); }
+          85% { transform: scale(1.1) rotate(5deg); }
+          90% { transform: scale(1.1) rotate(-5deg); }
+          95% { transform: scale(1.1) rotate(3deg); }
         }
         @keyframes memo-draw {
-          0% { stroke-dashoffset: 100; }
-          40%, 60% { stroke-dashoffset: 0; }
-          100% { stroke-dashoffset: -100; }
+          0% { stroke-dashoffset: 200; opacity: 0; }
+          10% { opacity: 1; }
+          40%, 60% { stroke-dashoffset: 0; opacity: 1; }
+          90% { opacity: 1; }
+          100% { stroke-dashoffset: -200; opacity: 0; }
         }
+        @keyframes btn-pulse-light {
+          0%, 100% { box-shadow: 0 0 0 0 rgba(0, 0, 0, 0.05); }
+          50% { box-shadow: 0 0 15px 2px rgba(255, 77, 0, 0.15); }
+        }
+        @keyframes btn-pulse-dark {
+          0%, 100% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); }
+          50% { box-shadow: 0 0 15px 2px rgba(255, 77, 0, 0.25); }
+        }
+        .animate-btn-pulse-light { animation: btn-pulse-light 4s infinite ease-in-out; }
+        .animate-btn-pulse-dark { animation: btn-pulse-dark 4s infinite ease-in-out; }
       `}</style>
     </div>
   );
