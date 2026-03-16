@@ -17,7 +17,7 @@ const formatDateTime = (dateString) => {
 };
 /**
  * [Page] 메인 페이지 (지도 메모 기능 통합 버전)
- * @version 20.4
+ * @version 20.5
  * @author Antigravity
  * @description 
  * - 바블 리스트 간격 복구 및 닉네임 하단 여백 최적화 버전입니다.
@@ -574,11 +574,11 @@ const Main = () => {
                         </button>
                       </div>
 
-                      {/* SVG 기반 완벽한 꼬리 연결 (왼쪽 위치 복구) */}
-                      <div className="absolute top-[calc(100%-1.5px)] left-[12px] w-[12px] h-[8px] z-20 pointer-events-none overflow-visible">
-                        <svg width="12" height="8" viewBox="0 0 12 8" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <path d="M1.5 0 H10.5 L6 6 Z" fill={isGroupExpanded ? "#FF4D00" : "white"} />
-                          <path d="M1.5 1.5 L6 6.5 L10.5 1.5" stroke="#FF4D00" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                      {/* SVG 기반 완벽한 꼬리 연결 (크기 확대 및 위치 미세 조정) */}
+                      <div className="absolute top-[calc(100%-1.1px)] left-[12px] w-[16px] h-[10px] z-20 pointer-events-none overflow-visible">
+                        <svg width="16" height="10" viewBox="0 0 16 10" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M2 0 H14 L8 8 Z" fill={isGroupExpanded ? "#FF4D00" : "white"} />
+                          <path d="M2 0 L8 8.5 L14 0" stroke="#FF4D00" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
                         </svg>
                       </div>
                     </div>
