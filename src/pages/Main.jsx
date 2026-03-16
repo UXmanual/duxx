@@ -15,10 +15,9 @@ const formatDateTime = (dateString) => {
   const min = String(date.getMinutes()).padStart(2, '0');
   return `${yyyy}.${mm}.${dd} ${hh}:${min}`;
 };
-
 /**
  * [Page] 메인 페이지 (지도 메모 기능 통합 버전)
- * @version 19.4
+ * @version 19.5
  * @author Antigravity
  * @description 
  * - 모바일 접근성 최적화: 말풍선 영역 내 더블터치 시 지도가 확대되는 현상을 방지하기 위해 터치 이벤트 전파 차단 및 touch-action 속성을 적용했습니다.
@@ -191,21 +190,41 @@ const Main = () => {
     const text = prompt('여기에 남길 메모를 입력해주세요:');
     
     if (text && text.trim()) {
-      const newMemo = {
-        lat: latlng.getLat(),
-        lng: latlng.getLng(),
-        text: text.trim()
-      };
+      // 닉네임 조합용 데이터
+      const personalities = ["친절한", "배고픈", "심심한", "행복한", "궁금한", "신난", "차분한", "활발한", "꿈꾸는", "조용한", "똑똑한", "멋진", "귀여운", "용감한"];
+      const suffixes = ["바블러", "바블리", "바블몬", "바블링", "바블러브", "바블맨", "바블걸"];
+      
+      // 1. 역지오코딩으로 동네 명칭 가져오기
+      const geocoder = new window.kakao.maps.services.Geocoder();
+      geocoder.coord2RegionCode(latlng.getLng(), latlng.getLat(), async (result, status) => {
+        let neighborhood = "어딘가";
+        if (status === window.kakao.maps.services.Status.OK) {
+          const region = result.find(r => r.region_type === 'H');
+          neighborhood = region ? region.region_3depth_name : "어딘가";
+        }
 
-      const { data, error } = await supabase
-        .from('memos')
-        .insert([newMemo])
-        .select();
+        // 2. 닉네임 생성: [동네] + [성격] + [접미사]
+        const p = personalities[Math.floor(Math.random() * personalities.length)];
+        const s = suffixes[Math.floor(Math.random() * suffixes.length)];
+        const nickname = `${neighborhood} ${p} ${s}`;
 
-      if (!error && data) {
-        setMemos(prev => [...prev, data[0]]);
-        setIsMemoMode(false); // 작성 후 모드 해제
-      }
+        const newMemo = {
+          lat: latlng.getLat(),
+          lng: latlng.getLng(),
+          text: text.trim(),
+          nickname: nickname
+        };
+
+        const { data, error } = await supabase
+          .from('memos')
+          .insert([newMemo])
+          .select();
+
+        if (!error && data) {
+          setMemos(prev => [...prev, data[0]]);
+          setIsMemoMode(false); // 작성 후 모드 해제
+        }
+      });
     }
   };
 
@@ -447,8 +466,14 @@ const Main = () => {
                           onDoubleClick={(e) => e.stopPropagation()}
                           onTouchStart={(e) => e.stopPropagation()}
                         >
-                          {group.slice(0, hiddenCount).map(memo => (
-                            <div key={memo.id} className="relative px-3 py-2 bg-white border-[1.5px] border-[#FF4D00] rounded-[8px] shadow-lg flex flex-col gap-1 w-max min-w-[120px] max-w-[240px] animate-pop-in">
+                           {group.slice(0, hiddenCount).map(memo => (
+                            <div key={memo.id} className="relative px-3 py-2 bg-white border-[1.5px] border-[#FF4D00] rounded-[8px] shadow-lg flex flex-col gap-0.5 w-max min-w-[120px] max-w-[240px] animate-pop-in">
+                              {/* 닉네임 (동네+성격+접미사) */}
+                              <div className="w-full text-left">
+                                <span className="text-[11px] font-bold text-[#FF4D00] opacity-80 tracking-tight">
+                                  {memo.nickname || '익명의 바블러'}
+                                </span>
+                              </div>
                               <div className="w-full relative z-10 text-left">
                                 <span className="text-[14px] font-medium text-black leading-tight tracking-tight break-all whitespace-pre-wrap line-clamp-2">
                                   {memo.text}
@@ -480,6 +505,13 @@ const Main = () => {
                         </div>
                       )}
 
+                       {/* 닉네임 (동네+성격+접미사) */}
+                      <div className="w-full text-left mb-0.5">
+                        <span className={`text-[11px] font-bold tracking-tight ${isGroupExpanded ? 'text-white/70' : 'text-[#FF4D00] opacity-80'}`}>
+                          {anchorMemo.nickname || '익명의 바블러'}
+                        </span>
+                      </div>
+                      
                       {/* 기준 최신 메모 상단 텍스트 영역 */}
                       <div className="w-full relative z-10 text-left">
                         <span className={`text-[14px] font-medium leading-tight tracking-tight break-all whitespace-pre-wrap line-clamp-2 ${isGroupExpanded ? 'text-white' : 'text-black'}`}>
