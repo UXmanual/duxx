@@ -3,7 +3,7 @@ import pkg from '../../package.json';
 
 /**
  * [Component] 푸터
- * @version 18.7
+ * @version 18.8
  * @author Antigravity
  * @description 
  * - 푸터의 모든 텍스트 드래그(선택)를 방지하는 select-none 속성을 추가했습니다.
@@ -21,7 +21,7 @@ const Footer = () => {
             </p>
             <span className="w-px h-3 bg-black opacity-100" />
             <p className="text-[14px] font-bold tracking-[0]">
-              Last Deployed: 2026.03.16 15:51
+              Last Deployed: 2026.03.16 15:56
             </p>
           </div>
           {/* 저작권: 블랙 0.3 */}
