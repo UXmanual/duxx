@@ -17,11 +17,27 @@ const formatDateTime = (dateString) => {
 };
 /**
  * [Page] 메인 페이지 (지도 메모 기능 통합 버전)
- * @version 19.8
+ * @version 19.9
  * @author Antigravity
  * @description 
- * - 모바일 접근성 최적화: 말풍선 영역 내 더블터치 시 지도가 확대되는 현상을 방지하기 위해 터치 이벤트 전파 차단 및 touch-action 속성을 적용했습니다.
+ * - 푸터의 버전을 19.9로 업데이트했습니다.
  */
+
+// 닉네임 조합용 상수
+const PERSONALITIES = ["친절한", "배고픈", "심심한", "행복한", "궁금한", "신난", "차분한", "활발한", "꿈꾸는", "조용한", "똑똑한", "멋진", "귀여운", "용감한", "미스테리한", "발랄한"];
+const SUFFIXES = ["바블러", "바블리", "바블몬", "바블링", "바블러브", "바블맨", "바블걸", "바블키즈", "바블마스터"];
+const OLD_NEIGHBORHOODS = ["바블동네", "비밀동네", "우리동네", "이웃동네", "정겨운동네", "신비로운동네"];
+
+// 기존 글을 위한 결정론적 랜덤 닉네임 생성 함수
+const getVirtualNickname = (id) => {
+  if (!id) return "이름없는 바블러";
+  // ID 문자열을 숫자로 변환하여 시드값 생성
+  const seed = String(id).split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  const n = OLD_NEIGHBORHOODS[seed % OLD_NEIGHBORHOODS.length];
+  const p = PERSONALITIES[(seed * 7) % PERSONALITIES.length];
+  const s = SUFFIXES[(seed * 13) % SUFFIXES.length];
+  return `${n} ${p} ${s}`;
+};
 
 const Main = () => {
   const { isDark } = useTheme();
@@ -190,11 +206,7 @@ const Main = () => {
     const latlng = mouseEvent.latLng;
     const text = prompt('여기에 남길 메모를 입력해주세요:');
     
-    if (text && text.trim()) {
-      // 닉네임 조합용 데이터
-      const personalities = ["친절한", "배고픈", "심심한", "행복한", "궁금한", "신난", "차분한", "활발한", "꿈꾸는", "조용한", "똑똑한", "멋진", "귀여운", "용감한"];
-      const suffixes = ["바블러", "바블리", "바블몬", "바블링", "바블러브", "바블맨", "바블걸"];
-      
+    if (text && text.trim()) {      
       // 1. 역지오코딩으로 동네 명칭 가져오기
       if (!window.kakao || !window.kakao.maps || !window.kakao.maps.services || !window.kakao.maps.services.Geocoder) {
         alert('지도 서비스가 준비되지 않았습니다. 잠시 후 다시 시도해주세요.');
@@ -214,8 +226,8 @@ const Main = () => {
         }
 
         // 2. 닉네임 생성: [동네] + [성격] + [접미사]
-        const p = personalities[Math.floor(Math.random() * personalities.length)];
-        const s = suffixes[Math.floor(Math.random() * suffixes.length)];
+        const p = PERSONALITIES[Math.floor(Math.random() * PERSONALITIES.length)];
+        const s = SUFFIXES[Math.floor(Math.random() * SUFFIXES.length)];
         const nickname = `${neighborhood} ${p} ${s}`;
 
         const newMemo = {
@@ -497,7 +509,7 @@ const Main = () => {
                               {/* 닉네임 (동네+성격+접미사) */}
                               <div className="w-full text-left">
                                 <span className="text-[11px] font-bold text-[#FF4D00] opacity-80 tracking-tight">
-                                  {memo.nickname || '바블동네 신비로운 바블러'}
+                                  {memo.nickname || getVirtualNickname(memo.id)}
                                 </span>
                               </div>
                               <div className="w-full relative z-10 text-left">
@@ -534,7 +546,7 @@ const Main = () => {
                        {/* 닉네임 (동네+성격+접미사) */}
                       <div className="w-full text-left mb-0.5">
                         <span className={`text-[11px] font-bold tracking-tight ${isGroupExpanded ? 'text-white/70' : 'text-[#FF4D00] opacity-80'}`}>
-                          {anchorMemo.nickname || '바블동네 신비로운 바블러'}
+                          {anchorMemo.nickname || getVirtualNickname(anchorMemo.id)}
                         </span>
                       </div>
                       
