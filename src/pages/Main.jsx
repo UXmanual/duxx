@@ -18,11 +18,11 @@ const formatDateTime = (dateString) => {
 
 /**
  * [Page] 메인 페이지 (지도 메모 기능 통합 버전)
- * @version 18.2
+ * @version 18.3
  * @author Antigravity
  * @description 
- * - 메모 말풍선 클릭 시, 말풍선의 가로 중앙이 지도의 정중앙에 오도록 센터링 로직을 최적화했습니다.
- * - 말풍선 디자인을 좌측 정렬에서 중앙 정렬 기반으로 변경하여 시각적 균형을 개선했습니다.
+ * - 말풍선 디자인을 다시 왼쪽 꼬리 정렬로 복구하여 시각적 일관성을 유지했습니다.
+ * - 클릭 시 지도의 중심을 말풍선 가로 크기에 맞춰 오프셋 이동함으로써, 말풍선이 화면 중앙에 보이도록 최적화했습니다.
  */
 
 const Main = () => {
@@ -229,12 +229,17 @@ const Main = () => {
   const toggleGroupExpand = (id, lat, lng, e) => {
     e.stopPropagation();
     if (map) {
-      map.panTo(new window.kakao.maps.LatLng(lat, lng));
+      // 말풍선의 가로 중앙이 화면 중앙에 오도록 오프셋 계산 (꼬리가 왼쪽에 있으므로 지도를 오른쪽으로 이동)
+      const proj = map.getProjection();
+      const point = proj.pointFromLatLng(new window.kakao.maps.LatLng(lat, lng));
+      point.x += 90; // 말풍선의 평균적인 너비를 고려한 오프셋 (약 90px)
+      const newCenter = proj.latLngFromPoint(point);
+      map.panTo(newCenter);
     }
     setExpandedGroupIds(prev => {
       const isExpanding = !prev.includes(id);
       if (isExpanding) {
-        setSelectedStarbucksId(null); // 메모 말풍선 펼칠 때 스타벅스 말풍선 제거
+        setSelectedStarbucksId(null); 
         return [id];
       }
       return [];
@@ -403,26 +408,31 @@ const Main = () => {
               <CustomOverlayMap
                 key={`group-${anchorMemo.id}`}
                 position={{ lat: anchorMemo.lat, lng: anchorMemo.lng }}
-                xAnchor={0.5}
+                xAnchor={0}
                 yAnchor={0}
                 zIndex={isGroupExpanded ? 999 : 10}
               >
                 {/* 0x0 크기의 앵커 기준점 */}
-                <div className="relative w-0 h-0 group animate-pop-in pointer-events-none text-center">
-                  {/* 기준(최신) 말풍선을 감싸는 Wrapper - 가로 중앙 정렬 */}
-                  <div className={`absolute bottom-0 left-1/2 -translate-x-1/2 flex flex-col pb-[6px] pointer-events-auto ${isDark ? 'custom-marker-original-color' : ''}`}>
+                <div className="relative w-0 h-0 group animate-pop-in pointer-events-none">
+                  {/* 기준(최신) 말풍선 Wrapper - 왼쪽 꼬리 정렬 복구 */}
+                  <div className={`absolute bottom-0 left-[-18px] flex flex-col pb-[6px] pointer-events-auto ${isDark ? 'custom-marker-original-color' : ''}`}>
                     
                     <div 
                       className={`relative px-3 py-2 border-[1.5px] border-[#FF4D00] rounded-[8px] shadow-lg flex flex-col gap-1 w-max min-w-[120px] max-w-[240px] select-none ${hiddenCount > 0 ? 'cursor-pointer' : ''} ${isGroupExpanded ? 'bg-[#FF4D00]' : 'bg-white'}`}
                       onClick={(e) => {
                         if (hiddenCount > 0) toggleGroupExpand(anchorMemo.id, anchorMemo.lat, anchorMemo.lng, e);
-                        else if (map) map.panTo(new window.kakao.maps.LatLng(anchorMemo.lat, anchorMemo.lng));
+                        else if (map) {
+                          const proj = map.getProjection();
+                          const point = proj.pointFromLatLng(new window.kakao.maps.LatLng(anchorMemo.lat, anchorMemo.lng));
+                          point.x += 90;
+                          map.panTo(proj.latLngFromPoint(point));
+                        }
                       }}
                     >
                       
-                      {/* 펼쳐진 이전 메모들 (중앙 정렬 유지) */}
+                      {/* 펼쳐진 이전 메모들 (왼쪽 정렬 복구) */}
                       {hiddenCount > 0 && isGroupExpanded && (
-                        <div className="absolute bottom-full left-0 mb-[6px] flex flex-col items-center gap-[6px] cursor-default select-none" onClick={(e) => e.stopPropagation()}>
+                        <div className="absolute bottom-full left-[-1.5px] mb-[6px] flex flex-col items-start gap-[6px] cursor-default select-none" onClick={(e) => e.stopPropagation()}>
                           {group.slice(0, hiddenCount).map(memo => (
                             <div key={memo.id} className="relative px-3 py-2 bg-white border-[1.5px] border-[#FF4D00] rounded-[8px] shadow-lg flex flex-col gap-1 w-max min-w-[120px] max-w-[240px] animate-pop-in">
                               <div className="w-full relative z-10 text-left">
@@ -479,8 +489,8 @@ const Main = () => {
                         </button>
                       </div>
 
-                      {/* SVG 기반 완벽한 꼬리 연결 (중앙 위치) */}
-                      <div className="absolute top-[calc(100%-1.5px)] left-1/2 -translate-x-1/2 w-[12px] h-[8px] z-20 pointer-events-none overflow-visible">
+                      {/* SVG 기반 완벽한 꼬리 연결 (왼쪽 위치 복구) */}
+                      <div className="absolute top-[calc(100%-1.5px)] left-[12px] w-[12px] h-[8px] z-20 pointer-events-none overflow-visible">
                         <svg width="12" height="8" viewBox="0 0 12 8" fill="none" xmlns="http://www.w3.org/2000/svg">
                           <path d="M1.5 0 H10.5 L6 6 Z" fill={isGroupExpanded ? "#FF4D00" : "white"} />
                           <path d="M1.5 1.5 L6 6.5 L10.5 1.5" stroke="#FF4D00" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
