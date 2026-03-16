@@ -18,7 +18,7 @@ const formatDateTime = (dateString) => {
 
 /**
  * [Page] 메인 페이지 (지도 메모 기능 통합 버전)
- * @version 16.8
+ * @version 16.9
  * @author Antigravity
  * @description 
  * - Supabase 백엔드를 연동하여 지도 위에 말풍선 메모를 남기는 기능을 구현했습니다.
@@ -471,23 +471,22 @@ const Main = () => {
         }
 
         .animate-memo-icon {
-          animation: memo-wiggle 4s infinite ease-in-out;
+          animation: memo-wiggle 3s infinite ease-in-out;
         }
         .animate-memo-icon path {
-          stroke-dasharray: 200;
-          animation: memo-draw 4s infinite ease-in-out;
+          stroke-dasharray: 100;
+          animation: memo-draw 3s infinite linear;
         }
         @keyframes memo-wiggle {
-          0%, 80%, 100% { transform: scale(1) rotate(0); }
-          85% { transform: scale(1.1) rotate(5deg); }
-          90% { transform: scale(1.1) rotate(-5deg); }
-          95% { transform: scale(1.1) rotate(3deg); }
+          0%, 85%, 100% { transform: scale(1) rotate(0); }
+          90% { transform: scale(1.1) rotate(5deg); }
+          95% { transform: scale(1.1) rotate(-5deg); }
         }
         @keyframes memo-draw {
-          0% { stroke-dashoffset: 200; }
-          45% { stroke-dashoffset: 0; }
-          55% { stroke-dashoffset: 0; }
-          100% { stroke-dashoffset: -200; }
+          0% { stroke-dashoffset: 100; opacity: 1; }
+          40% { stroke-dashoffset: 0; }
+          60% { stroke-dashoffset: 0; }
+          100% { stroke-dashoffset: -100; }
         }
         @keyframes btn-pulse-light {
           0%, 100% { box-shadow: 0 0 0 0 rgba(0, 0, 0, 0.05); }
