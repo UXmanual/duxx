@@ -17,7 +17,7 @@ const formatDateTime = (dateString) => {
 };
 /**
  * [Page] 메인 페이지 (지도 메모 기능 통합 버전)
- * @version 20.6
+ * @version 20.7
  * @author Antigravity
  * @description 
  * - 바블 리스트 간격 복구 및 닉네임 하단 여백 최적화 버전입니다.
@@ -574,8 +574,8 @@ const Main = () => {
                         </button>
                       </div>
 
-                      {/* SVG 기반 완벽한 꼬리 연결 (위치 하향 조정 및 끝부분 라운딩) */}
-                      <div className="absolute top-[calc(100%-0.6px)] left-[12px] w-[16px] h-[10px] z-20 pointer-events-none overflow-visible">
+                      {/* SVG 기반 완벽한 꼬리 연결 (위치 추가 하향 조정) */}
+                      <div className="absolute top-[calc(100%-0.2px)] left-[12px] w-[16px] h-[10px] z-20 pointer-events-none overflow-visible">
                         <svg width="16" height="10" viewBox="0 0 16 10" fill="none" xmlns="http://www.w3.org/2000/svg">
                           <path d="M2 0 H14 L9.5 7.5 Q8 9 6.5 7.5 Z" fill={isGroupExpanded ? "#FF4D00" : "white"} />
                           <path d="M2 0 L6.5 7.5 Q8 9 9.5 7.5 L14 0" stroke="#FF4D00" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
