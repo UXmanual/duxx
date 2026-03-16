@@ -240,41 +240,50 @@ const Main = () => {
             <CustomOverlayMap
               key={memo.id}
               position={{ lat: memo.lat, lng: memo.lng }}
-              yAnchor={1.2}
+              xAnchor={0}
+              yAnchor={0}
               zIndex={10}
             >
-              <div className={`relative px-3 py-2 bg-white border-[1.5px] border-[#FF4D00] rounded-[8px] shadow-lg flex flex-col gap-1 group animate-pop-in ${isDark ? 'custom-marker-original-color' : ''}`}>
-                {/* 상단 텍스트 영역: 내용이 길 경우 가로로 길어지다 최대 넓이 초과 시 줄바꿈 처리 */}
-                <div className="flex items-start justify-between gap-3 min-w-[120px] max-w-[280px]">
-                  <span 
-                    onClick={(e) => toggleMemoExpand(memo.id, e)}
-                    className={`text-[14px] font-medium text-black leading-tight tracking-tight break-all whitespace-pre-wrap flex-1 cursor-pointer transition-all ${!expandedMemoIds.includes(memo.id) ? 'line-clamp-1' : ''}`}
-                    title={!expandedMemoIds.includes(memo.id) ? "클릭하여 더보기" : ""}
-                  >
-                    {memo.text}
-                  </span>
-                  <button 
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDeleteMemo(memo.id);
-                    }}
-                    className="flex-shrink-0 flex items-center justify-center text-zinc-400 hover:text-[#FF4D00] transition-colors mt-0.5"
-                    aria-label="메모 삭제"
-                  >
-                    <X size={12} strokeWidth={2.5} />
-                  </button>
-                </div>
-                {/* [Date Row] 하단 날짜, 폰트사이즈 10px */}
-                <span className="text-[10px] text-zinc-400 font-medium tracking-wide">
-                  {formatDateTime(memo.created_at)}
-                </span>
-                
-                {/* [Simplified Tail] */}
-                <div className="absolute -bottom-[8px] left-1/2 -translate-x-1/2 w-[10px] h-2">
-                  <svg width="10" height="8" viewBox="0 0 10 8" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M5 8L0 0H10L5 8Z" fill="white"/>
-                    <path d="M0 0L5 8L10 0" stroke="#FF4D00" strokeWidth="1.5"/>
-                  </svg>
+              {/* Kakao 맵의 고정 크기 측정 한계를 우회하기 위해 0x0 크기의 앵커 기준점을 생성 */}
+              <div className="relative w-0 h-0 group animate-pop-in pointer-events-none">
+                {/* 꼬리 끝이 앵커 포인트(0,0)에 정확히 닿도록 absolute bottom-0 으로 배치. 
+                    내용이 늘어나도 무조건 위로만 확장됩니다! */}
+                <div className={`absolute bottom-0 left-0 -translate-x-[50%] flex flex-col items-center pb-[8px] pointer-events-auto ${isDark ? 'custom-marker-original-color' : ''}`}>
+                  
+                  <div className="relative px-3 py-2 bg-white border-[1.5px] border-[#FF4D00] rounded-[8px] shadow-lg flex flex-col gap-1 w-max min-w-[120px] max-w-[280px]">
+                    {/* 상단 텍스트 영역: 내용이 길 경우 가로로 길어지다 최대 넓이 초과 시 줄바꿈 처리 */}
+                    <div className="flex items-start justify-between gap-3 w-full">
+                      <span 
+                        onClick={(e) => toggleMemoExpand(memo.id, e)}
+                        className={`text-[14px] font-medium text-black leading-tight tracking-tight break-all whitespace-pre-wrap flex-1 cursor-pointer transition-all ${!expandedMemoIds.includes(memo.id) ? 'line-clamp-1' : ''}`}
+                        title={!expandedMemoIds.includes(memo.id) ? "클릭하여 더보기" : ""}
+                      >
+                        {memo.text}
+                      </span>
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteMemo(memo.id);
+                        }}
+                        className="flex-shrink-0 flex items-center justify-center text-zinc-400 hover:text-[#FF4D00] transition-colors mt-0.5"
+                        aria-label="메모 삭제"
+                      >
+                        <X size={12} strokeWidth={2.5} />
+                      </button>
+                    </div>
+                    {/* [Date Row] 하단 날짜, 폰트사이즈 10px */}
+                    <span className="text-[10px] text-zinc-400 font-medium tracking-wide">
+                      {formatDateTime(memo.created_at)}
+                    </span>
+                  </div>
+                  
+                  {/* [Simplified Tail] */}
+                  <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[10px] h-[8px]">
+                    <svg width="10" height="8" viewBox="0 0 10 8" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M5 8L0 0H10L5 8Z" fill="white"/>
+                      <path d="M0 0L5 8L10 0" stroke="#FF4D00" strokeWidth="1.5"/>
+                    </svg>
+                  </div>
                 </div>
               </div>
             </CustomOverlayMap>
