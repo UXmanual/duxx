@@ -18,7 +18,7 @@ const formatDateTime = (dateString) => {
 
 /**
  * [Page] 메인 페이지 (지도 메모 기능 통합 버전)
- * @version 17.1
+ * @version 17.2
  * @author Antigravity
  * @description 
  * - Supabase 백엔드를 연동하여 지도 위에 말풍선 메모를 남기는 기능을 구현했습니다.
@@ -102,28 +102,40 @@ const Main = () => {
   };
 
   const requestLocation = (shouldPan = true) => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const lat = position.coords.latitude;
-          const lng = position.coords.longitude;
-          const pos = { lat, lng };
-          
-          setMyLocation(pos);
-          
-          if (map && shouldPan) {
-            map.setCenter(new window.kakao.maps.LatLng(lat, lng));
-            map.setLevel(4);
-          }
-        },
-        null,
-        { 
-          enableHighAccuracy: true, 
-          timeout: 10000, 
-          maximumAge: 30000 
-        }
-      );
-    }
+    if (!navigator.geolocation) return;
+
+    const options = {
+      enableHighAccuracy: true,
+      timeout: 10000,
+      maximumAge: 0
+    };
+
+    const success = (position) => {
+      const lat = position.coords.latitude;
+      const lng = position.coords.longitude;
+      const pos = { lat, lng };
+      
+      setMyLocation(pos);
+      
+      if (map && shouldPan) {
+        map.setCenter(new window.kakao.maps.LatLng(lat, lng));
+        map.setLevel(4);
+      }
+    };
+
+    const error = (err) => {
+      console.warn(`Geolocation error (${err.code}): ${err.message}`);
+      // iOS Safari에서 High Accuracy가 실패할 경우 Low Accuracy로 재시도
+      if (err.code === 1 || err.code === 3) {
+        navigator.geolocation.getCurrentPosition(success, null, {
+          enableHighAccuracy: false,
+          timeout: 5000,
+          maximumAge: Infinity
+        });
+      }
+    };
+
+    navigator.geolocation.getCurrentPosition(success, error, options);
   };
 
   useEffect(() => {
