@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 /**
  * [Component] 상단 헤더
- * @version 20.0
+ * @version 20.2
  * @author Antigravity
  * @description
  * - 테마 토글 버튼의 배경 블러, 쉐도우, 배경색을 모두 제거하여 순수 아이콘만 노출되도록 했습니다.
@@ -32,7 +32,7 @@ const Header = () => {
       */}
       <div 
         className="absolute top-0 left-0 px-10 h-24 flex items-center z-10 pointer-events-none text-[#FF4D00]"
-        style={{ mixBlendMode: isDark ? 'color-dodge' : 'color-burn' }}
+        style={{ mixBlendMode: isDark ? 'color-dodge' : 'multiply' }}
       >
         <span className="logo-font text-[24px] tracking-[0] uppercase select-none pointer-events-auto">
           BABBLE
