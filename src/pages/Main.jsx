@@ -18,7 +18,7 @@ const formatDateTime = (dateString) => {
 
 /**
  * [Page] 메인 페이지 (지도 메모 기능 통합 버전)
- * @version 19.3
+ * @version 19.4
  * @author Antigravity
  * @description 
  * - 모바일 접근성 최적화: 말풍선 영역 내 더블터치 시 지도가 확대되는 현상을 방지하기 위해 터치 이벤트 전파 차단 및 touch-action 속성을 적용했습니다.
@@ -239,7 +239,7 @@ const Main = () => {
 
   if (loading || !isLocationLoaded) {
     return (
-      <div className="w-full h-screen bg-white relative overflow-hidden flex flex-col items-center justify-center">
+      <div className="w-full h-screen bg-white relative overflow-hidden flex flex-col items-center justify-center pb-[20vh]">
         {/* 백그라운드 그리드 패턴 */}
         <div className="absolute inset-0 opacity-[0.03] pointer-events-none">
           <div className="w-full h-full border-t border-l border-black bg-[linear-gradient(to_right,#000_1px,transparent_1px),linear-gradient(to_bottom,#000_1px,transparent_1px)] bg-[size:40px_40px]" />
