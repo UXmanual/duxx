@@ -18,7 +18,7 @@ const formatDateTime = (dateString) => {
 
 /**
  * [Page] 메인 페이지 (지도 메모 기능 통합 버전)
- * @version 18.4.1
+ * @version 18.5
  * @author Antigravity
  * @description 
  * - 말풍선 클릭 인터랙션 버그 수정을 위해 CustomOverlayMap의 clickable 속성을 제거하고 이벤트 전파 로직을 최적화했습니다.
