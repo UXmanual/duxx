@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Map, CustomOverlayMap, MapMarker, MarkerClusterer, useKakaoLoader } from 'react-kakao-maps-sdk';
 import { useTheme } from '../context/ThemeContext';
-import { Crosshair, MessageSquare, X } from 'lucide-react';
+import { Crosshair, MessageSquare, X, Coffee } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 
 const formatDateTime = (dateString) => {
@@ -17,7 +17,7 @@ const formatDateTime = (dateString) => {
 
 /**
  * [Page] 메인 페이지 (지도 메모 기능 통합 버전)
- * @version 15.3
+ * @version 15.4
  * @author Antigravity
  * @description 
  * - Supabase 백엔드를 연동하여 지도 위에 말풍선 메모를 남기는 기능을 구현했습니다.
@@ -35,6 +35,10 @@ const Main = () => {
   const [memos, setMemos] = useState([]);
   const [isMemoMode, setIsMemoMode] = useState(false);
   const [expandedGroupIds, setExpandedGroupIds] = useState([]); // 그룹핑된 말풍선 확장 상태 추적
+
+  // 스타벅스 리저브 관련 상태
+  const [starbucksPlaces, setStarbucksPlaces] = useState([]);
+  const [isStarbucksVisible, setIsStarbucksVisible] = useState(false);
 
   const [loading, error] = useKakaoLoader({
     appkey: import.meta.env.VITE_KAKAO_MAPS_API_KEY,
@@ -120,12 +124,41 @@ const Main = () => {
     }
   };
 
+  // 스타벅스 리저브 지점 검색
+  const fetchStarbucksReserve = (location) => {
+    if (!window.kakao || !window.kakao.maps.services) return;
+    
+    const ps = new window.kakao.maps.services.Places();
+    const options = location ? {
+      location: new window.kakao.maps.LatLng(location.lat, location.lng),
+      radius: 10000, // 10km 이내
+      sort: window.kakao.maps.services.SortBy.DISTANCE
+    } : {};
+
+    ps.keywordSearch('스타벅스 리저브', (data, status) => {
+      if (status === window.kakao.maps.services.Status.OK) {
+        // 이름 기반 필터링: 리저브 또는 Reserve 포함 지점만
+        const filtered = data.filter(place => 
+          place.place_name.includes('리저브') || 
+          place.place_name.toLowerCase().includes('reserve')
+        );
+        setStarbucksPlaces(filtered);
+      }
+    }, options);
+  };
+
   useEffect(() => {
     if (map) {
-      requestLocation(true);
+      if (!myLocation) requestLocation(true);
       fetchMemos();
     }
   }, [map]);
+
+  useEffect(() => {
+    if (map && myLocation) {
+      fetchStarbucksReserve(myLocation);
+    }
+  }, [map, myLocation]);
 
   const handleMyLocationBtn = (e) => {
     if (e) {
@@ -242,6 +275,32 @@ const Main = () => {
             </div>
           </CustomOverlayMap>
         )}
+
+        {/* 스타벅스 리저브 마커 레이어 */}
+        {isStarbucksVisible && starbucksPlaces.map((place) => (
+          <MapMarker
+            key={`starbucks-${place.id}`}
+            position={{ lat: place.y, lng: place.x }}
+            image={{
+              src: 'data:image/svg+xml;base64,' + btoa(`
+                <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <circle cx="20" cy="20" r="18" fill="#2D2926" stroke="#CBA052" stroke-width="2"/>
+                  <path d="M20 8L22.5 15.5H30L24 20L26.5 27.5L20 23L13.5 27.5L16 20L10 15.5H17.5L20 8Z" fill="#CBA052"/>
+                  <text x="20" y="34" fill="#CBA052" font-family="Arial" font-size="8" font-weight="bold" text-anchor="middle">R</text>
+                </svg>
+              `),
+              size: { width: 32, height: 32 },
+              options: { offset: { x: 16, y: 16 } }
+            }}
+            title={place.place_name}
+            onClick={() => {
+              if (map) {
+                map.panTo(new window.kakao.maps.LatLng(place.y, place.x));
+                map.setLevel(3);
+              }
+            }}
+          />
+        ))}
 
         {/* 지도 메모 표시 로직: 줌 레벨에 따른 동적 렌더링 (레벨 6 이상일 때 숫자 뱃지로 축약) */}
         {mapLevel >= 6 ? (
@@ -375,6 +434,21 @@ const Main = () => {
       {/* [Interface Layer] 우측 컨트롤 스택 */}
       <div className="fixed bottom-6 right-6 z-[9999] pointer-events-none">
         <div className="flex flex-col items-center justify-end gap-3 pointer-events-auto">
+          {/* 스타벅스 리저브 토글 버튼 */}
+          <button 
+            onClick={() => setIsStarbucksVisible(!isStarbucksVisible)}
+            className={`w-12 h-12 rounded-full flex items-center justify-center active:scale-90 transition-all shadow-lg
+              ${isStarbucksVisible 
+                ? 'bg-[#2D2926] text-[#CBA052] border-2 border-[#CBA052]' 
+                : (isDark 
+                  ? 'bg-[#1a1c1e]/90 text-white border border-white/10' 
+                  : 'bg-white text-[#1a1c1e] border border-gray-200')}
+            `}
+            aria-label="스타벅스 리저브 표시"
+          >
+            <Coffee size={24} fill={isStarbucksVisible ? "#CBA052" : "none"} />
+          </button>
+
           {/* 메모 작성 모드 버튼 */}
           <button 
             onClick={() => setIsMemoMode(!isMemoMode)}
