@@ -17,7 +17,7 @@ const formatDateTime = (dateString) => {
 
 /**
  * [Page] 메인 페이지 (지도 메모 기능 통합 버전)
- * @version 15.9
+ * @version 16.0
  * @author Antigravity
  * @description 
  * - Supabase 백엔드를 연동하여 지도 위에 말풍선 메모를 남기는 기능을 구현했습니다.
@@ -138,19 +138,18 @@ const Main = () => {
 
     ps.keywordSearch('스타벅스 리저브', (data, status) => {
       if (status === window.kakao.maps.services.Status.OK) {
-        // 리저브 매장 필터링: '리저브', 'Reserve', 또는 ' R' (R점 등) 포함
+        // 리저브 매장 필터링: '리저브', 'Reserve', ' R', '별다방', '광화문점' 포함
         const filtered = data.filter(place => 
           place.place_name.includes('리저브') || 
           place.place_name.toLowerCase().includes('reserve') ||
           place.place_name.includes(' R') ||
+          place.place_name.includes('별다방') ||
+          place.place_name.includes('광화문점') ||
           /R점$/.test(place.place_name)
         );
         setStarbucksPlaces(filtered);
       }
-    }, {
-      ...options,
-      radius: 20000 // 20km
-    });
+    }); // 위치/반경 제한 제거하여 전국 대상 검색 가능성 확대
   };
 
   useEffect(() => {
