@@ -4,6 +4,7 @@ import { useTheme } from '../context/ThemeContext';
 import { Crosshair, MessageSquare, X, Coffee } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import { starbucksReserveStores } from '../data/starbucksReserve';
+import { AI_PERSONAS } from '../data/aiPersonas';
 
 const formatDateTime = (dateString) => {
   if (!dateString) return '';
@@ -17,7 +18,7 @@ const formatDateTime = (dateString) => {
 };
 /**
  * [Page] 메인 페이지 (지도 메모 기능 통합 버전)
- * @version 21.3
+ * @version 21.9
  * @author Antigravity
  * @description 
  * - 바블 리스트 간격 복구 및 닉네임 하단 여백 최적화 버전입니다.
@@ -48,7 +49,9 @@ const Main = () => {
   // 메모 관련 상태
   const [memos, setMemos] = useState([]);
   const [isMemoMode, setIsMemoMode] = useState(false);
-  const [expandedGroupIds, setExpandedGroupIds] = useState([]); // 그룹핑된 말풍선 확장 상태 추적
+  const [expandedGroupIds, setExpandedGroupIds] = useState([]); 
+  const [replyTargetId, setReplyTargetId] = useState(null); // 답글 작성 중인 메모 ID
+  const [replyText, setReplyText] = useState(''); // 답글 입력 텍스트
 
   const [starbucksPlaces, setStarbucksPlaces] = useState(starbucksReserveStores);
   const [isStarbucksVisible, setIsStarbucksVisible] = useState(true);
@@ -77,10 +80,11 @@ const Main = () => {
     return R * c;
   };
 
-  // 500m 이내 메모 그룹핑 (최신 기준)
+  // 500m 이내 메모 그룹핑 (최신 본문 기준)
   const groupedMemos = useMemo(() => {
-    // 가장 최신 메모부터 그룹핑의 기준(anchor)으로 삼기 위해 역순 정렬
-    let unassigned = [...memos].reverse(); 
+    // 본문(parent_id가 없는 글)만 그룹핑 대상으로 삼음
+    const rootMemos = memos.filter(m => !m.parent_id);
+    let unassigned = [...rootMemos].reverse(); 
     let groups = [];
     while (unassigned.length > 0) {
       let anchor = unassigned.shift();
@@ -94,7 +98,6 @@ const Main = () => {
         }
       }
       unassigned = remaining;
-      // HTML 순서상 위에서 아래로 렌더링되므로, 오래된 것이 위에 오도록 배열 재배치
       groups.push(group.reverse());
     }
     return groups;
@@ -119,26 +122,16 @@ const Main = () => {
 
   const requestLocation = (shouldPan = true) => {
     if (!navigator.geolocation) return;
-
-    const options = {
-      enableHighAccuracy: true,
-      timeout: 10000,
-      maximumAge: 0
-    };
-
+    const options = { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 };
     const success = (position) => {
       const lat = position.coords.latitude;
       const lng = position.coords.longitude;
       const pos = { lat, lng };
-      
       setMyLocation(pos);
-      
       if (map && shouldPan) {
-        // 부드러운 이동 애니메이션 적용
         map.panTo(new window.kakao.maps.LatLng(lat, lng));
       }
     };
-
     const error = (err) => {
       console.warn(`Geolocation error (${err.code}): ${err.message}`);
       if (err.code === 1 || err.code === 3) {
@@ -149,18 +142,15 @@ const Main = () => {
         });
       }
     };
-
     navigator.geolocation.getCurrentPosition(success, error, options);
   };
 
-  // 1. 컴포넌트 마운트 시 위치 미리 가져오기 (스켈레톤 노출용)
   useEffect(() => {
     const prefetchLocation = () => {
       if (!navigator.geolocation) {
         setIsLocationLoaded(true);
         return;
       }
-
       navigator.geolocation.getCurrentPosition(
         (pos) => {
           const coords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
@@ -168,115 +158,119 @@ const Main = () => {
           setInitialCenter(coords);
           setIsLocationLoaded(true);
         },
-        () => {
-          setIsLocationLoaded(true); // 실패 시 시청역 기반으로 로딩 해제
-        },
-        { timeout: 3000 } // 최대 3초만 대기
+        () => setIsLocationLoaded(true),
+        { timeout: 3000 }
       );
     };
-
     prefetchLocation();
     fetchMemos();
   }, []);
 
-  // 2. 지도 로드 후 데이터 재동기화
   useEffect(() => {
-    if (map) {
-      fetchMemos();
-    }
+    if (map) fetchMemos();
   }, [map]);
 
   const handleMyLocationBtn = (e) => {
-    if (e) {
-      e.preventDefault();
-      e.stopPropagation();
-    }
+    if (e) { e.preventDefault(); e.stopPropagation(); }
     requestLocation(true);
   };
 
-  // 지도 클릭 시 메모 생성
+  // 답글 작성 핸들러
+  const handleReplySubmit = async (parentId) => {
+    if (!replyText.trim()) return;
+    const parentMemo = memos.find(m => m.id === parentId);
+    if (!parentMemo) return;
+
+    const neighborhood = parentMemo.nickname?.split(' ')[0] || "어딘가";
+    const p = PERSONALITIES[Math.floor(Math.random() * PERSONALITIES.length)];
+    const s = SUFFIXES[Math.floor(Math.random() * SUFFIXES.length)];
+    const nickname = `${neighborhood} ${p} ${s}`;
+
+    const newReply = {
+      lat: parentMemo.lat,
+      lng: parentMemo.lng,
+      text: replyText.trim(),
+      nickname: nickname,
+      parent_id: parentId,
+      is_ai: false
+    };
+
+    try {
+      const { data, error } = await supabase.from('memos').insert([newReply]).select();
+      if (!error && data) {
+        setMemos(prev => [...prev, data[0]]);
+        setReplyText('');
+        setReplyTargetId(null);
+      }
+    } catch (err) { console.error('Reply failed:', err); }
+  };
+
+  // AI 자동 응답 트리거
+  const triggerAIResponse = async (parentMemo) => {
+    // 2~5초 사이 무작위 지연 (AI가 읽고 생각하는 척)
+    const delay = Math.floor(Math.random() * 3000) + 2000;
+    
+    setTimeout(async () => {
+      const persona = AI_PERSONAS[Math.floor(Math.random() * AI_PERSONAS.length)];
+      const aiText = persona.styles[Math.floor(Math.random() * persona.styles.length)];
+      
+      const newReply = {
+        lat: parentMemo.lat,
+        lng: parentMemo.lng,
+        text: aiText,
+        nickname: `${persona.name} ${persona.emoji}`,
+        parent_id: parentMemo.id,
+        is_ai: true,
+        persona_id: persona.id
+      };
+
+      try {
+        const { data, error } = await supabase.from('memos').insert([newReply]).select();
+        if (!error && data) {
+          setMemos(prev => [...prev, data[0]]);
+        }
+      } catch (err) {
+        console.error('AI reply failed:', err);
+      }
+    }, delay);
+  };
+
   const handleMapClick = async (_t, mouseEvent) => {
     if (!isMemoMode) return;
-    if (!supabase) {
-      alert('데이터베이스 연결 설정이 완료되지 않았습니다. .env 환경 변수를 확인해주세요.');
-      console.error('Supabase client is not initialized.');
-      return;
-    }
-
     const latlng = mouseEvent.latLng;
     const text = prompt('여기에 남길 메모를 입력해주세요:');
-    
     if (text && text.trim()) {      
-      // 1. 역지오코딩으로 동네 명칭 가져오기
-      if (!window.kakao || !window.kakao.maps || !window.kakao.maps.services || !window.kakao.maps.services.Geocoder) {
-        alert('지도 서비스가 준비되지 않았습니다. 잠시 후 다시 시도해주세요.');
-        console.error('Kakao Maps Geocoder service is not available.');
-        return;
-      }
-
       const geocoder = new window.kakao.maps.services.Geocoder();
       geocoder.coord2RegionCode(latlng.getLng(), latlng.getLat(), async (result, status) => {
         let neighborhood = "어딘가";
         if (status === window.kakao.maps.services.Status.OK) {
-          // 행정동(H) 명칭 우선 추출
           const region = result.find(r => r.region_type === 'H') || result[0];
           neighborhood = region ? region.region_3depth_name : "어딘가";
-        } else {
-          console.warn('Geocoder failed to find region code:', status);
         }
-
-        // 2. 닉네임 생성: [동네] + [성격] + [접미사]
         const p = PERSONALITIES[Math.floor(Math.random() * PERSONALITIES.length)];
         const s = SUFFIXES[Math.floor(Math.random() * SUFFIXES.length)];
         const nickname = `${neighborhood} ${p} ${s}`;
 
-        const newMemo = {
-          lat: latlng.getLat(),
-          lng: latlng.getLng(),
-          text: text.trim(),
-          nickname: nickname
-        };
-
+        const newMemo = { lat: latlng.getLat(), lng: latlng.getLng(), text: text.trim(), nickname: nickname };
         try {
-          const { data, error } = await supabase
-            .from('memos')
-            .insert([newMemo])
-            .select();
-
-          if (error) {
-            console.error('Supabase insert error:', error);
-            // 만약 nickname 컬럼이 없어서 실패하는 경우를 대비한 안내
-            if (error.message.includes('column "nickname" of relation "memos" does not exist')) {
-              alert('데이터베이스에 "nickname" 컬럼이 없습니다. Supabase SQL 에디터에서 다음 명령을 실행해주세요: \n\nALTER TABLE memos ADD COLUMN nickname TEXT;');
-            } else {
-              alert(`바블 등록 실패: ${error.message}`);
-            }
-            return;
-          }
-
-          if (data && data[0]) {
+          const { data, error } = await supabase.from('memos').insert([newMemo]).select();
+          if (!error && data) {
             setMemos(prev => [...prev, data[0]]);
-            setIsMemoMode(false); // 작성 후 모드 해제
+            setIsMemoMode(false);
+            // 사용자 메모 등록 후 AI 응답 트리거 작동
+            triggerAIResponse(data[0]);
           }
-        } catch (err) {
-          console.error('Unexpected error during memo insertion:', err);
-          alert('예기치 못한 오류가 발생했습니다.');
-        }
+        } catch (err) { console.error('Insert error:', err); }
       });
     }
   };
 
-  // 메모 삭제 처리
   const handleDeleteMemo = async (id) => {
     if (!supabase) return;
-    if (confirm('이 메모를 삭제하시겠습니까?')) {
-      const { error } = await supabase
-        .from('memos')
-        .delete()
-        .eq('id', id);
-
+    if (confirm('이 메모를 삭제하시겠습니까? (답글도 함께 삭제됩니다)')) {
+      const { error } = await supabase.from('memos').delete().eq('id', id);
       if (!error) {
-        setMemos(prev => prev.filter(m => m.id !== id));
+        setMemos(prev => prev.filter(m => m.id !== id && m.parent_id !== id));
       }
     }
   };
@@ -514,10 +508,57 @@ const Main = () => {
                                 </span>
                               </div>
                               <div className="w-full relative z-10 text-left">
-                                <span className="text-[14px] font-medium text-black leading-tight tracking-tight break-all whitespace-pre-wrap line-clamp-2">
+                                <span className="text-[14px] font-medium text-black leading-tight tracking-tight break-all whitespace-pre-wrap">
                                   {memo.text}
                                 </span>
                               </div>
+
+                              {/* [추가] 각 메모별 답글 리스트 */}
+                              {(() => {
+                                const memoReplies = memos.filter(r => r.parent_id === memo.id);
+                                if (memoReplies.length === 0 && replyTargetId !== memo.id) return null;
+                                return (
+                                  <div className="mt-2 flex flex-col gap-2 p-2 rounded-lg bg-gray-50 max-h-[150px] overflow-y-auto">
+                                    {memoReplies.map(reply => (
+                                      <div key={reply.id} className="flex flex-col border-b border-black/5 last:border-0 pb-1 mb-1">
+                                        <span className="text-[10px] font-bold text-[#FF4D00]">
+                                          {reply.nickname}
+                                        </span>
+                                        <span className="text-[12px] text-zinc-700">
+                                          {reply.text}
+                                        </span>
+                                      </div>
+                                    ))}
+                                    {replyTargetId === memo.id ? (
+                                      <div className="flex flex-col gap-1 mt-1">
+                                        <input 
+                                          autoFocus
+                                          className="w-full text-[12px] px-2 py-1 rounded border border-gray-200 outline-none focus:border-[#FF4D00]"
+                                          placeholder="답글 남기기..."
+                                          value={replyText}
+                                          onChange={(e) => setReplyText(e.target.value)}
+                                          onKeyDown={(e) => {
+                                            if (e.key === 'Enter') handleReplySubmit(memo.id);
+                                            if (e.key === 'Escape') setReplyTargetId(null);
+                                          }}
+                                        />
+                                        <div className="flex justify-end gap-1">
+                                          <button onClick={() => setReplyTargetId(null)} className="text-[10px] text-gray-400">취소</button>
+                                          <button onClick={() => handleReplySubmit(memo.id)} className="text-[10px] font-bold text-[#FF4D00]">등록</button>
+                                        </div>
+                                      </div>
+                                    ) : (
+                                      <button 
+                                        onClick={(e) => { e.stopPropagation(); setReplyTargetId(memo.id); }}
+                                        className="text-[11px] font-bold flex items-center gap-1 text-[#FF4D00]/60 hover:text-[#FF4D00]"
+                                      >
+                                        <MessageSquare size={12} /> 답글 달기
+                                      </button>
+                                    )}
+                                  </div>
+                                );
+                              })()}
+
                               <div className="text-[10px] text-zinc-400 font-medium tracking-wide relative z-10 text-left flex items-center gap-1 mt-0.5">
                                 <span>{formatDateTime(memo.created_at)}</span>
                                 <span className="text-zinc-300">|</span>
@@ -553,13 +594,61 @@ const Main = () => {
                       
                       {/* 기준 최신 메모 상단 텍스트 영역 */}
                       <div className="w-full relative z-10 text-left">
-                        <span className={`text-[14px] font-medium leading-tight tracking-tight break-all whitespace-pre-wrap line-clamp-2 ${isGroupExpanded ? 'text-white' : 'text-black'}`}>
+                        <span className={`text-[14px] font-medium leading-tight tracking-tight break-all whitespace-pre-wrap ${isGroupExpanded ? 'text-white' : 'text-black'}`}>
                           {anchorMemo.text}
                         </span>
                       </div>
+
+                      {/* 답글 리스트 표시 영역 */}
+                      {(() => {
+                        const memoReplies = memos.filter(r => r.parent_id === anchorMemo.id);
+                        if (memoReplies.length === 0 && replyTargetId !== anchorMemo.id) return null;
+                        return (
+                          <div className={`mt-2 flex flex-col gap-2 p-2 rounded-lg ${isGroupExpanded ? 'bg-black/10' : 'bg-gray-50'}`}>
+                            {memoReplies.map(reply => (
+                              <div key={reply.id} className="flex flex-col border-b border-black/5 last:border-0 pb-1 mb-1">
+                                <span className={`text-[10px] font-bold ${isGroupExpanded ? 'text-white/70' : 'text-[#FF4D00]'}`}>
+                                  {reply.nickname}
+                                </span>
+                                <span className={`text-[12px] ${isGroupExpanded ? 'text-white/90' : 'text-zinc-700'}`}>
+                                  {reply.text}
+                                </span>
+                              </div>
+                            ))}
+                            
+                            {/* 답글 입력창 */}
+                            {replyTargetId === anchorMemo.id ? (
+                              <div className="flex flex-col gap-1 mt-1">
+                                <input 
+                                  autoFocus
+                                  className="w-full text-[12px] px-2 py-1 rounded border border-gray-200 outline-none focus:border-[#FF4D00]"
+                                  placeholder="소중한 답글을 남겨주세요..."
+                                  value={replyText}
+                                  onChange={(e) => setReplyText(e.target.value)}
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter') handleReplySubmit(anchorMemo.id);
+                                    if (e.key === 'Escape') setReplyTargetId(null);
+                                  }}
+                                />
+                                <div className="flex justify-end gap-1">
+                                  <button onClick={() => setReplyTargetId(null)} className="text-[10px] text-gray-400">취소</button>
+                                  <button onClick={() => handleReplySubmit(anchorMemo.id)} className="text-[10px] font-bold text-[#FF4D00]">등록</button>
+                                </div>
+                              </div>
+                            ) : (
+                              <button 
+                                onClick={(e) => { e.stopPropagation(); setReplyTargetId(anchorMemo.id); }}
+                                className={`text-[11px] font-bold flex items-center gap-1 ${isGroupExpanded ? 'text-white/60 hover:text-white' : 'text-[#FF4D00]/60 hover:text-[#FF4D00]'}`}
+                              >
+                                <MessageSquare size={12} /> 답글 달기
+                              </button>
+                            )}
+                          </div>
+                        );
+                      })()}
                       
                       {/* 기준 최신 메모 하단 날짜 + 삭제 버튼 */}
-                      <div className={`text-[10px] font-medium tracking-wide relative z-10 text-left flex items-center gap-1 mt-0.5 ${isGroupExpanded ? 'text-white/80' : 'text-zinc-400'}`}>
+                      <div className={`text-[10px] font-medium tracking-wide relative z-10 text-left flex items-center gap-1 mt-1.5 ${isGroupExpanded ? 'text-white/80' : 'text-zinc-400'}`}>
                         <span>{formatDateTime(anchorMemo.created_at)}</span>
                         <span className={isGroupExpanded ? 'text-white/50' : 'text-zinc-300'}>|</span>
                         <button 
