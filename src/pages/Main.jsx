@@ -18,11 +18,11 @@ const formatDateTime = (dateString) => {
 
 /**
  * [Page] 메인 페이지 (지도 메모 기능 통합 버전)
- * @version 18.3.1
+ * @version 18.4
  * @author Antigravity
  * @description 
- * - 말풍선 디자인을 다시 왼쪽 꼬리 정렬로 복구하여 시각적 일관성을 유지했습니다.
- * - 클릭 시 지도의 중심을 말풍선 가로 크기에 맞춰 오프셋 이동함으로써, 말풍선이 화면 중앙에 보이도록 최적화했습니다.
+ * - 말풍선 클릭 인식율을 높이기 위해 CustomOverlayMap에 clickable 속성을 추가했습니다.
+ * - 오프셋 기반 센터링과 왼쪽 꼬리 정렬 디자인을 유지하며 인터랙션 안정성을 강화했습니다.
  */
 
 const Main = () => {
@@ -355,10 +355,18 @@ const Main = () => {
               }}
             />
             {selectedStarbucksId === place.id && (
-              <CustomOverlayMap position={{ lat: place.lat, lng: place.lng }} yAnchor={1.5} zIndex={1000}>
+              <CustomOverlayMap 
+                position={{ lat: place.lat, lng: place.lng }} 
+                yAnchor={1.5} 
+                zIndex={1000}
+                clickable={true}
+              >
                 <div 
                   className="bg-white px-3 py-1.5 rounded-full border-2 border-[#00704a] shadow-lg flex items-center gap-1.5 relative select-none cursor-pointer animate-pop-in"
-                  onClick={() => setSelectedStarbucksId(null)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedStarbucksId(null);
+                  }}
                 >
                   <span className="text-[13px] font-bold text-[#00704a] whitespace-nowrap">
                     {place.name}
@@ -411,6 +419,7 @@ const Main = () => {
                 xAnchor={0}
                 yAnchor={0}
                 zIndex={isGroupExpanded ? 999 : 10}
+                clickable={true}
               >
                 {/* 0x0 크기의 앵커 기준점 */}
                 <div className="relative w-0 h-0 group animate-pop-in pointer-events-none">
