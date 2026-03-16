@@ -17,7 +17,7 @@ const formatDateTime = (dateString) => {
 
 /**
  * [Page] 메인 페이지 (지도 메모 기능 통합 버전)
- * @version 15.5
+ * @version 15.6
  * @author Antigravity
  * @description 
  * - Supabase 백엔드를 연동하여 지도 위에 말풍선 메모를 남기는 기능을 구현했습니다.
@@ -442,16 +442,16 @@ const Main = () => {
           {/* 스타벅스 리저브 토글 버튼 */}
           <button 
             onClick={() => setIsStarbucksVisible(!isStarbucksVisible)}
-            className={`w-12 h-12 rounded-full flex items-center justify-center active:scale-90 transition-all shadow-lg
+            className={`w-12 h-12 rounded-full flex items-center justify-center active:scale-90 transition-all 
               ${isStarbucksVisible 
-                ? 'bg-[#2D2926] text-[#CBA052] border-2 border-[#CBA052]' 
+                ? 'bg-[#006241] text-white animate-btn-pulse-green' 
                 : (isDark 
-                  ? 'bg-[#1a1c1e]/90 text-white border border-white/10' 
-                  : 'bg-white text-[#1a1c1e] border border-gray-200')}
+                  ? 'bg-[#1a1c1e]/90 text-white' 
+                  : 'bg-white text-[#1a1c1e]')}
             `}
             aria-label="스타벅스 리저브 표시"
           >
-            <Coffee size={24} fill={isStarbucksVisible ? "#CBA052" : "none"} />
+            <Coffee size={24} fill={isStarbucksVisible ? "white" : "none"} />
           </button>
 
           {/* 메모 작성 모드 버튼 */}
@@ -532,8 +532,13 @@ const Main = () => {
           0%, 100% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); }
           50% { box-shadow: 0 0 15px 2px rgba(255, 77, 0, 0.25); }
         }
+        @keyframes btn-pulse-green {
+          0%, 100% { box-shadow: 0 0 0 0 rgba(0, 98, 65, 0); }
+          50% { box-shadow: 0 0 15px 2px rgba(0, 98, 65, 0.4); }
+        }
         .animate-btn-pulse-light { animation: btn-pulse-light 4s infinite ease-in-out; }
         .animate-btn-pulse-dark { animation: btn-pulse-dark 4s infinite ease-in-out; }
+        .animate-btn-pulse-green { animation: btn-pulse-green 2s infinite ease-in-out; }
       `}</style>
     </div>
   );
