@@ -31,7 +31,7 @@ const Header = () => {
         mix-blend-mode: color-burn (Light) / color-dodge (Dark)
       */}
       <div 
-        className={`absolute top-0 left-0 px-10 h-24 flex items-center z-10 pointer-events-none ${isDark ? 'text-white' : 'text-black'}`}
+        className="absolute top-0 left-0 px-10 h-24 flex items-center z-10 pointer-events-none text-[#FF4D00]"
         style={{ mixBlendMode: isDark ? 'color-dodge' : 'color-burn' }}
       >
         <span className="font-black text-[24px] tracking-[0] uppercase select-none pointer-events-auto">
