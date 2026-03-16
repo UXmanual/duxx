@@ -233,8 +233,9 @@ const Main = () => {
               zIndex={10}
             >
               <div className={`relative px-3 py-2 bg-white border-[1.5px] border-[#FF4D00] rounded-[8px] shadow-lg flex flex-col gap-1 group animate-pop-in ${isDark ? 'custom-marker-original-color' : ''}`}>
-                <div className="flex items-start justify-between gap-3">
-                  <span className="text-[14px] font-medium text-black leading-tight tracking-tight max-w-[150px] break-words">
+                {/* 상단 텍스트 영역: 내용이 길 경우 가로로 길어지다 최대 넓이 초과 시 줄바꿈 처리 */}
+                <div className="flex items-start justify-between gap-3 min-w-[120px] max-w-[280px]">
+                  <span className="text-[14px] font-medium text-black leading-tight tracking-tight break-all whitespace-pre-wrap flex-1">
                     {memo.text}
                   </span>
                   <button 
@@ -242,7 +243,7 @@ const Main = () => {
                       e.stopPropagation();
                       handleDeleteMemo(memo.id);
                     }}
-                    className="flex items-center justify-center text-zinc-400 hover:text-[#FF4D00] transition-colors mt-0.5"
+                    className="flex-shrink-0 flex items-center justify-center text-zinc-400 hover:text-[#FF4D00] transition-colors mt-0.5"
                     aria-label="메모 삭제"
                   >
                     <X size={12} strokeWidth={2.5} />
