@@ -17,7 +17,7 @@ const formatDateTime = (dateString) => {
 
 /**
  * [Page] 메인 페이지 (지도 메모 기능 통합 버전)
- * @version 15.14
+ * @version 15.16
  * @author Antigravity
  * @description 
  * - Supabase 백엔드를 연동하여 지도 위에 말풍선 메모를 남기는 기능을 구현했습니다.
@@ -394,7 +394,7 @@ const Main = () => {
             {/* 현위치 버튼 */}
             <button 
               onPointerDown={handleMyLocationBtn}
-              className={`w-10 h-10 rounded-full flex items-center justify-center active:scale-90 transition-all border
+              className={`w-12 h-12 rounded-full flex items-center justify-center active:scale-90 transition-all border shadow-lg
                 ${isDark 
                   ? 'bg-[#1a1c1e]/90 border-white/10 text-white' 
                   : 'bg-white border-gray-200 text-[#1a1c1e]'}
