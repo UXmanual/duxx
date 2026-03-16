@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 /**
  * [Component] 상단 헤더
- * @version 19.6
+ * @version 19.7
  * @author Antigravity
  * @description
  * - 테마 토글 버튼의 배경 블러, 쉐도우, 배경색을 모두 제거하여 순수 아이콘만 노출되도록 했습니다.
