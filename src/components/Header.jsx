@@ -28,11 +28,11 @@ const Header = () => {
     <header style={{ display: 'contents' }}>
       {/* 
         [Logo Layer] 
-        mix-blend-mode: color-burn
+        mix-blend-mode: color-burn (Light) / color-dodge (Dark)
       */}
       <div 
-        className="absolute top-0 left-0 px-10 h-24 flex items-center z-10 pointer-events-none"
-        style={{ mixBlendMode: 'color-burn' }}
+        className={`absolute top-0 left-0 px-10 h-24 flex items-center z-10 pointer-events-none ${isDark ? 'text-white' : 'text-black'}`}
+        style={{ mixBlendMode: isDark ? 'color-dodge' : 'color-burn' }}
       >
         <span className="font-black text-[24px] tracking-[0] uppercase select-none pointer-events-auto">
           BABBLE
