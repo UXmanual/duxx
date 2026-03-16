@@ -17,7 +17,7 @@ const formatDateTime = (dateString) => {
 
 /**
  * [Page] 메인 페이지 (지도 메모 기능 통합 버전)
- * @version 15.5.0
+ * @version 15.7
  * @author Antigravity
  * @description 
  * - Supabase 백엔드를 연동하여 지도 위에 말풍선 메모를 남기는 기능을 구현했습니다.
@@ -246,8 +246,8 @@ const Main = () => {
             >
               {/* Kakao 맵의 고정 크기 측정 한계를 우회하기 위해 0x0 크기의 앵커 기준점을 생성 */}
               <div className="relative w-0 h-0 group animate-pop-in pointer-events-none">
-                {/* 꼬리 끝이 앵커 포인트(0,0)에 정확히 닿도록 absolute bottom-0 으로 배치. pb-[8px] 로 꼬리의 높이를 확보 */}
-                <div className={`absolute bottom-0 left-0 -translate-x-[50%] flex flex-col items-center pb-[8px] pointer-events-auto ${isDark ? 'custom-marker-original-color' : ''}`}>
+                {/* 꼬리 끝이 앵커 포인트(0,0)에 정확히 닿도록 absolute bottom-0 으로 배치. pb-[6px] 로 꼬리의 높이를 확보 */}
+                <div className={`absolute bottom-0 left-0 -translate-x-[50%] flex flex-col items-center pb-[6px] pointer-events-auto ${isDark ? 'custom-marker-original-color' : ''}`}>
                   
                   <div className="relative px-3 py-2 bg-white border-[1.5px] border-[#FF4D00] rounded-[8px] shadow-lg flex flex-col gap-1 w-max min-w-[120px] max-w-[280px]">
                     {/* 상단 텍스트 영역: 내용이 길 경우 가로로 길어지다 최대 넓이 초과 시 줄바꿈 처리 */}
@@ -275,11 +275,13 @@ const Main = () => {
                       {formatDateTime(memo.created_at)}
                     </span>
 
-                    {/* CSS 기반 완벽한 꼬리 연결 (SVG 제거 및 사각형 회전 방식 적용) */}
-                    <div 
-                      className="absolute top-[100%] left-1/2 -translate-x-[50%] w-[11px] h-[11px] bg-white border-b-[1.5px] border-r-[1.5px] border-[#FF4D00] rotate-45 rounded-[1.5px]"
-                      style={{ marginTop: '-6.5px' }}
-                    />
+                    {/* SVG 기반 완벽한 꼬리 연결 (가로폭 감소, 끊김 방지를 위한 정밀한 overlap 처리) */}
+                    <div className="absolute top-[calc(100%-1.5px)] left-1/2 -translate-x-[50%] w-[12px] h-[8px] z-20 pointer-events-none overflow-visible">
+                      <svg width="12" height="8" viewBox="0 0 12 8" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M1.5 0 H10.5 L6 6 Z" fill="white" />
+                        <path d="M1.5 1.5 L6 6.5 L10.5 1.5" stroke="#FF4D00" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    </div>
                   </div>
                 </div>
               </div>
