@@ -18,7 +18,7 @@ const formatDateTime = (dateString) => {
 
 /**
  * [Page] 메인 페이지 (지도 메모 기능 통합 버전)
- * @version 17.2
+ * @version 17.3
  * @author Antigravity
  * @description 
  * - Supabase 백엔드를 연동하여 지도 위에 말풍선 메모를 남기는 기능을 구현했습니다.
@@ -199,11 +199,19 @@ const Main = () => {
   };
 
   // 말풍선 그룹 확장 토글 처리
-  const toggleGroupExpand = (id, e) => {
+  const toggleGroupExpand = (id, lat, lng, e) => {
     e.stopPropagation();
-    setExpandedGroupIds(prev => 
-      prev.includes(id) ? [] : [id]
-    );
+    if (map) {
+      map.panTo(new window.kakao.maps.LatLng(lat, lng));
+    }
+    setExpandedGroupIds(prev => {
+      const isExpanding = !prev.includes(id);
+      if (isExpanding) {
+        setSelectedStarbucksId(null); // 메모 말풍선 펼칠 때 스타벅스 말풍선 제거
+        return [id];
+      }
+      return [];
+    });
   };
 
   if (loading) {
@@ -279,6 +287,10 @@ const Main = () => {
               onClick={() => {
                 if (map) {
                   map.panTo(new window.kakao.maps.LatLng(place.lat, place.lng));
+                  const isOpening = selectedStarbucksId !== place.id;
+                  if (isOpening) {
+                    setExpandedGroupIds([]); // 스타벅스 말풍선 열 때 메모 말풍선 닫기
+                  }
                   setSelectedStarbucksId(selectedStarbucksId === place.id ? null : place.id);
                 }
               }}
@@ -349,7 +361,8 @@ const Main = () => {
                     <div 
                       className={`relative px-3 py-2 border-[1.5px] border-[#FF4D00] rounded-[8px] shadow-lg flex flex-col gap-1 w-max min-w-[120px] max-w-[240px] select-none ${hiddenCount > 0 ? 'cursor-pointer' : ''} ${isGroupExpanded ? 'bg-[#FF4D00]' : 'bg-white'}`}
                       onClick={(e) => {
-                        if (hiddenCount > 0) toggleGroupExpand(anchorMemo.id, e);
+                        if (hiddenCount > 0) toggleGroupExpand(anchorMemo.id, anchorMemo.lat, anchorMemo.lng, e);
+                        else if (map) map.panTo(new window.kakao.maps.LatLng(anchorMemo.lat, anchorMemo.lng));
                       }}
                     >
                       
