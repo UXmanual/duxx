@@ -22,7 +22,7 @@ const formatDateTime = (dateString) => {
  * @author Antigravity
  * @description 
  * - 말풍선 클릭 인터랙션 버그 수정을 완료하고 리스트 노출 기능을 안정화했습니다.
- * - 메모 아이콘 애니메이션 개선: '그리기 -> 전진 지우기' 형태의 자연스러운 루프를 구현했습니다.
+ * - iOS Safari 호환성 강화: 양수 기반 전진 루프(300-200-100)를 통해 애니메이션 생략 문제를 해결했습니다.
  */
 
 const Main = () => {
@@ -600,16 +600,16 @@ const Main = () => {
           95% { -webkit-transform: scale(1.1) rotate(-5deg); }
         }
         @keyframes memo-draw {
-          0% { stroke-dashoffset: 100; }
-          40% { stroke-dashoffset: 0; }
-          60% { stroke-dashoffset: 0; }
-          100% { stroke-dashoffset: -100; }
+          0% { stroke-dashoffset: 300; }
+          40% { stroke-dashoffset: 200; }
+          60% { stroke-dashoffset: 200; }
+          100% { stroke-dashoffset: 100; }
         }
         @-webkit-keyframes memo-draw {
-          0% { stroke-dashoffset: 100; }
-          40% { stroke-dashoffset: 0; }
-          60% { stroke-dashoffset: 0; }
-          100% { stroke-dashoffset: -100; }
+          0% { stroke-dashoffset: 300; }
+          40% { stroke-dashoffset: 200; }
+          60% { stroke-dashoffset: 200; }
+          100% { stroke-dashoffset: 100; }
         }
         @keyframes btn-pulse-light {
           0%, 100% { box-shadow: 0 0 0 0 rgba(0, 0, 0, 0.05); }
