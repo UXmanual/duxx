@@ -18,11 +18,11 @@ const formatDateTime = (dateString) => {
 
 /**
  * [Page] 메인 페이지 (지도 메모 기능 통합 버전)
- * @version 18.1
+ * @version 18.2
  * @author Antigravity
  * @description 
- * - 스켈레톤 UI를 미니멀한 그레이 톤으로 정제하여 콘텐츠 로딩 상태를 더 차분하고 전문적으로 표현했습니다.
- * - 초기 로딩 시 현위치를 정교하게 포착하여 자연스러운 시작 환경을 제공합니다.
+ * - 메모 말풍선 클릭 시, 말풍선의 가로 중앙이 지도의 정중앙에 오도록 센터링 로직을 최적화했습니다.
+ * - 말풍선 디자인을 좌측 정렬에서 중앙 정렬 기반으로 변경하여 시각적 균형을 개선했습니다.
  */
 
 const Main = () => {
@@ -403,14 +403,14 @@ const Main = () => {
               <CustomOverlayMap
                 key={`group-${anchorMemo.id}`}
                 position={{ lat: anchorMemo.lat, lng: anchorMemo.lng }}
-                xAnchor={0}
+                xAnchor={0.5}
                 yAnchor={0}
                 zIndex={isGroupExpanded ? 999 : 10}
               >
                 {/* 0x0 크기의 앵커 기준점 */}
-                <div className="relative w-0 h-0 group animate-pop-in pointer-events-none">
-                  {/* 기준(최신) 말풍선을 감싸는 Wrapper */}
-                  <div className={`absolute bottom-0 left-[-18px] flex flex-col pb-[6px] pointer-events-auto ${isDark ? 'custom-marker-original-color' : ''}`}>
+                <div className="relative w-0 h-0 group animate-pop-in pointer-events-none text-center">
+                  {/* 기준(최신) 말풍선을 감싸는 Wrapper - 가로 중앙 정렬 */}
+                  <div className={`absolute bottom-0 left-1/2 -translate-x-1/2 flex flex-col pb-[6px] pointer-events-auto ${isDark ? 'custom-marker-original-color' : ''}`}>
                     
                     <div 
                       className={`relative px-3 py-2 border-[1.5px] border-[#FF4D00] rounded-[8px] shadow-lg flex flex-col gap-1 w-max min-w-[120px] max-w-[240px] select-none ${hiddenCount > 0 ? 'cursor-pointer' : ''} ${isGroupExpanded ? 'bg-[#FF4D00]' : 'bg-white'}`}
@@ -420,9 +420,9 @@ const Main = () => {
                       }}
                     >
                       
-                      {/* 펼쳐진 이전 메모들 (최신 메모 왼쪽 모서리에 딱 맞춤) */}
+                      {/* 펼쳐진 이전 메모들 (중앙 정렬 유지) */}
                       {hiddenCount > 0 && isGroupExpanded && (
-                        <div className="absolute bottom-full left-[-1.5px] mb-[6px] flex flex-col items-start gap-[6px] cursor-default select-none" onClick={(e) => e.stopPropagation()}>
+                        <div className="absolute bottom-full left-0 mb-[6px] flex flex-col items-center gap-[6px] cursor-default select-none" onClick={(e) => e.stopPropagation()}>
                           {group.slice(0, hiddenCount).map(memo => (
                             <div key={memo.id} className="relative px-3 py-2 bg-white border-[1.5px] border-[#FF4D00] rounded-[8px] shadow-lg flex flex-col gap-1 w-max min-w-[120px] max-w-[240px] animate-pop-in">
                               <div className="w-full relative z-10 text-left">
@@ -479,8 +479,8 @@ const Main = () => {
                         </button>
                       </div>
 
-                      {/* SVG 기반 완벽한 꼬리 연결 (가장 하단의 최신 메모에만 항상 존재) */}
-                      <div className="absolute top-[calc(100%-1.5px)] left-[12px] w-[12px] h-[8px] z-20 pointer-events-none overflow-visible">
+                      {/* SVG 기반 완벽한 꼬리 연결 (중앙 위치) */}
+                      <div className="absolute top-[calc(100%-1.5px)] left-1/2 -translate-x-1/2 w-[12px] h-[8px] z-20 pointer-events-none overflow-visible">
                         <svg width="12" height="8" viewBox="0 0 12 8" fill="none" xmlns="http://www.w3.org/2000/svg">
                           <path d="M1.5 0 H10.5 L6 6 Z" fill={isGroupExpanded ? "#FF4D00" : "white"} />
                           <path d="M1.5 1.5 L6 6.5 L10.5 1.5" stroke="#FF4D00" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
