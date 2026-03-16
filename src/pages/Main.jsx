@@ -18,7 +18,7 @@ const formatDateTime = (dateString) => {
 
 /**
  * [Page] 메인 페이지 (지도 메모 기능 통합 버전)
- * @version 16.1
+ * @version 16.2
  * @author Antigravity
  * @description 
  * - Supabase 백엔드를 연동하여 지도 위에 말풍선 메모를 남기는 기능을 구현했습니다.
@@ -253,7 +253,7 @@ const Main = () => {
         {isStarbucksVisible && starbucksPlaces.map((place) => (
           <React.Fragment key={`starbucks-group-${place.id}`}>
             <MapMarker
-              position={{ lat: place.y, lng: place.x }}
+              position={{ lat: place.lat, lng: place.lng }}
               image={{
                 src: 'data:image/svg+xml;base64,' + btoa(`
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -266,19 +266,19 @@ const Main = () => {
               }}
               onClick={() => {
                 if (map) {
-                  map.panTo(new window.kakao.maps.LatLng(place.y, place.x));
+                  map.panTo(new window.kakao.maps.LatLng(place.lat, place.lng));
                   setSelectedStarbucksId(selectedStarbucksId === place.id ? null : place.id);
                 }
               }}
             />
             {selectedStarbucksId === place.id && (
-              <CustomOverlayMap position={{ lat: place.y, lng: place.x }} yAnchor={1.4} zIndex={1000}>
+              <CustomOverlayMap position={{ lat: place.lat, lng: place.lng }} yAnchor={1.4} zIndex={1000}>
                 <div 
                   className="bg-white px-3 py-1.5 rounded-full border-2 border-[#00704a] shadow-lg flex items-center gap-1.5 relative select-none cursor-pointer animate-pop-in"
                   onClick={() => setSelectedStarbucksId(null)}
                 >
                   <span className="text-[13px] font-bold text-[#00704a] whitespace-nowrap">
-                    {place.place_name}
+                    {place.name}
                   </span>
                   {/* 말풍선 꼬리 */}
                   <div className="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px] border-t-[#00704a]" />
