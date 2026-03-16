@@ -1,11 +1,15 @@
-@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css');
-
 @font-face {
     font-family: 'ChangwonDangamRounded';
     src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/2511-1@1.0/ChangwonDangamRound-Regular.woff2') format('woff2');
     font-weight: normal;
     font-display: swap;
 }
+
+.logo-font {
+    font-family: 'ChangwonDangamRounded', sans-serif !important;
+}
+
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css');
 
 @tailwind base;
 @tailwind components;
