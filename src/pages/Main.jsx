@@ -21,7 +21,7 @@ const formatDateTime = (dateString) => {
  * @version 18.5
  * @author Antigravity
  * @description 
- * - 말풍선 클릭 인터랙션 버그 수정을 위해 CustomOverlayMap의 clickable 속성을 제거하고 이벤트 전파 로직을 최적화했습니다.
+ * - 말풍선 클릭 인터랙션 버그 수정을 위해 CustomOverlayMap에 clickable={true} 속성을 추가하여 상호작용 기능을 복구했습니다.
  * - 오프셋 기반 센터링과 왼쪽 꼬리 정렬 디자인 시스템을 안정화했습니다.
  */
 
@@ -359,6 +359,7 @@ const Main = () => {
                 position={{ lat: place.lat, lng: place.lng }} 
                 yAnchor={1.5} 
                 zIndex={1000}
+                clickable={true}
               >
                 <div 
                   className="bg-white px-3 py-1.5 rounded-full border-2 border-[#00704a] shadow-lg flex items-center gap-1.5 relative select-none cursor-pointer animate-pop-in"
@@ -418,6 +419,7 @@ const Main = () => {
                 xAnchor={0}
                 yAnchor={0}
                 zIndex={isGroupExpanded ? 999 : 10}
+                clickable={true}
               >
                 {/* 0x0 크기의 앵커 기준점 */}
                 <div className="relative w-0 h-0 group animate-pop-in pointer-events-none">
