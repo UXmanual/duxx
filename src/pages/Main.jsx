@@ -17,7 +17,7 @@ const formatDateTime = (dateString) => {
 };
 /**
  * [Page] 메인 페이지 (지도 메모 기능 통합 버전)
- * @version 19.5
+ * @version 19.6
  * @author Antigravity
  * @description 
  * - 모바일 접근성 최적화: 말풍선 영역 내 더블터치 시 지도가 확대되는 현상을 방지하기 위해 터치 이벤트 전파 차단 및 touch-action 속성을 적용했습니다.
@@ -183,6 +183,7 @@ const Main = () => {
     if (!isMemoMode) return;
     if (!supabase) {
       alert('데이터베이스 연결 설정이 완료되지 않았습니다. .env 환경 변수를 확인해주세요.');
+      console.error('Supabase client is not initialized.');
       return;
     }
 
@@ -195,12 +196,21 @@ const Main = () => {
       const suffixes = ["바블러", "바블리", "바블몬", "바블링", "바블러브", "바블맨", "바블걸"];
       
       // 1. 역지오코딩으로 동네 명칭 가져오기
+      if (!window.kakao || !window.kakao.maps || !window.kakao.maps.services || !window.kakao.maps.services.Geocoder) {
+        alert('지도 서비스가 준비되지 않았습니다. 잠시 후 다시 시도해주세요.');
+        console.error('Kakao Maps Geocoder service is not available.');
+        return;
+      }
+
       const geocoder = new window.kakao.maps.services.Geocoder();
       geocoder.coord2RegionCode(latlng.getLng(), latlng.getLat(), async (result, status) => {
         let neighborhood = "어딘가";
         if (status === window.kakao.maps.services.Status.OK) {
-          const region = result.find(r => r.region_type === 'H');
+          // 행정동(H) 명칭 우선 추출
+          const region = result.find(r => r.region_type === 'H') || result[0];
           neighborhood = region ? region.region_3depth_name : "어딘가";
+        } else {
+          console.warn('Geocoder failed to find region code:', status);
         }
 
         // 2. 닉네임 생성: [동네] + [성격] + [접미사]
@@ -215,14 +225,30 @@ const Main = () => {
           nickname: nickname
         };
 
-        const { data, error } = await supabase
-          .from('memos')
-          .insert([newMemo])
-          .select();
+        try {
+          const { data, error } = await supabase
+            .from('memos')
+            .insert([newMemo])
+            .select();
 
-        if (!error && data) {
-          setMemos(prev => [...prev, data[0]]);
-          setIsMemoMode(false); // 작성 후 모드 해제
+          if (error) {
+            console.error('Supabase insert error:', error);
+            // 만약 nickname 컬럼이 없어서 실패하는 경우를 대비한 안내
+            if (error.message.includes('column "nickname" of relation "memos" does not exist')) {
+              alert('데이터베이스에 "nickname" 컬럼이 없습니다. Supabase SQL 에디터에서 다음 명령을 실행해주세요: \n\nALTER TABLE memos ADD COLUMN nickname TEXT;');
+            } else {
+              alert(`바블 등록 실패: ${error.message}`);
+            }
+            return;
+          }
+
+          if (data && data[0]) {
+            setMemos(prev => [...prev, data[0]]);
+            setIsMemoMode(false); // 작성 후 모드 해제
+          }
+        } catch (err) {
+          console.error('Unexpected error during memo insertion:', err);
+          alert('예기치 못한 오류가 발생했습니다.');
         }
       });
     }
