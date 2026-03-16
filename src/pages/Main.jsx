@@ -18,12 +18,11 @@ const formatDateTime = (dateString) => {
 
 /**
  * [Page] 메인 페이지 (지도 메모 기능 통합 버전)
- * @version 17.6
+ * @version 17.7
  * @author Antigravity
  * @description 
- * - Supabase 백엔드를 연동하여 지도 위에 말풍선 메모를 남기는 기능을 구현했습니다.
- * - 줌 레벨 기반 메모 표시 최적화: 레벨 6~11에서는 말풍선을 숫자 원형 뱃지로 축약하여 표시합니다.
- * - 개별 말풍선 하단에 생성 날짜와 시간을 표기했습니다.
+ * - 사이트 진입 시 스켈레톤 UI 노출 중 현위치를 미리 계산하여 지도 깜빡임(튀는 현상)을 최적화했습니다.
+ * - 현위치 버튼 클릭 시 panTo를 이용한 부드러운 애니메이션 이동을 적용했습니다.
  */
 
 const Main = () => {
@@ -37,10 +36,13 @@ const Main = () => {
   const [isMemoMode, setIsMemoMode] = useState(false);
   const [expandedGroupIds, setExpandedGroupIds] = useState([]); // 그룹핑된 말풍선 확장 상태 추적
 
-  // 스타벅스 리저브 관련 상태
   const [starbucksPlaces, setStarbucksPlaces] = useState(starbucksReserveStores);
   const [isStarbucksVisible, setIsStarbucksVisible] = useState(true);
   const [selectedStarbucksId, setSelectedStarbucksId] = useState(null);
+
+  // 초기 위치 로딩 최적화 상태
+  const [isLocationLoaded, setIsLocationLoaded] = useState(false);
+  const [initialCenter, setInitialCenter] = useState({ lat: 37.5665, lng: 126.9780 });
 
   const [loading, error] = useKakaoLoader({
     appkey: import.meta.env.VITE_KAKAO_MAPS_API_KEY,
@@ -118,14 +120,13 @@ const Main = () => {
       setMyLocation(pos);
       
       if (map && shouldPan) {
-        map.setCenter(new window.kakao.maps.LatLng(lat, lng));
-        map.setLevel(4);
+        // 부드러운 이동 애니메이션 적용
+        map.panTo(new window.kakao.maps.LatLng(lat, lng));
       }
     };
 
     const error = (err) => {
       console.warn(`Geolocation error (${err.code}): ${err.message}`);
-      // iOS Safari에서 High Accuracy가 실패할 경우 Low Accuracy로 재시도
       if (err.code === 1 || err.code === 3) {
         navigator.geolocation.getCurrentPosition(success, null, {
           enableHighAccuracy: false,
@@ -138,9 +139,35 @@ const Main = () => {
     navigator.geolocation.getCurrentPosition(success, error, options);
   };
 
+  // 1. 컴포넌트 마운트 시 위치 미리 가져오기 (스켈레톤 노출용)
+  useEffect(() => {
+    const prefetchLocation = () => {
+      if (!navigator.geolocation) {
+        setIsLocationLoaded(true);
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const coords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+          setMyLocation(coords);
+          setInitialCenter(coords);
+          setIsLocationLoaded(true);
+        },
+        () => {
+          setIsLocationLoaded(true); // 실패 시 시청역 기반으로 로딩 해제
+        },
+        { timeout: 3000 } // 최대 3초만 대기
+      );
+    };
+
+    prefetchLocation();
+    fetchMemos();
+  }, []);
+
+  // 2. 지도 로드 후 데이터 재동기화
   useEffect(() => {
     if (map) {
-      if (!myLocation) requestLocation(true);
       fetchMemos();
     }
   }, [map]);
@@ -214,7 +241,7 @@ const Main = () => {
     });
   };
 
-  if (loading) {
+  if (loading || !isLocationLoaded) {
     return (
       <div className="w-full h-screen bg-[#f8f9fa] relative overflow-hidden flex items-center justify-center">
         <div className="absolute inset-0 opacity-20">
@@ -239,7 +266,7 @@ const Main = () => {
   return (
     <div className="w-full h-screen relative bg-white overflow-hidden">
       <Map
-        center={{ lat: 37.5665, lng: 126.9780 }}
+        center={initialCenter}
         level={4}
         onCreate={(m) => {
           setMap(m);
