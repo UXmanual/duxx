@@ -3,11 +3,11 @@ import pkg from '../../package.json';
 
 /**
  * [Component] 푸터
- * @version 19.2
+ * @version 19.3
  * @author Antigravity
  * @description 
- * - 푸터의 모든 텍스트 드래그(선택)를 방지하는 select-none 속성을 추가했습니다.
- * - 텍스트 컬러 투명도 0.3을 유지하며 깔끔하게 마감했습니다.
+ * - 푸터의 배포 시간 정보를 제거하고 빌드 버전만 노출하도록 간소화했습니다.
+ * - 푸터의 모든 텍스트 드래그(선택)를 방지하는 select-none 속성을 유지합니다.
  */
 const Footer = () => {
   return (
@@ -18,10 +18,6 @@ const Footer = () => {
           <div className="flex items-center gap-3">
             <p className="text-[14px] font-bold tracking-[0]">
               Build v{pkg.version.split('.').slice(0, 2).join('.')}
-            </p>
-            <span className="w-px h-3 bg-black opacity-100" />
-            <p className="text-[14px] font-bold tracking-[0]">
-              Last Deployed: 2026.03.16 16:15
             </p>
           </div>
           {/* 저작권: 블랙 0.3 */}
