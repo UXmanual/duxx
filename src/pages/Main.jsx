@@ -18,7 +18,7 @@ const formatDateTime = (dateString) => {
 
 /**
  * [Page] 메인 페이지 (지도 메모 기능 통합 버전)
- * @version 18.3
+ * @version 18.3.1
  * @author Antigravity
  * @description 
  * - 말풍선 디자인을 다시 왼쪽 꼬리 정렬로 복구하여 시각적 일관성을 유지했습니다.
@@ -420,12 +420,17 @@ const Main = () => {
                     <div 
                       className={`relative px-3 py-2 border-[1.5px] border-[#FF4D00] rounded-[8px] shadow-lg flex flex-col gap-1 w-max min-w-[120px] max-w-[240px] select-none ${hiddenCount > 0 ? 'cursor-pointer' : ''} ${isGroupExpanded ? 'bg-[#FF4D00]' : 'bg-white'}`}
                       onClick={(e) => {
-                        if (hiddenCount > 0) toggleGroupExpand(anchorMemo.id, anchorMemo.lat, anchorMemo.lng, e);
-                        else if (map) {
+                        e.stopPropagation();
+                        if (hiddenCount > 0) {
+                          toggleGroupExpand(anchorMemo.id, anchorMemo.lat, anchorMemo.lng, e);
+                        } else if (map) {
                           const proj = map.getProjection();
-                          const point = proj.pointFromLatLng(new window.kakao.maps.LatLng(anchorMemo.lat, anchorMemo.lng));
-                          point.x += 90;
-                          map.panTo(proj.latLngFromPoint(point));
+                          if (proj) {
+                            const point = proj.pointFromLatLng(new window.kakao.maps.LatLng(anchorMemo.lat, anchorMemo.lng));
+                            point.x += 90;
+                            map.panTo(proj.latLngFromPoint(point));
+                          }
+                          setSelectedStarbucksId(null); // 단일 메모 클릭 시에도 스타벅스 말풍선 처리
                         }
                       }}
                     >
