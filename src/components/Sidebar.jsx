@@ -4,8 +4,8 @@ import { X, Clock, MessageSquare, Trash2, Send } from 'lucide-react';
 
 /**
  * [Component] LNB 사이드바 / 모바일 바텀시트
- * @version 31.9
- * @description 단계별 스냅 시스템(0%-40%-90%) 적용 및 드래그 조작감 고도화
+ * @version 32.0
+ * @description 단계별 스냅 시스템(0%-45%-90%) 적용 및 드래그 조작감 고도화
  */
 const Sidebar = ({ 
   memo, 
@@ -33,9 +33,9 @@ const Sidebar = ({
     };
     window.addEventListener('resize', handleResize);
     
-    // 바텀시트 열릴 때 초기 높이(40%)로 애니메이션
+    // 바텀시트 열릴 때 초기 높이(45%)로 애니메이션
     if (memo && isMobile) {
-      animate(sheetHeight, window.innerHeight * 0.4, { 
+      animate(sheetHeight, window.innerHeight * 0.45, { 
         type: 'spring', 
         damping: 30, 
         stiffness: 400 
@@ -102,14 +102,14 @@ const Sidebar = ({
     const velocity = info.velocity.y; // 양수면 아래로, 음수면 위로
     const snapTransition = { type: 'spring', damping: 38, stiffness: 450 };
 
-    const halfH = windowHeight * 0.4;
+    const halfH = windowHeight * 0.45;
     const fullH = windowHeight * 0.9;
     const threshold = windowHeight * 0.15; // 15% 정도 움직였을 때 스냅 변경
 
     // 1. 위쪽 영역(Full 근처)에 있을 때
     if (currentH > windowHeight * 0.65) {
       if (velocity > 400 || currentH < fullH - threshold) {
-        // 아래로 강하게 던지거나 일정 거리 미달 시 Half(40)로 복귀
+        // 아래로 강하게 던지거나 일정 거리 미달 시 Half(45)로 복귀
         animate(sheetHeight, halfH, snapTransition);
       } else {
         // Full(90) 고정
@@ -125,14 +125,14 @@ const Sidebar = ({
         // 아래로 강하게 던지거나 너무 낮아지면 닫기(0)
         animate(sheetHeight, 0, snapTransition).then(() => onClose());
       } else {
-        // Half(40) 고정
+        // Half(45) 고정
         animate(sheetHeight, halfH, snapTransition);
       }
     } 
     // 3. 하단 영역일 때
     else {
       if (velocity < -600) {
-        // 하단에서 아주 강하게 위로 밀면 Half(40)로
+        // 하단에서 아주 강하게 위로 밀면 Half(45)로
         animate(sheetHeight, halfH, snapTransition);
       } else {
         // 닫기

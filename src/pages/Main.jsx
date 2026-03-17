@@ -19,10 +19,10 @@ const formatDateTime = (dateString) => {
 };
 /**
  * [Page] 메인 페이지 (지도 메모 기능 통합 버전)
- * @version 31.9
+ * @version 32.0
  * @author Antigravity
  * @description 
- * - 모바일 바텀시트 단계별 스냅 시스템(0-40-90) 적용 버전입니다.
+ * - 모바일 바텀시트 기준점(45%) 조정 및 단계별 스냅 고도화 버전입니다.
  */
 
 // 닉네임 조합용 상수
