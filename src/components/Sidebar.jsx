@@ -4,8 +4,8 @@ import { X, Clock, MessageSquare, Trash2, Send } from 'lucide-react';
 
 /**
  * [Component] LNB 사이드바 / 모바일 바텀시트
- * @version 1.5
- * @description 최신 답글 상단 정렬 및 UI 디테일 개선
+ * @version 1.6
+ * @description 답글 입력창 placeholder 수정 및 전송 버튼 레이아웃 최적화
  */
 const Sidebar = ({ 
   memo, 
@@ -218,7 +218,7 @@ const Sidebar = ({
                   type="text" 
                   value={replyText}
                   onChange={(e) => setReplyText(e.target.value)}
-                  placeholder="따뜻한 한마디를 남겨주세요..."
+                  placeholder="말하고싶은 바블을 남겨주세요"
                   className="w-full pl-6 pr-16 py-4 bg-gray-50 border border-gray-100 rounded-[20px] text-[13px] font-bold focus:outline-none focus:ring-4 focus:ring-[#FF4D00]/10 focus:bg-white focus:border-[#FF4D00]/30 transition-all placeholder:text-gray-300"
                   onKeyPress={(e) => e.key === 'Enter' && onReplySubmit(memo.id)}
                 />
@@ -226,7 +226,7 @@ const Sidebar = ({
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={() => onReplySubmit(memo.id)}
-                  className="absolute right-2 w-11 h-11 bg-[#FF4D00] text-white rounded-2xl flex items-center justify-center shadow-lg shadow-[#FF4D00]/30"
+                  className="absolute right-1.5 w-11 h-11 bg-[#FF4D00] text-white rounded-2xl flex items-center justify-center shadow-lg shadow-[#FF4D00]/30"
                 >
                   <Send size={18} strokeWidth={2.5} />
                 </motion.button>
