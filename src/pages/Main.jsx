@@ -20,9 +20,9 @@ const formatDateTime = (dateString) => {
 
 /**
  * [Page] 메인 페이지 (지도 메모 기능 통합 버전)
- * @version 33.0
+ * @version 33.1
  * @description 
- * - AI 닉네임 중복 노출 해결 및 닉네임 생성 로직 최적화 버전입니다.
+ * - 스타벅스 리저브 매장 정보 말풍선(Overlay) 복구 버전입니다.
  */
 
 // 닉네임 조합용 상수
@@ -317,6 +317,26 @@ const Main = () => {
                 if (selectedStarbucksId !== place.id) { setExpandedGroupIds([]); setSelectedMemoId(null); } 
               }}
             />
+            {selectedStarbucksId === place.id && (
+              <CustomOverlayMap 
+                position={{ lat: place.lat, lng: place.lng }} 
+                yAnchor={1.5} 
+                zIndex={1000}
+                clickable={true}
+              >
+                <div 
+                  className="bg-white px-3 py-1.5 rounded-full border-2 border-[#00704a] shadow-lg flex items-center gap-1.5 relative select-none cursor-pointer animate-pop-in [touch-action:manipulation]"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedStarbucksId(null);
+                  }}
+                >
+                  <span className="text-[13px] font-bold text-[#00704a] whitespace-nowrap">
+                    {place.name}
+                  </span>
+                </div>
+              </CustomOverlayMap>
+            )}
           </React.Fragment>
         ))}
 
@@ -361,6 +381,16 @@ const Main = () => {
         <div className="flex flex-col items-center gap-3 pointer-events-auto">
           {isMemoMode && <div className="bg-[#FF4D00] text-white text-[12px] font-bold px-3 py-2 rounded-full mb-3">메모 위치를 눌러주세요</div>}
           <button onClick={() => setIsMemoMode(!isMemoMode)} className={`w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-all ${isMemoMode ? 'bg-[#FF4D00] text-white' : 'bg-white text-[#FF4D00]'}`}><MessageSquare size={22} /></button>
+          
+          {/* 스타벅스 토글 버튼 (v33.1 복구) */}
+          <button 
+            onClick={() => setIsStarbucksVisible(!isStarbucksVisible)}
+            className={`w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-all ${isStarbucksVisible ? 'bg-[#00704a] text-white' : 'bg-white text-[#00704a]'}`}
+            title="스타벅스 리저브 매장 보기"
+          >
+            <Coffee size={22} />
+          </button>
+
           <button onClick={handleMyLocationBtn} className="w-12 h-12 rounded-full flex items-center justify-center bg-white shadow-lg"><Crosshair size={22} /></button>
         </div>
       </div>
