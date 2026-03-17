@@ -1,82 +1,81 @@
 import React, { useState, useEffect } from 'react';
-import { useTheme } from '../context/ThemeContext';
-import { Sun, Moon, MoonStar } from 'lucide-react';
+import { Sun, Cloud, CloudRain, CloudSnow, CloudLightning, Wind } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 /**
- * [Component] 상단 헤더
- * @version 20.9
+ * [Component] 상단 헤더 (날씨 위젯 통합 버전)
+ * @version 24.0
  * @author Antigravity
- * @description
- * - 테마 토글 버튼의 배경 블러, 쉐도우, 배경색을 모두 제거하여 순수 아이콘만 노출되도록 했습니다.
- * - 터치 영역(w-12 h-12)은 유지하여 사용성을 확보했습니다.
  */
 const Header = () => {
-  const { isDark, toggleTheme } = useTheme();
-  const [moonPhase, setMoonPhase] = useState(0);
+  const [weather, setWeather] = useState('sunny'); // sunny, cloudy, rainy, snowy
+  const [temp, setTemp] = useState(22);
 
+  // 시뮬레이션을 위해 10초마다 날씨 랜덤 변경 (실제 구현 시 API 연동 가능)
   useEffect(() => {
-    if (!isDark) {
-      const interval = setInterval(() => {
-        setMoonPhase((prev) => (prev + 1) % 3);
-      }, 3000);
-      return () => clearInterval(interval);
+    const weatherList = ['sunny', 'cloudy', 'rainy', 'snowy', 'windy'];
+    const interval = setInterval(() => {
+      const randomWeather = weatherList[Math.floor(Math.random() * weatherList.length)];
+      setWeather(randomWeather);
+      setTemp(Math.floor(Math.random() * 15) + 10);
+    }, 15000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const getWeatherIcon = () => {
+    switch (weather) {
+      case 'sunny': return <Sun className="w-6 h-6 text-yellow-400" fill="currentColor" />;
+      case 'cloudy': return <Cloud className="w-6 h-6 text-gray-400" fill="currentColor" />;
+      case 'rainy': return <CloudRain className="w-6 h-6 text-blue-400" />;
+      case 'snowy': return <CloudSnow className="w-6 h-6 text-blue-200" />;
+      case 'windy': return <Wind className="w-6 h-6 text-teal-400" />;
+      default: return <Sun className="w-6 h-6 text-yellow-400" />;
     }
-  }, [isDark]);
+  };
+
+  const getWeatherMotion = () => {
+    switch (weather) {
+      case 'sunny': return { rotate: 360, scale: [1, 1.1, 1] };
+      case 'cloudy': return { x: [-2, 2, -2], y: [-1, 1, -1] };
+      case 'rainy': return { y: [0, 3, 0] };
+      case 'snowy': return { opacity: [0.7, 1, 0.7], scale: [0.9, 1, 0.9] };
+      case 'windy': return { x: [-5, 5, -5], skewX: [-5, 5, -5] };
+      default: return {};
+    }
+  };
 
   return (
     <header style={{ display: 'contents' }}>
-      {/* 
-        [Logo Layer] 
-        mix-blend-mode: color-burn (Light) / color-dodge (Dark)
-      */}
-      <div 
-        className="absolute top-0 left-0 px-10 h-24 flex items-center z-10 pointer-events-none text-[#FF4D00]"
-        style={{ mixBlendMode: isDark ? 'color-dodge' : 'multiply' }}
-      >
+      <div className="absolute top-0 left-0 px-10 h-24 flex items-center z-10 pointer-events-none text-[#FF4D00] multiply">
         <span className="logo-font text-[24px] tracking-[0] uppercase select-none pointer-events-auto">
           BABBLE
         </span>
       </div>
 
-      {/* [Interface Layer] 테마 버튼 - 배경 및 쉐도우 제거 버전 */}
+      {/* [Weather Widget Layer] */}
       <div className="absolute top-0 right-0 px-10 h-24 flex items-center z-20 pointer-events-none">
-        <button 
-          onClick={toggleTheme}
-          className="p-3 bg-transparent transition-colors duration-500 group flex items-center justify-center w-12 h-12 pointer-events-auto"
-          aria-label="Toggle Theme"
-        >
+        <div className="flex items-center gap-3 bg-white/50 backdrop-blur-md px-4 py-2 rounded-full shadow-sm pointer-events-auto cursor-default">
           <AnimatePresence mode="wait">
             <motion.div
-              key={isDark ? 'dark' : `light-${moonPhase}`}
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.8 }}
+              key={weather}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.5 }}
-              className="relative z-10 flex items-center justify-center text-[#FACC15]"
+              className="flex items-center gap-2"
             >
-              {isDark ? (
-                <motion.div
-                  animate={{ rotate: 360 }}
-                  transition={{ duration: 12, repeat: Infinity, ease: "linear" }}
-                >
-                  <Sun className="w-6 h-6" fill="currentColor" />
-                </motion.div>
-              ) : (
-                <motion.div
-                  animate={{ y: [0, -2, 0] }}
-                  transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-                >
-                  {moonPhase === 0 && <Moon className="w-6 h-6" fill="currentColor" />}
-                  {moonPhase === 1 && <MoonStar className="w-6 h-6" fill="currentColor" />}
-                  {moonPhase === 2 && (
-                    <div className="w-5 h-5 rounded-full bg-current shadow-[0_0_10px_rgba(250,204,21,0.5)]" />
-                  )}
-                </motion.div>
-              )}
+              <motion.div
+                animate={getWeatherMotion()}
+                transition={{ duration: weather === 'sunny' ? 10 : 3, repeat: Infinity, ease: "linear" }}
+              >
+                {getWeatherIcon()}
+              </motion.div>
+              <span className="text-[14px] font-bold text-zinc-700 tracking-tight">
+                {temp}°C
+              </span>
             </motion.div>
           </AnimatePresence>
-        </button>
+        </div>
       </div>
     </header>
   );

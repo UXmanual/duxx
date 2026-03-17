@@ -7,36 +7,17 @@ const ThemeContext = createContext();
  * @description 로직 수정을 위해 UI 컴포넌트를 건드릴 필요가 없게 합니다.
  */
 export const ThemeProvider = ({ children }) => {
-  const [isDark, setIsDark] = useState(() => {
-    // 1. 로컬 스토리지에 사용자가 명시적으로 저장한 설정이 있는지 확인
-    const savedTheme = localStorage.getItem('theme');
-    if (savedTheme === 'dark' || savedTheme === 'light') {
-      return savedTheme === 'dark';
-    }
+  // 다크모드 제거: 항상 라이트 모드 고정
+  const isDark = false;
 
-    // 2. 저장된 설정이 없다면 현재 한국 시간(KST) 기준 자동 설정 (오후 6시 ~ 오전 6시)
-    const now = new Date();
-    const kstHour = (now.getUTCHours() + 9) % 24;
-    return kstHour >= 18 || kstHour < 6;
-  });
-
-  // DOM 클래스 업데이트만 담당
   useEffect(() => {
     const root = window.document.documentElement;
-    if (isDark) {
-      root.classList.add('dark');
-    } else {
-      root.classList.remove('dark');
-    }
-  }, [isDark]);
+    root.classList.remove('dark');
+    localStorage.setItem('theme', 'light');
+  }, []);
 
-  // 사용자가 직접 버튼을 클릭했을 때만 localStorage에 영구 저장
   const toggleTheme = () => {
-    setIsDark(prev => {
-      const nextTheme = !prev;
-      localStorage.setItem('theme', nextTheme ? 'dark' : 'light');
-      return nextTheme;
-    });
+    // 테마 토글 기능 비활성화
   };
 
   return (
