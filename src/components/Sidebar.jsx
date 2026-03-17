@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useDragControls } from 'framer-motion';
 import { X, Clock, MessageSquare, Trash2, Send } from 'lucide-react';
 
 /**
  * [Component] LNB 사이드바 / 모바일 바텀시트
- * @version 30.8
- * @description 픽셀 기반 드래그 추종성 강화 및 점프 오류 수정
+ * @version 30.9
+ * @description 40%/90% 가변형 바텀시트 및 드래그 핸들 제어 최적화
  */
 const Sidebar = ({ 
   memo, 
@@ -22,6 +22,7 @@ const Sidebar = ({
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [sheetHeight, setSheetHeight] = useState('half'); // 'half', 'full'
   const [windowHeight, setWindowHeight] = useState(window.innerHeight);
+  const dragControls = useDragControls();
 
   // 화면 크기 변화 감지 및 바디 스크롤 잠금
   useEffect(() => {
@@ -93,29 +94,31 @@ const Sidebar = ({
           
           <motion.div 
             variants={{
-              half: { y: windowHeight * 0.5 },
-              full: { y: 0 },
+              half: { y: windowHeight * 0.6 }, // 40% 노출
+              full: { y: windowHeight * 0.1 }, // 90% 노출
               closed: { y: windowHeight }
             }}
             initial={isMobile ? "closed" : { x: -400, opacity: 0 }}
             animate={isMobile ? sheetHeight : { x: 0, opacity: 1, y: 0 }}
             exit={isMobile ? "closed" : { x: -400, opacity: 0 }}
-            transition={{ type: 'spring', damping: 30, stiffness: 250 }}
+            transition={{ type: 'spring', damping: 35, stiffness: 300 }}
             drag={isMobile ? "y" : false}
-            dragConstraints={{ top: 0, bottom: windowHeight }}
-            dragElastic={0.02}
+            dragControls={dragControls}
+            dragListener={false} // 핸들로만 드래그 허용
+            dragConstraints={{ top: windowHeight * 0.1, bottom: windowHeight }}
+            dragElastic={0.05}
             onDragEnd={(e, info) => {
               const offset = info.offset.y;
               const velocity = info.velocity.y;
 
               if (sheetHeight === 'half') {
-                if (offset < -100 || velocity < -500) {
+                if (offset < -50 || velocity < -500) {
                   setSheetHeight('full');
-                } else if (offset > 150 || velocity > 500) {
+                } else if (offset > 100 || velocity > 500) {
                   onClose();
                 }
               } else if (sheetHeight === 'full') {
-                if (offset > 150 || velocity > 500) {
+                if (offset > 100 || velocity > 500) {
                   setSheetHeight('half');
                 }
               }
@@ -127,9 +130,12 @@ const Sidebar = ({
               h-screen md:h-full overflow-hidden
             `}
           >
-            {/* Mobile Drag Handle Area */}
+            {/* Mobile Drag Handle Area (여기서만 드래그 시작) */}
             {isMobile && (
-              <div className="w-full flex justify-center pt-5 pb-5 flex-shrink-0 drag-handle cursor-grab active:cursor-grabbing">
+              <div 
+                className="w-full flex justify-center pt-5 pb-5 flex-shrink-0 cursor-grab active:cursor-grabbing"
+                onPointerDown={(e) => dragControls.start(e)}
+              >
                 <div className="w-14 h-1.5 bg-gray-200 rounded-full" />
               </div>
             )}
@@ -155,7 +161,7 @@ const Sidebar = ({
 
             <div 
               className="flex-1 overflow-y-auto custom-scrollbar"
-              onPointerDown={(e) => e.stopPropagation()} // 내부 스크롤 시 시트 전체 드래그 방지
+              onPointerDown={(e) => e.stopPropagation()} // 내부 영역 터치 시 드래그 전파 방지
             >
               <div className="p-6 space-y-8">
                 {/* Main Content Card */}

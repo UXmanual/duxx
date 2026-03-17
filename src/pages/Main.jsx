@@ -19,10 +19,10 @@ const formatDateTime = (dateString) => {
 };
 /**
  * [Page] 메인 페이지 (지도 메모 기능 통합 버전)
- * @version 30.8
+ * @version 30.9
  * @author Antigravity
  * @description 
- * - 바텀시트 상단 오버드래그 및 바운스 현상 수정 버전입니다.
+ * - 모바일 바텀시트 가변 범위(40%/90%) 및 핸들 드래그 최적화 버전입니다.
  */
 
 // 닉네임 조합용 상수
