@@ -20,10 +20,9 @@ const formatDateTime = (dateString) => {
 
 /**
  * [Page] 메인 페이지 (지도 메모 기능 통합 버전)
- * @version 32.7
- * @author Antigravity
+ * @version 32.8
  * @description 
- * - 만료된 바블 자동 삭제 로직 안정화 및 화이트 스크린 이슈 긴급 조치 버전입니다.
+ * - 모바일에서 바블 클릭 시 오프셋 센터링 적용 (바텀시트 가림 방지, v32.8)
  */
 
 // 닉네임 조합용 상수
@@ -73,7 +72,25 @@ const Main = () => {
     });
   }, [memos]);
 
-  // 초기 메모 데이터 로드
+  // 부드러운 오프셋 센터링을 위한 헬퍼 함수 (v32.8)
+  const panToWithOffset = (lat, lng) => {
+    if (!map) return;
+    const latlng = new window.kakao.maps.LatLng(lat, lng);
+    const isMobile = window.innerWidth < 768;
+    
+    if (isMobile) {
+      const projection = map.getProjection();
+      // 바텀시트 높이(약 45%)를 고려하여 마커를 화면 중상단(약 30~35% 지점)에 배치
+      const offsetPixels = 160; 
+      const markerPoint = projection.pointFromCoords(latlng);
+      const newCenterPoint = new window.kakao.maps.Point(markerPoint.x, markerPoint.y + offsetPixels);
+      const newCenterLatLng = projection.coordsFromPoint(newCenterPoint);
+      map.panTo(newCenterLatLng);
+    } else {
+      map.panTo(latlng);
+    }
+  };
+
   const fetchMemos = async () => {
     if (!supabase) return;
     try {
@@ -283,7 +300,11 @@ const Main = () => {
           <React.Fragment key={`sb-${place.id}`}>
             <MapMarker position={{ lat: place.lat, lng: place.lng }} 
               image={{ src: 'data:image/svg+xml;base64,' + btoa('<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="10" fill="#00704a" stroke="white" stroke-width="2"/><path d="M12 6.25L13.5 10.75H18L14.5 13.25L15.5 17.75L12 15.25L8.5 17.75L9.5 13.25L6 10.75H10.5L12 6.25Z" fill="white"/></svg>'), size: { width: 24, height: 24 } }}
-              onClick={() => { map.panTo(new window.kakao.maps.LatLng(place.lat, place.lng)); setSelectedStarbucksId(selectedStarbucksId === place.id ? null : place.id); if (selectedStarbucksId !== place.id) { setExpandedGroupIds([]); setSelectedMemoId(null); } }}
+              onClick={() => { 
+                panToWithOffset(place.lat, place.lng);
+                setSelectedStarbucksId(selectedStarbucksId === place.id ? null : place.id); 
+                if (selectedStarbucksId !== place.id) { setExpandedGroupIds([]); setSelectedMemoId(null); } 
+              }}
             />
           </React.Fragment>
         ))}
@@ -298,8 +319,16 @@ const Main = () => {
               <div className={`relative w-0 h-0 group pointer-events-none ${memo.is_popping ? 'animate-bubble-pop' : ''}`}>
                 <div className="absolute bottom-0 left-1/2 -translate-x-1/2 pb-2 pointer-events-auto transition-opacity duration-500" style={{ opacity: memo.popped_at ? 0.4 : 1 }}>
                   <div className="relative px-4 py-2 bg-white/90 backdrop-blur-md border-2 border-[#FF4D00] rounded-full shadow-lg flex items-center gap-2 min-w-[50px] max-w-[220px] cursor-pointer"
-                    onClick={(e) => { e.stopPropagation(); map.panTo(new window.kakao.maps.LatLng(memo.lat, memo.lng)); setSelectedStarbucksId(null); setSelectedMemoId(memo.id); setExpandedGroupIds([memo.id]); setShowReplyIds([memo.id]); setReplyTargetId(memo.id); }}
-                  >
+                    onClick={(e) => { 
+                    e.stopPropagation(); 
+                    panToWithOffset(memo.lat, memo.lng);
+                    setSelectedStarbucksId(null); 
+                    setSelectedMemoId(memo.id); 
+                    setExpandedGroupIds([memo.id]); 
+                    setShowReplyIds([memo.id]); 
+                    setReplyTargetId(memo.id); 
+                  }}
+                >
                     {memos.filter(m => m.parent_id === memo.id).length > 0 && <div className="absolute -top-2 -right-2 bg-[#FF4D00] text-white text-[10px] font-black px-1.5 py-0.5 rounded-full border border-white min-w-[20px] flex justify-center">{memos.filter(m => m.parent_id === memo.id).length}</div>}
                     <div className="flex-1 overflow-hidden font-bold text-[13px] truncate whitespace-nowrap">{memo.text}</div>
                     {!memo.popped_at && (
