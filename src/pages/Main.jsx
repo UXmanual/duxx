@@ -18,7 +18,7 @@ const formatDateTime = (dateString) => {
 };
 /**
  * [Page] 메인 페이지 (지도 메모 기능 통합 버전)
- * @version 26.2
+ * @version 26.3
  * @author Antigravity
  * @description 
  * - 바블 리스트 간격 복구 및 닉네임 하단 여백 최적화 버전입니다.
@@ -498,10 +498,10 @@ const Main = () => {
               clickable={true}
             >
               <div className="relative w-0 h-0 group animate-pop-in pointer-events-none">
-                {/* 화이트 글래스 캡슐 디자인 - v26.2 */}
+                {/* 화이트 글래스 캡슐 디자인 (오렌지 보더 추가) - v26.3 */}
                 <div className="absolute bottom-0 left-1/2 -translate-x-1/2 flex flex-col pb-2 pointer-events-auto">
                   <div 
-                    className="relative px-5 py-2.5 bg-white/90 backdrop-blur-md rounded-full shadow-[0_8px_24px_rgba(0,0,0,0.08)] flex items-center justify-center min-w-[50px] max-w-[180px] select-none hover:scale-105 hover:bg-white transition-all duration-300 cursor-pointer active:scale-95 group/bubble"
+                    className="relative px-5 py-2.5 bg-white/90 backdrop-blur-md border-[1.5px] border-[#FF4D00]/60 rounded-full shadow-[0_8px_24px_rgba(255,77,0,0.12)] flex items-center justify-center min-w-[50px] max-w-[180px] select-none hover:scale-105 hover:bg-white transition-all duration-300 cursor-pointer active:scale-95 group/bubble"
                     onClick={(e) => {
                       e.stopPropagation();
                       if (map) {
