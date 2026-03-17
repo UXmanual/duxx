@@ -18,7 +18,7 @@ const formatDateTime = (dateString) => {
 };
 /**
  * [Page] 메인 페이지 (지도 메모 기능 통합 버전)
- * @version 25.2
+ * @version 25.3
  * @author Antigravity
  * @description 
  * - 바블 리스트 간격 복구 및 닉네임 하단 여백 최적화 버전입니다.
@@ -81,12 +81,13 @@ const Main = () => {
     return R * c;
   };
 
-  // 겹침 방지 분산 알고리즘 (Spiderfy) 강화 버전 (v25.2)
+  // 겹침 방지 극대화 (Spiderfy Spiral) 버전 (v25.3)
   const groupedMemos = useMemo(() => {
     const rootMemos = memos.filter(m => !m.parent_id);
     if (rootMemos.length === 0) return [];
 
-    const proximityLimit = 100; // 100미터 이내 바블들을 분산 대상으로 잡음
+    // 감지 범위를 150m로 확대
+    const proximityLimit = 150;
 
     // 1. 근접 그룹 형성
     let unassigned = [...rootMemos];
@@ -108,21 +109,22 @@ const Main = () => {
       unassigned = remaining;
     }
 
-    // 2. 그룹 내 좌표 분산 (강화된 Spiral Offset)
+    // 2. 나선형 분산 (Spiral Offset) - 아예 닿지 않게 반경 대폭 학대
     return groups.map(group => {
       if (group.length === 1) return group;
 
       return group.map((memo, index) => {
-        if (index === 0) return memo; // 첫 번째는 기준점 제자리
+        if (index === 0) return memo; 
 
-        const angle = (index * (2 * Math.PI)) / (group.length - 1);
-        // 바블 크기(약 240px)를 고려하여 분산 반경을 대폭 확대 (약 80~100m 거리)
-        const radius = 0.0008; 
+        // 하나씩 쌓일 때마다 각도뿐 아니라 거리(radius)도 늘려나가는 나선형 구조
+        const angle = index * 1.0; // 일정한 회전각
+        const radiusHeightFactor = 0.0012; // 수직 기본 단위 (약 120m)
+        const spiralRadius = radiusHeightFactor + (index * 0.0003); // 뒤로 갈수록 더 멀리
         
         return {
           ...memo,
-          lat: memo.lat + Math.sin(angle) * (radius * 1.2), // 위도 오프셋 더 크게 (위아래 겹침 방지)
-          lng: memo.lng + Math.cos(angle) * (radius * 1.8) // 경도 오프셋 보정
+          lat: memo.lat + Math.sin(angle) * spiralRadius,
+          lng: memo.lng + Math.cos(angle) * (spiralRadius * 2.0) // 가로(경도)는 바블 너비 때문에 더 넓게 벌림
         };
       });
     });
