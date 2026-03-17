@@ -18,7 +18,7 @@ const formatDateTime = (dateString) => {
 };
 /**
  * [Page] 메인 페이지 (지도 메모 기능 통합 버전)
- * @version 26.5
+ * @version 26.6
  * @author Antigravity
  * @description 
  * - 바블 리스트 간격 복구 및 닉네임 하단 여백 최적화 버전입니다.
@@ -451,8 +451,6 @@ const Main = () => {
                   <span className="text-[13px] font-bold text-[#00704a] whitespace-nowrap">
                     {place.name}
                   </span>
-                  {/* 말풍선 꼬리 */}
-                  <div className="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px] border-t-[#00704a]" />
                 </div>
               </CustomOverlayMap>
             )}
@@ -498,10 +496,10 @@ const Main = () => {
               clickable={true}
             >
               <div className="relative w-0 h-0 group animate-pop-in pointer-events-none">
-                {/* 화이트 글래스 캡슐 디자인 (솔리드 오렌지 보더) - v26.5 */}
+                {/* 화이트 글래스 캡슐 디자인 (테두리 2px 통일) - v26.6 */}
                 <div className="absolute bottom-0 left-1/2 -translate-x-1/2 flex flex-col pb-2 pointer-events-auto">
                   <div 
-                    className="relative px-5 py-2.5 bg-white/90 backdrop-blur-md border-[1px] border-[#FF4D00] rounded-full shadow-[0_8px_24px_rgba(255,77,0,0.12)] flex items-center justify-center min-w-[50px] max-w-[180px] select-none hover:scale-105 hover:bg-white transition-all duration-300 cursor-pointer active:scale-95 group/bubble"
+                    className="relative px-5 py-2.5 bg-white/90 backdrop-blur-md border-2 border-[#FF4D00] rounded-full shadow-[0_8px_24px_rgba(255,77,0,0.12)] flex items-center justify-center min-w-[50px] max-w-[180px] select-none hover:scale-105 hover:bg-white transition-all duration-300 cursor-pointer active:scale-95 group/bubble"
                     onClick={(e) => {
                       e.stopPropagation();
                       if (map) {
