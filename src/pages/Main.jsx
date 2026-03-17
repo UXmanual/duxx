@@ -18,7 +18,7 @@ const formatDateTime = (dateString) => {
 };
 /**
  * [Page] 메인 페이지 (지도 메모 기능 통합 버전)
- * @version 26.6
+ * @version 27.0
  * @author Antigravity
  * @description 
  * - 바블 리스트 간격 복구 및 닉네임 하단 여백 최적화 버전입니다.
@@ -81,55 +81,10 @@ const Main = () => {
     return R * c;
   };
 
-  // 겹침 방지 극대화 (Zoom-Adaptive Vertical Stacking) 버전 (v25.6)
-  const groupedMemos = useMemo(() => {
-    const rootMemos = memos.filter(m => !m.parent_id);
-    if (rootMemos.length === 0) return [];
-
-    const proximityLimit = 150;
-
-    // 1. 근접 그룹 형성
-    let sortedMemos = [...rootMemos].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-    let unassigned = [...sortedMemos];
-    let groups = [];
-    
-    while (unassigned.length > 0) {
-      const anchor = unassigned.shift();
-      const group = [anchor];
-      const remaining = [];
-      
-      for (const m of unassigned) {
-        if (getDistance(anchor.lat, anchor.lng, m.lat, m.lng) < proximityLimit) {
-          group.push(m);
-        } else {
-          remaining.push(m);
-        }
-      }
-      groups.push(group);
-      unassigned = remaining;
-    }
-
-    // 2. 가변 수직 스택 (Zoom-Adaptive Stacking)
-    return groups.map(group => {
-      if (group.length === 1) return group;
-
-      return group.map((memo, index) => {
-        if (index === 0) return memo; 
-
-        // 줌 레벨(mapLevel)에 따른 동적 간격 계산
-        // 레벨 4 기준 0.0018, 레벨 5는 그 2배인 0.0036으로 벌려줌
-        const baseGap = 0.0018;
-        const zoomMultiplier = Math.pow(2, mapLevel - 4);
-        const dynamicVerticalGap = baseGap * zoomMultiplier;
-        
-        return {
-          ...memo,
-          lat: memo.lat + (index * dynamicVerticalGap),
-          lng: memo.lng 
-        };
-      });
-    });
-  }, [memos, mapLevel]); // mapLevel 의존성 추가
+  // 루트 메모 리스트 (분산 로직 제거 - 원본 위치 그대로 표기) (v27.0)
+  const rootMemos = useMemo(() => {
+    return memos.filter(m => !m.parent_id);
+  }, [memos]);
 
   // 초기 메모 데이터 로드
   const fetchMemos = async () => {
@@ -486,7 +441,7 @@ const Main = () => {
             ))}
           </MarkerClusterer>
         ) : (
-          groupedMemos.flatMap((group) => group.map((memo) => (
+          rootMemos.map((memo) => (
             <CustomOverlayMap
               key={`memo-${memo.id}`}
               position={{ lat: memo.lat, lng: memo.lng }}
@@ -527,7 +482,7 @@ const Main = () => {
                 </div>
               </div>
             </CustomOverlayMap>
-          )))
+          ))
         )}
 
       </Map>
