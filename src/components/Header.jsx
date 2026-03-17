@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 /**
  * [Component] 상단 헤더 (실시간 날씨 API 연동 버전)
- * @version 26.1
+ * @version 26.2
  * @author Antigravity
  */
 const Header = () => {

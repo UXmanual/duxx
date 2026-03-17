@@ -18,7 +18,7 @@ const formatDateTime = (dateString) => {
 };
 /**
  * [Page] 메인 페이지 (지도 메모 기능 통합 버전)
- * @version 26.1
+ * @version 26.2
  * @author Antigravity
  * @description 
  * - 바블 리스트 간격 복구 및 닉네임 하단 여백 최적화 버전입니다.
@@ -498,10 +498,10 @@ const Main = () => {
               clickable={true}
             >
               <div className="relative w-0 h-0 group animate-pop-in pointer-events-none">
-                {/* 오렌지 글래스 캡슐 디자인 - v26.1 */}
+                {/* 화이트 글래스 캡슐 디자인 - v26.2 */}
                 <div className="absolute bottom-0 left-1/2 -translate-x-1/2 flex flex-col pb-2 pointer-events-auto">
                   <div 
-                    className="relative px-5 py-2.5 bg-[#FF4D00]/85 backdrop-blur-lg rounded-full shadow-[0_8px_32px_rgba(255,77,0,0.25)] flex items-center justify-center min-w-[50px] max-w-[180px] select-none hover:scale-110 hover:bg-[#FF4D00] transition-all duration-300 cursor-pointer active:scale-95 group/bubble"
+                    className="relative px-5 py-2.5 bg-white/90 backdrop-blur-md rounded-full shadow-[0_8px_24px_rgba(0,0,0,0.08)] flex items-center justify-center min-w-[50px] max-w-[180px] select-none hover:scale-105 hover:bg-white transition-all duration-300 cursor-pointer active:scale-95 group/bubble"
                     onClick={(e) => {
                       e.stopPropagation();
                       if (map) {
@@ -515,7 +515,7 @@ const Main = () => {
                   >
                     {/* 텍스트 영역 - 무조건 1줄 제한 (Ellipsis) */}
                     <div className="w-full relative z-10 text-center overflow-hidden">
-                      <span className="text-[13px] font-bold leading-none tracking-tight whitespace-nowrap truncate text-white block">
+                      <span className="text-[13px] font-bold leading-none tracking-tight whitespace-nowrap truncate text-[#1A1A1A] block">
                         {memo.text}
                       </span>
                     </div>
@@ -526,9 +526,6 @@ const Main = () => {
                       <span>{formatDateTime(memo.created_at)}</span>
                     </div>
                   </div>
-                  
-                  {/* 하단 앵커 포인트 - 더 입체적인 느낌 */}
-                  <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-[#FF4D00] rounded-full shadow-md border-2 border-white/40 animate-pulse" />
                 </div>
               </div>
             </CustomOverlayMap>
