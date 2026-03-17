@@ -6,6 +6,7 @@ import { supabase } from '../lib/supabaseClient';
 import { starbucksReserveStores } from '../data/starbucksReserve';
 import { AI_PERSONAS } from '../data/aiPersonas';
 import Sidebar from '../components/Sidebar';
+import confetti from 'canvas-confetti';
 
 const formatDateTime = (dateString) => {
   if (!dateString) return '';
@@ -20,9 +21,9 @@ const formatDateTime = (dateString) => {
 
 /**
  * [Page] 메인 페이지 (지도 메모 기능 통합 버전)
- * @version 33.7
+ * @version 33.8
  * @description 
- * - 고도화된 바블 터트리기 효과 (12개 파티클 + 쇼크웨이브 링) 적용 버전입니다. (v33.7)
+ * - canvas-confetti 기반의 '진짜 터지는' 고해상도 파편 효과 적용 버전입니다. (v33.8)
  */
 
 // 닉네임 조합용 상수
@@ -108,7 +109,7 @@ const Main = () => {
       (position) => {
         const pos = { lat: position.coords.latitude, lng: position.coords.longitude };
         setMyLocation(pos);
-        if (map && shouldPan) map.panTo(new window.kakao.maps.LatLng(pos.lat, pos.lng));
+        if (map && shouldPan) panToWithOffset(pos.lat, pos.lng);
       },
       (err) => console.warn(err),
       { enableHighAccuracy: true, timeout: 10000 }
@@ -257,6 +258,27 @@ const Main = () => {
 
   const handlePopBubble = async (id, e) => {
     if (e) e.stopPropagation();
+    
+    // v33.8: 진짜 바블이 터지는 듯한 물리 파워 파편 효과 (canvas-confetti)
+    if (e && e.clientX && e.clientY) {
+      const origin = {
+        x: e.clientX / window.innerWidth,
+        y: e.clientY / window.innerHeight
+      };
+      
+      confetti({
+        particleCount: 50,
+        spread: 360,
+        startVelocity: 35,
+        gravity: 1.2,
+        ticks: 60,
+        origin: origin,
+        colors: ['#FF4D00', '#FF8A00', '#FF1E00', '#FFF'],
+        shapes: ['circle'],
+        scalar: 0.8
+      });
+    }
+
     const now = new Date().toISOString();
     setMemos(prev => prev.map(m => m.id === id ? { ...m, popped_at: now, is_popping: true } : m));
     try {
