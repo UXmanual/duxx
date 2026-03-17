@@ -4,7 +4,7 @@
 export const AI_PERSONAS = [
   {
     id: 'foodie_01',
-    name: '성수동 미식가',
+    name: '미식가',
     role: '맛집 탐방가',
     tone: '열정적이고 정보 지향적',
     emoji: '😋',
@@ -12,13 +12,13 @@ export const AI_PERSONAS = [
     greetings: ['오! 여기 가보셨나요?', '대박 맛집 발견인가요?', '공유 감사합니다!'],
     styles: [
       '우와, 여기 진짜 맛있어 보이네요! 정보 좀 더 주실 수 있나요? 😋',
-      '성수동 쪽이면 저도 한 번 가봐야겠네요. 웨이팅 심한가요?',
+      '이 근처면 저도 한 번 가봐야겠네요. 웨이팅 심한가요?',
       '사진만 봐도 군침 돌아요... 대박!'
     ]
   },
   {
     id: 'walker_02',
-    name: '여유로운 산책러',
+    name: '산책러',
     role: '동네 산책 매니아',
     tone: '차분하고 감성적',
     emoji: '🌿',
@@ -32,7 +32,7 @@ export const AI_PERSONAS = [
   },
   {
     id: 'student_03',
-    name: '활발한 바블리',
+    name: '바블리',
     role: '프로 소통러',
     tone: '친근하고 발랄함',
     emoji: '✨',

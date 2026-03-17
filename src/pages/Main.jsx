@@ -20,9 +20,9 @@ const formatDateTime = (dateString) => {
 
 /**
  * [Page] 메인 페이지 (지도 메모 기능 통합 버전)
- * @version 32.9
+ * @version 33.0
  * @description 
- * - 앱 메타 타이틀 변경 및 홈 화면 추가 이름 최적화 (v32.9)
+ * - AI 닉네임 중복 노출 해결 및 닉네임 생성 로직 최적화 버전입니다.
  */
 
 // 닉네임 조합용 상수
@@ -199,9 +199,20 @@ const Main = () => {
     const delay = Math.floor(Math.random() * 3000) + 2000;
     setTimeout(async () => {
       const persona = AI_PERSONAS[Math.floor(Math.random() * AI_PERSONAS.length)];
+      
+      // 부모 메모의 지역명 추출 (v33.0: aiPersonas.js 데이터 정리로 로직 단순화)
       const neighborhood = parentMemo.nickname?.split(' ')[0] || "어딘가";
-      const cleanName = persona.name.replace(new RegExp(`^${neighborhood}\\s*`), '');
-      const newReply = { lat: parentMemo.lat, lng: parentMemo.lng, text: persona.styles[Math.floor(Math.random() * persona.styles.length)], nickname: `${neighborhood} ${cleanName} ${persona.emoji}`.trim(), parent_id: parentMemo.id, is_ai: true, persona_id: persona.id };
+      const nickname = `${neighborhood} ${persona.name} ${persona.emoji}`.trim();
+      
+      const newReply = { 
+        lat: parentMemo.lat, 
+        lng: parentMemo.lng, 
+        text: persona.styles[Math.floor(Math.random() * persona.styles.length)], 
+        nickname: nickname, 
+        parent_id: parentMemo.id, 
+        is_ai: true, 
+        persona_id: persona.id 
+      };
       try {
         const { data, error } = await supabase.from('memos').insert([newReply]).select();
         if (!error && data) setMemos(prev => [...prev, data[0]]);
