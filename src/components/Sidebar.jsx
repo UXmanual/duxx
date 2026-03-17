@@ -4,8 +4,8 @@ import { X, Clock, MessageSquare, Trash2, Send } from 'lucide-react';
 
 /**
  * [Component] LNB 사이드바 / 모바일 바텀시트
- * @version 33.5
- * @description 터트리기 버튼 스타일 수정 (쉐도우 제거 및 연한 주황 보더 적용, v33.5)
+ * @version 33.6
+ * @description 터트리기 버튼 스타일 수정 및 터트리기 애니메이션 고도화 (v33.6)
  */
 const Sidebar = ({ 
   memo, 
@@ -143,7 +143,7 @@ const Sidebar = ({
         {!memo.popped_at && (
           <button 
             onClick={(e) => { e.stopPropagation(); onPop(memo.id); }}
-            className="p-2.5 bg-white border border-[#FF4D00]/20 rounded-xl hover:bg-[#FF4D00]/5 transition-all group"
+            className="p-2.5 bg-white border border-gray-100 rounded-xl hover:bg-gray-50 transition-all group"
           >
             <motion.svg 
               width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FF4D00" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"

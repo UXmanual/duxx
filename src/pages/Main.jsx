@@ -20,9 +20,9 @@ const formatDateTime = (dateString) => {
 
 /**
  * [Page] 메인 페이지 (지도 메모 기능 통합 버전)
- * @version 33.5
+ * @version 33.6
  * @description 
- * - 디자인 표준 가이드 적용 및 터트리기 버튼 스타일 최적화 버전입니다. (v33.5)
+ * - 더 사실적인 바블 터트리기 애니메이션 및 파편 효과 추가 버전입니다. (v33.6)
  */
 
 // 닉네임 조합용 상수
@@ -349,7 +349,16 @@ const Main = () => {
             <CustomOverlayMap key={`memo-${memo.id}`} position={{ lat: memo.lat, lng: memo.lng }} xAnchor={0} yAnchor={0} zIndex={replyTargetId === memo.id ? 999 : (memo.popped_at ? 1 : 10)}>
               <div className={`relative w-0 h-0 group pointer-events-none ${memo.is_popping ? 'animate-bubble-pop' : ''}`}>
                 <div className="absolute bottom-0 left-1/2 -translate-x-1/2 pb-2 pointer-events-auto transition-opacity duration-500" style={{ opacity: memo.popped_at ? 0.4 : 1 }}>
-                  <div className="relative px-4 py-2 bg-white/90 backdrop-blur-md border-2 border-[#FF4D00] rounded-full shadow-lg flex items-center gap-2 min-w-[50px] max-w-[220px] cursor-pointer"
+                  {/* 터지는 파편 효과 (v33.6 추가) */}
+                  {memo.is_popping && (
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                      {[1, 2, 3, 4, 5, 6].map(i => (
+                        <div key={i} className="absolute w-1.5 h-1.5 bg-[#FF4D00] rounded-full animate-burst-particle" 
+                          style={{ '--angle': `${i * 60}deg`, '--delay': `${Math.random() * 0.1}s` }} />
+                      ))}
+                    </div>
+                  )}
+                  <div className={`relative px-4 py-2 bg-white/90 backdrop-blur-md border-2 border-[#FF4D00] rounded-full shadow-lg flex items-center gap-2 min-w-[50px] max-w-[220px] cursor-pointer ${memo.is_popping ? 'animate-bubble-pop' : ''}`}
                     onClick={(e) => { 
                     e.stopPropagation(); 
                     panToWithOffset(memo.lat, memo.lng);
@@ -388,9 +397,21 @@ const Main = () => {
 
       <style>{`
         @keyframes pop-in { 0% { transform: scale(0.8) translateY(10px); opacity: 0; } 100% { transform: scale(1) translateY(0); opacity: 1; } }
-        @keyframes bubble-pop { 0% { transform: scale(1); filter: brightness(1.2); } 100% { transform: scale(1.5); opacity: 0; } }
+        /* v33.6: 더 사실적인 터트리기 애니메이션 */
+        @keyframes bubble-pop { 
+          0% { transform: scale(1); filter: brightness(1.2); }
+          15% { transform: scale(0.9); }
+          40% { transform: scale(1.15); }
+          100% { transform: scale(1.8); opacity: 0; filter: blur(4px); }
+        }
+        /* v33.6: 파편 효과 */
+        @keyframes burst-particle {
+          0% { transform: rotate(var(--angle)) translateY(0) scale(1); opacity: 1; }
+          100% { transform: rotate(var(--angle)) translateY(-40px) scale(0); opacity: 0; }
+        }
         .animate-pop-in { animation: pop-in 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-        .animate-bubble-pop { animation: bubble-pop 0.5s ease-out forwards; }
+        .animate-bubble-pop { animation: bubble-pop 0.6s cubic-bezier(0.19, 1, 0.22, 1) forwards; }
+        .animate-burst-particle { animation: burst-particle 0.6s ease-out var(--delay) forwards; }
       `}</style>
     </div>
   );
