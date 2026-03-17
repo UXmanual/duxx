@@ -18,7 +18,7 @@ const formatDateTime = (dateString) => {
 };
 /**
  * [Page] 메인 페이지 (지도 메모 기능 통합 버전)
- * @version 24.3
+ * @version 25.0
  * @author Antigravity
  * @description 
  * - 바블 리스트 간격 복구 및 닉네임 하단 여백 최적화 버전입니다.
@@ -67,41 +67,12 @@ const Main = () => {
     libraries: ['services', 'clusterer', 'drawing'],
   });
 
-  // 하버사인 거리 계산 로직 (미터 단위)
-  const getDistance = (lat1, lon1, lat2, lon2) => {
-    const R = 6371e3;
-    const p1 = lat1 * Math.PI / 180;
-    const p2 = lat2 * Math.PI / 180;
-    const dp = (lat2 - lat1) * Math.PI / 180;
-    const dl = (lon2 - lon1) * Math.PI / 180;
-    const a = Math.sin(dp / 2) * Math.sin(dp / 2) +
-              Math.cos(p1) * Math.cos(p2) *
-              Math.sin(dl / 2) * Math.sin(dl / 2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    return R * c;
-  };
-
-  // 500m 이내 메모 그룹핑 (최신 본문 기준)
+  // 모든 메모를 개별 바블로 표시 (v25.0 그룹핑 기능 삭제)
   const groupedMemos = useMemo(() => {
-    // 본문(parent_id가 없는 글)만 그룹핑 대상으로 삼음
+    // 본문(parent_id가 없는 글)만 대상으로 함
     const rootMemos = memos.filter(m => !m.parent_id);
-    let unassigned = [...rootMemos].reverse(); 
-    let groups = [];
-    while (unassigned.length > 0) {
-      let anchor = unassigned.shift();
-      let group = [anchor];
-      let remaining = [];
-      for (let m of unassigned) {
-        if (getDistance(anchor.lat, anchor.lng, m.lat, m.lng) <= 500) {
-          group.push(m);
-        } else {
-          remaining.push(m);
-        }
-      }
-      unassigned = remaining;
-      groups.push(group.reverse());
-    }
-    return groups;
+    // 각각의 메모를 하나의 그룹(배열)으로 감싸서 리턴 (기존 렌더링 로직 호환성 유지)
+    return rootMemos.map(m => [m]);
   }, [memos]);
 
   // 초기 메모 데이터 로드
