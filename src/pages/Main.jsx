@@ -18,7 +18,7 @@ const formatDateTime = (dateString) => {
 };
 /**
  * [Page] 메인 페이지 (지도 메모 기능 통합 버전)
- * @version 28.2
+ * @version 28.3
  * @author Antigravity
  * @description 
  * - 바블 리스트 간격 복구 및 닉네임 하단 여백 최적화 버전입니다.
@@ -522,7 +522,6 @@ const Main = () => {
                         title="터트리기"
                       >
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FF4D00" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="animate-pulse">
-                          <circle cx="12" cy="12" r="3" fill="#FF4D00" />
                           <path d="M12 2v2M12 20v2M2 12h2M20 12h2M19.07 4.93l-1.41 1.41M6.34 17.66l-1.41 1.41M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41" />
                         </svg>
                       </button>
