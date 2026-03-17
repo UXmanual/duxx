@@ -4,12 +4,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 /**
  * [Component] 상단 헤더 (실시간 날씨 API 연동 버전)
- * @version 30.1
+ * @version 32.3
  * @author Antigravity
  */
 const Header = () => {
-  const [weather, setWeather] = useState('sunny');
-  const [temp, setTemp] = useState(20);
+  const [weather, setWeather] = useState(null);
+  const [temp, setTemp] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [locationName, setLocationName] = useState('위치 확인 중...');
 
   // Weather Code Mapping (Open-Meteo 기준)
@@ -31,6 +32,7 @@ const Header = () => {
         setWeather(mapWeatherCode(data.current_weather.weathercode));
         setTemp(Math.round(data.current_weather.temperature));
         setLocationName('실시간 날씨');
+        setLoading(false);
       }
     } catch (error) {
       console.error('Weather fetch error:', error);
@@ -96,26 +98,40 @@ const Header = () => {
       {/* [Weather Widget Layer] */}
       <div className="absolute top-0 right-0 px-10 h-24 flex items-center z-20 pointer-events-none">
         <div className="flex flex-col items-end gap-1">
-          <div className="flex items-center gap-3 bg-white/80 backdrop-blur-md px-4 py-2 rounded-full shadow-sm pointer-events-auto cursor-default border border-orange-50">
+          <div className="flex items-center gap-3 bg-white/80 backdrop-blur-md px-4 py-2 rounded-full shadow-sm pointer-events-auto cursor-default border border-orange-50 min-w-[90px] h-[40px] justify-center overflow-hidden">
             <AnimatePresence mode="wait">
-              <motion.div
-                key={weather}
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.8 }}
-                transition={{ duration: 0.5 }}
-                className="flex items-center gap-2"
-              >
+              {loading ? (
+                /* 스켈레톤 로딩 바 (v32.3) */
                 <motion.div
-                  animate={getWeatherMotion()}
-                  transition={{ duration: weather === 'sunny' ? 15 : 3, repeat: Infinity, ease: "linear" }}
+                  key="skeleton"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="flex items-center gap-2 w-full"
                 >
-                  {getWeatherIcon()}
+                  <div className="w-6 h-6 bg-gray-200 rounded-full animate-pulse" />
+                  <div className="w-10 h-4 bg-gray-100 rounded-md animate-pulse" />
                 </motion.div>
-                <span className="text-[14px] font-bold text-zinc-800 tracking-tight">
-                  {temp}°C
-                </span>
-              </motion.div>
+              ) : (
+                <motion.div
+                  key={weather}
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.8 }}
+                  transition={{ duration: 0.5 }}
+                  className="flex items-center gap-2"
+                >
+                  <motion.div
+                    animate={getWeatherMotion()}
+                    transition={{ duration: weather === 'sunny' ? 15 : 3, repeat: Infinity, ease: "linear" }}
+                  >
+                    {getWeatherIcon()}
+                  </motion.div>
+                  <span className="text-[14px] font-bold text-zinc-800 tracking-tight">
+                    {temp}°C
+                  </span>
+                </motion.div>
+              )}
             </AnimatePresence>
           </div>
         </div>

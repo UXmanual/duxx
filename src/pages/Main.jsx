@@ -19,10 +19,10 @@ const formatDateTime = (dateString) => {
 };
 /**
  * [Page] 메인 페이지 (지도 메모 기능 통합 버전)
- * @version 32.2
+ * @version 32.3
  * @author Antigravity
  * @description 
- * - 입력창 테두리 강화 및 전송 버튼 쉐도우 제거 버전입니다.
+ * - 날씨 로딩 스켈레톤 UI 적용 및 데이터 초기화 최적화 버전입니다.
  */
 
 // 닉네임 조합용 상수
