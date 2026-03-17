@@ -18,7 +18,7 @@ const formatDateTime = (dateString) => {
 };
 /**
  * [Page] 메인 페이지 (지도 메모 기능 통합 버전)
- * @version 22.0
+ * @version 22.1
  * @author Antigravity
  * @description 
  * - 바블 리스트 간격 복구 및 닉네임 하단 여백 최적화 버전입니다.
@@ -514,7 +514,7 @@ const Main = () => {
                                 </span>
                               </div>
 
-                              {/* [개선] 그룹 내 메모별 답글 접기/펴기 & 개수 표시 */}
+                              {/* [개선] 그룹 내 메모별 답글: 스크롤 제거 & 입력창 자동 연동 */}
                               {(() => {
                                 const memoReplies = memos.filter(r => r.parent_id === memo.id);
                                 const hasReplies = memoReplies.length > 0;
@@ -526,11 +526,17 @@ const Main = () => {
                                       <button 
                                         onClick={(e) => {
                                           e.stopPropagation();
+                                          const nextShowing = !isShowing;
+                                          
                                           setShowReplyIds(prev => 
-                                            prev.includes(memo.id) 
-                                              ? prev.filter(id => id !== memo.id) 
-                                              : [...prev, memo.id]
+                                            nextShowing ? [...prev, memo.id] : prev.filter(id => id !== memo.id)
                                           );
+
+                                          if (nextShowing) {
+                                            setReplyTargetId(memo.id);
+                                          } else {
+                                            setReplyTargetId(null);
+                                          }
                                         }}
                                         className="text-[11px] font-bold flex items-center gap-1 text-[#FF4D00]/70 hover:opacity-100 transition-opacity"
                                       >
@@ -545,9 +551,9 @@ const Main = () => {
                                     </div>
 
                                     {isShowing && hasReplies && (
-                                      <div className="flex flex-col gap-2 mt-1 max-h-[120px] overflow-y-auto pr-1">
+                                      <div className="flex flex-col gap-2 mt-1 pr-1">
                                         {memoReplies.map(reply => (
-                                          <div key={reply.id} className="flex flex-col border-b border-black/5 last:border-0 pb-1.5 break-all">
+                                          <div key={reply.id} className="flex flex-col border-b border-black/5 last:border-0 pb-1.5 break-all whitespace-pre-wrap">
                                             <span className="text-[10px] font-bold text-[#FF4D00]">
                                               {reply.nickname}
                                             </span>
@@ -559,7 +565,7 @@ const Main = () => {
                                       </div>
                                     )}
 
-                                    {replyTargetId === memo.id ? (
+                                    {isShowing && replyTargetId === memo.id && (
                                       <div className="flex flex-col gap-1 mt-1">
                                         <input 
                                           autoFocus
@@ -569,23 +575,31 @@ const Main = () => {
                                           onChange={(e) => setReplyText(e.target.value)}
                                           onKeyDown={(e) => {
                                             if (e.key === 'Enter') handleReplySubmit(memo.id);
-                                            if (e.key === 'Escape') setReplyTargetId(null);
+                                            if (e.key === 'Escape') {
+                                              setReplyTargetId(null);
+                                              setShowReplyIds(prev => prev.filter(id => id !== memo.id));
+                                            }
                                           }}
                                         />
                                         <div className="flex justify-end gap-1">
-                                          <button onClick={() => setReplyTargetId(null)} className="text-[10px] text-gray-400 px-2 py-1">취소</button>
-                                          <button onClick={() => handleReplySubmit(memo.id)} className="text-[10px] font-bold text-white bg-[#FF4D00] px-2 py-0.5 rounded">등록</button>
+                                          <button 
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              setReplyTargetId(null);
+                                              setShowReplyIds(prev => prev.filter(id => id !== memo.id));
+                                            }} 
+                                            className="text-[10px] text-gray-400 px-2 py-1"
+                                          >
+                                            닫기
+                                          </button>
+                                          <button 
+                                            onClick={(e) => { e.stopPropagation(); handleReplySubmit(memo.id); }} 
+                                            className="text-[10px] font-bold text-white bg-[#FF4D00] px-2 py-0.5 rounded"
+                                          >
+                                            등록
+                                          </button>
                                         </div>
                                       </div>
-                                    ) : (
-                                      !isShowing && hasReplies ? null : (
-                                        <button 
-                                          onClick={(e) => { e.stopPropagation(); setReplyTargetId(memo.id); }}
-                                          className="text-[10px] font-medium self-end px-2 py-1 opacity-60 hover:opacity-100 text-zinc-500"
-                                        >
-                                          + 쓰기
-                                        </button>
-                                      )
                                     )}
                                   </div>
                                 );
@@ -639,16 +653,24 @@ const Main = () => {
 
                         return (
                           <div className={`mt-2 flex flex-col gap-1.5 p-2 rounded-lg ${isGroupExpanded ? 'bg-black/10' : 'bg-gray-50'}`}>
-                            {/* 상단: 개수 표시 및 접기/펴기 버튼 */}
+                            {/* 상단: 개수 표시 및 접기/펴기 버튼 (클릭 시 입력창도 같이 표시) */}
                             <div className="flex items-center justify-between px-1">
                               <button 
                                 onClick={(e) => {
                                   e.stopPropagation();
+                                  const nextShowing = !isShowing;
+                                  
+                                  // 펼침 상태 토글
                                   setShowReplyIds(prev => 
-                                    prev.includes(anchorMemo.id) 
-                                      ? prev.filter(id => id !== anchorMemo.id) 
-                                      : [...prev, anchorMemo.id]
+                                    nextShowing ? [...prev, anchorMemo.id] : prev.filter(id => id !== anchorMemo.id)
                                   );
+
+                                  // 펼칠 때 입력창도 같이 열기
+                                  if (nextShowing) {
+                                    setReplyTargetId(anchorMemo.id);
+                                  } else {
+                                    setReplyTargetId(null);
+                                  }
                                 }}
                                 className={`text-[11px] font-bold flex items-center gap-1 transition-opacity ${isGroupExpanded ? 'text-white/70' : 'text-[#FF4D00]/70'} hover:opacity-100`}
                               >
@@ -662,11 +684,11 @@ const Main = () => {
                               </button>
                             </div>
 
-                            {/* 답글 리스트 (펼쳐졌을 때만 노출) */}
+                            {/* 답글 리스트 (스크롤 없이 줄바꿈 처리) */}
                             {isShowing && hasReplies && (
-                              <div className="flex flex-col gap-2 mt-1 max-h-[150px] overflow-y-auto pr-1">
+                              <div className="flex flex-col gap-2 mt-1 pr-1">
                                 {memoReplies.map(reply => (
-                                  <div key={reply.id} className="flex flex-col border-b border-black/5 last:border-0 pb-1.5 break-all">
+                                  <div key={reply.id} className="flex flex-col border-b border-black/5 last:border-0 pb-1.5 break-all whitespace-pre-wrap">
                                     <span className={`text-[10px] font-bold ${isGroupExpanded ? 'text-white/70' : 'text-[#FF4D00]'}`}>
                                       {reply.nickname}
                                     </span>
@@ -678,8 +700,8 @@ const Main = () => {
                               </div>
                             )}
                             
-                            {/* 답글 입력창 (버튼 클릭 시에만 노출) */}
-                            {replyTargetId === anchorMemo.id ? (
+                            {/* 답글 입력창 (펼쳐졌을 때 자동 노출) */}
+                            {isShowing && replyTargetId === anchorMemo.id && (
                               <div className="flex flex-col gap-1 mt-1">
                                 <input 
                                   autoFocus
@@ -689,23 +711,31 @@ const Main = () => {
                                   onChange={(e) => setReplyText(e.target.value)}
                                   onKeyDown={(e) => {
                                     if (e.key === 'Enter') handleReplySubmit(anchorMemo.id);
-                                    if (e.key === 'Escape') setReplyTargetId(null);
+                                    if (e.key === 'Escape') {
+                                      setReplyTargetId(null);
+                                      setShowReplyIds(prev => prev.filter(id => id !== anchorMemo.id));
+                                    }
                                   }}
                                 />
                                 <div className="flex justify-end gap-1">
-                                  <button onClick={() => setReplyTargetId(null)} className="text-[10px] text-gray-400 px-2 py-1">취소</button>
-                                  <button onClick={() => handleReplySubmit(anchorMemo.id)} className="text-[10px] font-bold text-white bg-[#FF4D00] px-2 py-1 rounded">등록</button>
+                                  <button 
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setReplyTargetId(null);
+                                      setShowReplyIds(prev => prev.filter(id => id !== anchorMemo.id));
+                                    }} 
+                                    className="text-[10px] text-gray-400 px-2 py-1"
+                                  >
+                                    닫기
+                                  </button>
+                                  <button 
+                                    onClick={(e) => { e.stopPropagation(); handleReplySubmit(anchorMemo.id); }} 
+                                    className="text-[10px] font-bold text-white bg-[#FF4D00] px-2 py-1 rounded"
+                                  >
+                                    등록
+                                  </button>
                                 </div>
                               </div>
-                            ) : (
-                              !isShowing && hasReplies ? null : (
-                                <button 
-                                  onClick={(e) => { e.stopPropagation(); setReplyTargetId(anchorMemo.id); }}
-                                  className={`text-[10px] font-medium self-end px-2 py-1 opacity-60 hover:opacity-100 ${isGroupExpanded ? 'text-white' : 'text-zinc-500'}`}
-                                >
-                                  + 쓰기
-                                </button>
-                              )
                             )}
                           </div>
                         );
