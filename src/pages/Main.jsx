@@ -18,7 +18,7 @@ const formatDateTime = (dateString) => {
 };
 /**
  * [Page] 메인 페이지 (지도 메모 기능 통합 버전)
- * @version 26.0
+ * @version 26.1
  * @author Antigravity
  * @description 
  * - 바블 리스트 간격 복구 및 닉네임 하단 여백 최적화 버전입니다.
@@ -498,38 +498,37 @@ const Main = () => {
               clickable={true}
             >
               <div className="relative w-0 h-0 group animate-pop-in pointer-events-none">
-                {/* 프리미엄 컴팩트 디자인 - 날씨 위젯 스타일 계승 */}
+                {/* 오렌지 글래스 캡슐 디자인 - v26.1 */}
                 <div className="absolute bottom-0 left-1/2 -translate-x-1/2 flex flex-col pb-2 pointer-events-auto">
                   <div 
-                    className="relative px-4 py-2 bg-white/90 backdrop-blur-md border-[1px] border-[#FF4D00]/20 rounded-2xl shadow-[0_8px_32px_rgba(255,77,0,0.12)] flex flex-col gap-1 w-max min-w-[60px] max-w-[200px] select-none hover:scale-105 transition-transform duration-200 cursor-pointer active:scale-95"
+                    className="relative px-5 py-2.5 bg-[#FF4D00]/85 backdrop-blur-lg rounded-full shadow-[0_8px_32px_rgba(255,77,0,0.25)] flex items-center justify-center min-w-[50px] max-w-[180px] select-none hover:scale-110 hover:bg-[#FF4D00] transition-all duration-300 cursor-pointer active:scale-95 group/bubble"
                     onClick={(e) => {
                       e.stopPropagation();
                       if (map) {
                         map.panTo(new window.kakao.maps.LatLng(memo.lat, memo.lng));
                       }
                       setSelectedStarbucksId(null); 
-                      // 기능 로직은 유지하되, 현재는 선택 집중 효과만 수행
                       setExpandedGroupIds([]);
                       setShowReplyIds([memo.id]); 
                       setReplyTargetId(memo.id);
                     }}
                   >
-                    {/* 텍스트 영역 - 오직 내용만 심플하게 노출 */}
-                    <div className="w-full relative z-10 text-center">
-                      <span className="text-[13.5px] font-semibold leading-tight tracking-tight break-all whitespace-pre-wrap text-[#1A1A1A]">
+                    {/* 텍스트 영역 - 무조건 1줄 제한 (Ellipsis) */}
+                    <div className="w-full relative z-10 text-center overflow-hidden">
+                      <span className="text-[13px] font-bold leading-none tracking-tight whitespace-nowrap truncate text-white block">
                         {memo.text}
                       </span>
                     </div>
 
-                    {/* [추후 LNB용] 기능 데이터 보존 섹션 (화면 노출 제외) */}
+                    {/* [추후 LNB용] 데이터 보존 */}
                     <div className="hidden">
-                      <span className="info-nickname">{memo.nickname || getVirtualNickname(memo.id)}</span>
-                      <span className="info-time">{formatDateTime(memo.created_at)}</span>
+                      <span>{memo.nickname}</span>
+                      <span>{formatDateTime(memo.created_at)}</span>
                     </div>
                   </div>
                   
-                  {/* 심플한 하단 포인트 (꼬리 대신 세련된 점) */}
-                  <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-1.5 h-1.5 bg-[#FF4D00] rounded-full shadow-lg border border-white" />
+                  {/* 하단 앵커 포인트 - 더 입체적인 느낌 */}
+                  <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-[#FF4D00] rounded-full shadow-md border-2 border-white/40 animate-pulse" />
                 </div>
               </div>
             </CustomOverlayMap>
