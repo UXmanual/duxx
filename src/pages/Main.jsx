@@ -18,7 +18,7 @@ const formatDateTime = (dateString) => {
 };
 /**
  * [Page] 메인 페이지 (지도 메모 기능 통합 버전)
- * @version 22.3
+ * @version 22.4
  * @author Antigravity
  * @description 
  * - 바블 리스트 간격 복구 및 닉네임 하단 여백 최적화 버전입니다.
@@ -279,6 +279,11 @@ const Main = () => {
   // 말풍선 그룹 확장 토글 처리
   const toggleGroupExpand = (id, e) => {
     e.stopPropagation();
+    
+    // 다른 바블을 누르면 기존 열려있던 답글 창/입력창 모두 닫기
+    setShowReplyIds([]);
+    setReplyTargetId(null);
+
     setExpandedGroupIds(prev => {
       const isExpanding = !prev.includes(id);
       if (isExpanding) {
