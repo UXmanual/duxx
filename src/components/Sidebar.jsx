@@ -4,8 +4,8 @@ import { X, Clock, MessageSquare, Trash2, Send } from 'lucide-react';
 
 /**
  * [Component] LNB 사이드바 / 모바일 바텀시트
- * @version 32.4
- * @description AI 답글 'A' 뱃지 복구 및 닉네임 지역명 포함 최적화
+ * @version 32.5
+ * @description 터트리기 버튼 스케일 애니메이션 추가 (v32.5)
  */
 const Sidebar = ({ 
   memo, 
@@ -143,9 +143,13 @@ const Sidebar = ({
         {!memo.popped_at && (
           <button 
             onClick={(e) => { e.stopPropagation(); onPop(memo.id); }}
-            className="p-2.5 bg-white border border-gray-100 shadow-sm rounded-xl hover:border-[#FF4D00]/30 transition-all"
+            className="p-2.5 bg-white border border-gray-100 shadow-sm rounded-xl hover:border-[#FF4D00]/30 transition-all group"
           >
-            <motion.svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FF4D00" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <motion.svg 
+              width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FF4D00" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+              animate={{ scale: [1, 0.85, 1.15, 1] }}
+              transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+            >
               <path d="M12 2v2M12 20v2M2 12h2M20 12h2M19.07 4.93l-1.41 1.41M6.34 17.66l-1.41 1.41M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41" />
             </motion.svg>
           </button>

@@ -19,10 +19,10 @@ const formatDateTime = (dateString) => {
 };
 /**
  * [Page] 메인 페이지 (지도 메모 기능 통합 버전)
- * @version 32.4
+ * @version 32.5
  * @author Antigravity
  * @description 
- * - AI 답글 닉네임 지역명 포함 및 AI 뱃지 복구 버전입니다.
+ * - AI 닉네임 드로우 규칙 최적화 및 터트리기 버튼 스케일 애니메이션 추가 버전입니다.
  */
 
 // 닉네임 조합용 상수
@@ -211,14 +211,15 @@ const Main = () => {
       const persona = AI_PERSONAS[Math.floor(Math.random() * AI_PERSONAS.length)];
       const aiText = persona.styles[Math.floor(Math.random() * persona.styles.length)];
       
-      // 부모 메모의 지역명 추출 (v32.4)
+      // 부모 메모의 지역명 추출 및 AI 페르소나 이름 정제 (v32.5: 중복 지역명 제거)
       const neighborhood = parentMemo.nickname?.split(' ')[0] || "어딘가";
+      const cleanPersonaName = persona.name.replace(new RegExp(`^${neighborhood}\\s*`), '');
       
       const newReply = {
         lat: parentMemo.lat,
         lng: parentMemo.lng,
         text: aiText,
-        nickname: `${neighborhood} ${persona.name} ${persona.emoji}`,
+        nickname: `${neighborhood} ${cleanPersonaName} ${persona.emoji}`.trim(),
         parent_id: parentMemo.id,
         is_ai: true,
         persona_id: persona.id
@@ -526,12 +527,16 @@ const Main = () => {
                     {!memo.popped_at && (
                       <button
                         onClick={(e) => handlePopBubble(memo.id, e)}
-                        className="flex-shrink-0 w-5 h-5 flex items-center justify-center rounded-full hover:bg-[#FF4D00]/10 transition-colors pointer-events-auto"
+                        className="flex-shrink-0 w-6 h-6 flex items-center justify-center rounded-full hover:bg-[#FF4D00]/10 transition-colors pointer-events-auto"
                         title="터트리기"
                       >
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FF4D00" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="animate-pulse">
+                        <motion.svg 
+                          width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FF4D00" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" 
+                          animate={{ scale: [1, 0.85, 1.15, 1] }}
+                          transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+                        >
                           <path d="M12 2v2M12 20v2M2 12h2M20 12h2M19.07 4.93l-1.41 1.41M6.34 17.66l-1.41 1.41M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41" />
-                        </svg>
+                        </motion.svg>
                       </button>
                     )}
 
