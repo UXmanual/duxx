@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence, useDragControls } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { X, Clock, MessageSquare, Trash2, Send } from 'lucide-react';
 
 /**
  * [Component] LNB 사이드바 / 모바일 바텀시트
- * @version 31.0
- * @description 40%/90% 가변형 바텀시트 고도화 및 하단 인풋 고정 수정
+ * @version 31.1
+ * @description 높이 기반 가변형 바텀시트 구현 (40%/90%) 및 하단 인풋 고정 최적화
  */
 const Sidebar = ({ 
   memo, 
@@ -22,7 +22,6 @@ const Sidebar = ({
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [sheetHeight, setSheetHeight] = useState('half'); // 'half', 'full'
   const [windowHeight, setWindowHeight] = useState(window.innerHeight);
-  const dragControls = useDragControls();
 
   // 화면 크기 변화 감지 및 바디 스크롤 잠금
   useEffect(() => {
@@ -79,6 +78,9 @@ const Sidebar = ({
     return () => clearInterval(timer);
   }, [memo?.popped_at]);
 
+  // 상태 변화 시 스냅 효과를 위한 스프링 설정
+  const springTransition = { type: 'spring', damping: 30, stiffness: 400 };
+
   return (
     <AnimatePresence>
       {memo && (
@@ -93,50 +95,48 @@ const Sidebar = ({
           />
           
           <motion.div 
+            // 모바일에서는 높이 변경, 데스크탑에서는 기존 방식 유지
             variants={{
-              half: { y: windowHeight * 0.6 }, // 40% 노출
-              full: { y: windowHeight * 0.1 }, // 90% 노출
-              closed: { y: windowHeight }
+              half: isMobile ? { height: '40dvh', y: 0 } : { x: 0, opacity: 1, y: 0 },
+              full: isMobile ? { height: '90dvh', y: 0 } : { x: 0, opacity: 1, y: 0 },
+              closed: isMobile ? { height: '0dvh', y: 0 } : { x: -400, opacity: 0 }
             }}
-            initial={isMobile ? "closed" : { x: -400, opacity: 0 }}
-            animate={isMobile ? sheetHeight : { x: 0, opacity: 1, y: 0 }}
-            exit={isMobile ? "closed" : { x: -400, opacity: 0 }}
-            // 인스턴트한 느낌을 위해 물리엔진 값 조정 (반응 속도 상향)
-            transition={{ type: 'spring', damping: 25, stiffness: 350, restDelta: 0.5 }}
+            initial="closed"
+            animate={isMobile ? sheetHeight : "half"}
+            exit="closed"
+            transition={springTransition}
+            
+            // 모바일 전용 드래그 설정 (onDrag를 통해 높이 제어하는 대신 y축 이벤트를 감지하여 상태 변경)
             drag={isMobile ? "y" : false}
-            dragControls={dragControls}
-            dragListener={false} 
-            dragConstraints={{ top: windowHeight * 0.1, bottom: windowHeight }}
-            dragElastic={0.02}
+            dragConstraints={{ top: 0, bottom: 0 }}
+            dragElastic={0.1}
             onDragEnd={(e, info) => {
-              const offset = info.offset.y;
               const velocity = info.velocity.y;
+              const offset = info.offset.y;
 
               if (sheetHeight === 'half') {
-                if (offset < -50 || velocity < -300) {
+                if (offset < -50 || velocity < -500) {
                   setSheetHeight('full');
-                } else if (offset > 80 || velocity > 300) {
+                } else if (offset > 100 || velocity > 500) {
                   onClose();
                 }
               } else if (sheetHeight === 'full') {
-                if (offset > 100 || velocity > 300) {
+                if (offset > 100 || velocity > 500) {
                   setSheetHeight('half');
                 }
               }
             }}
+
             className={`
               fixed z-[10000] bg-white shadow-2xl flex flex-col
               md:left-0 md:top-0 md:h-screen md:w-[380px]
               bottom-0 left-0 w-full rounded-t-[32px] md:rounded-none
-              h-screen md:h-full overflow-hidden
+              overflow-hidden
             `}
           >
             {/* Mobile Drag Handle Area */}
             {isMobile && (
-              <div 
-                className="w-full flex justify-center pt-5 pb-5 flex-shrink-0 cursor-grab active:cursor-grabbing"
-                onPointerDown={(e) => dragControls.start(e)}
-              >
+              <div className="w-full flex justify-center pt-5 pb-3 flex-shrink-0 cursor-grab active:cursor-grabbing">
                 <div className="w-14 h-1.5 bg-gray-200 rounded-full" />
               </div>
             )}
@@ -160,7 +160,7 @@ const Sidebar = ({
               </div>
             )}
 
-            {/* Content Area - Scrollable */}
+            {/* Scrollable Content Area */}
             <div 
               className="flex-1 overflow-y-auto custom-scrollbar"
               onPointerDown={(e) => e.stopPropagation()} 
@@ -279,20 +279,20 @@ const Sidebar = ({
                     )}
                   </div>
                 </div>
-                {/* 인풋 영역이 덮지 않도록 하단 여백 추가 (v31.0) */}
-                <div className="h-[120px] md:h-0" />
+                {/* 인풋 영역 높이만큼 여백 */}
+                <div className="h-20 md:h-0" />
               </div>
             </div>
 
-            {/* Reply Input Box - Fixed Bottom */}
-            <div className="p-6 pb-12 md:pb-6 bg-white border-t border-gray-100 flex-shrink-0 sticky bottom-0 left-0 w-full z-20">
+            {/* Reply Input Box - Always at the bottom of the container */}
+            <div className="px-6 py-4 bg-white/95 backdrop-blur-md border-t border-gray-50 flex-shrink-0 safe-bottom">
               <div className="relative flex items-center">
                 <input 
                   type="text" 
                   value={replyText}
                   onChange={(e) => setReplyText(e.target.value)}
                   placeholder="말하고싶은 바블을 남겨주세요"
-                  className="w-full pl-6 pr-16 py-4 bg-gray-50 border border-gray-100 rounded-[20px] text-[13px] font-bold focus:outline-none focus:ring-4 focus:ring-[#FF4D00]/10 focus:bg-white focus:border-[#FF4D00]/30 transition-all placeholder:text-gray-300 shadow-sm"
+                  className="w-full pl-6 pr-16 py-4 bg-gray-50 border border-gray-100 rounded-[20px] text-[13px] font-bold focus:outline-none focus:ring-4 focus:ring-[#FF4D00]/10 focus:bg-white focus:border-[#FF4D00]/30 transition-all placeholder:text-gray-300"
                   onKeyPress={(e) => e.key === 'Enter' && onReplySubmit(memo.id)}
                 />
                 <motion.button 
