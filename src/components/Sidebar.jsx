@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Clock, MessageSquare, Trash2, Send } from 'lucide-react';
 
 /**
  * [Component] LNB 사이드바 / 모바일 바텀시트
- * @version 1.7
- * @description 데스크톱/모바일 전체 오버레이 클릭 시 닫기 기능 적용
+ * @version 1.8
+ * @description 데스크톱 딤 제거 및 외부 클릭 감지 로직 적용
  */
 const Sidebar = ({ 
   memo, 
@@ -19,9 +19,24 @@ const Sidebar = ({
   formatDateTime 
 }) => {
   const [timeLeft, setTimeLeft] = useState('');
+  const sidebarRef = useRef(null);
 
   // 최신 답글이 위로 오도록 정렬 (v1.5 추가)
   const sortedReplies = [...replies].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+  // 데스크톱 외부 클릭 시 닫기 로직 (v1.8 추가)
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      // 모바일(768px 미만)은 오버레이가 처리하므로 제외
+      if (window.innerWidth >= 768 && sidebarRef.current && !sidebarRef.current.contains(event.target)) {
+        // 이미 닫히고 있는 중이 아닐 때만 호출
+        onClose();
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [onClose]);
 
   // 실시간 소멸 카운트다운 로직
   useEffect(() => {
@@ -55,16 +70,17 @@ const Sidebar = ({
     <AnimatePresence>
       {memo && (
         <>
-          {/* Background Overlay for All Devices (v1.7) */}
+          {/* Background Overlay - Mobile Only (v1.8 원복) */}
           <motion.div 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/30 backdrop-blur-sm z-[9999]"
+            className="fixed inset-0 bg-black/30 backdrop-blur-sm z-[9999] md:hidden"
             onClick={onClose}
           />
           
           <motion.div 
+            ref={sidebarRef}
             initial={{ x: -400, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
             exit={{ x: -400, opacity: 0 }}
