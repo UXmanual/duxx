@@ -20,9 +20,9 @@ const formatDateTime = (dateString) => {
 
 /**
  * [Page] 메인 페이지 (지도 메모 기능 통합 버전)
- * @version 32.8
+ * @version 32.9
  * @description 
- * - 모바일에서 바블 클릭 시 오프셋 센터링 적용 (바텀시트 가림 방지, v32.8)
+ * - 앱 메타 타이틀 변경 및 홈 화면 추가 이름 최적화 (v32.9)
  */
 
 // 닉네임 조합용 상수
