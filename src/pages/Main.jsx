@@ -19,10 +19,10 @@ const formatDateTime = (dateString) => {
 };
 /**
  * [Page] 메인 페이지 (지도 메모 기능 통합 버전)
- * @version 30.3
+ * @version 30.4
  * @author Antigravity
  * @description 
- * - 터진 바블 흐리게 유지 복구 및 클러스터러 제외 로직 정교화 버전입니다.
+ * - 모바일 바텀시트 50vh 고정 및 스와이프 닫기 기능 추가 버전입니다.
  */
 
 // 닉네임 조합용 상수

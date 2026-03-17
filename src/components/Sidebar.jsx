@@ -4,8 +4,8 @@ import { X, Clock, MessageSquare, Trash2, Send } from 'lucide-react';
 
 /**
  * [Component] LNB 사이드바 / 모바일 바텀시트
- * @version 2.1
- * @description 모바일 바텀시트 슬라이드 업 애니메이션 및 투명 오버레이 적용
+ * @version 3.0
+ * @description 50vh 높이 고정 및 스와이프 닫기 기능 추가
  */
 const Sidebar = ({ 
   memo, 
@@ -77,13 +77,27 @@ const Sidebar = ({
             animate={isMobile ? { y: 0, opacity: 1 } : { x: 0, opacity: 1 }}
             exit={isMobile ? { y: '100%', opacity: 1 } : { x: -400, opacity: 0 }}
             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+            drag={isMobile ? "y" : false}
+            dragConstraints={{ top: 0 }}
+            dragElastic={0.2}
+            onDragEnd={(e, info) => {
+              if (info.offset.y > 100 || info.velocity.y > 500) {
+                onClose();
+              }
+            }}
             className={`
               fixed z-[10000] bg-white shadow-2xl flex flex-col
               md:left-0 md:top-0 md:h-screen md:w-[380px]
               bottom-0 left-0 w-full rounded-t-[32px] md:rounded-none
-              max-h-[85vh] md:max-h-none
+              h-[50vh] md:h-auto
             `}
           >
+            {/* Mobile Drag Handle */}
+            {isMobile && (
+              <div className="w-full flex justify-center pt-3 pb-1 flex-shrink-0">
+                <div className="w-12 h-1.5 bg-gray-200 rounded-full" />
+              </div>
+            )}
             {/* Header - Logo 적용 (v1.2) */}
             <div className="sticky top-0 bg-white/90 backdrop-blur-md z-10 px-6 py-5 flex items-center justify-between border-b border-gray-100 flex-shrink-0">
               <div className="flex items-center">
