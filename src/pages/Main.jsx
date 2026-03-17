@@ -18,7 +18,7 @@ const formatDateTime = (dateString) => {
 };
 /**
  * [Page] 메인 페이지 (지도 메모 기능 통합 버전)
- * @version 25.0
+ * @version 25.1
  * @author Antigravity
  * @description 
  * - 바블 리스트 간격 복구 및 닉네임 하단 여백 최적화 버전입니다.
@@ -67,12 +67,66 @@ const Main = () => {
     libraries: ['services', 'clusterer', 'drawing'],
   });
 
-  // 모든 메모를 개별 바블로 표시 (v25.0 그룹핑 기능 삭제)
+  // 하버사인 거리 계산 로직 (미터 단위)
+  const getDistance = (lat1, lon1, lat2, lon2) => {
+    const R = 6371e3;
+    const p1 = lat1 * Math.PI / 180;
+    const p2 = lat2 * Math.PI / 180;
+    const dp = (lat2 - lat1) * Math.PI / 180;
+    const dl = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dp / 2) * Math.sin(dp / 2) +
+              Math.cos(p1) * Math.cos(p2) *
+              Math.sin(dl / 2) * Math.sin(dl / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+  };
+
+  // 겹침 방지 분산 알고리즘 (Spiderfy) 적용된 메모 그룹화 (v25.1)
   const groupedMemos = useMemo(() => {
-    // 본문(parent_id가 없는 글)만 대상으로 함
     const rootMemos = memos.filter(m => !m.parent_id);
-    // 각각의 메모를 하나의 그룹(배열)으로 감싸서 리턴 (기존 렌더링 로직 호환성 유지)
-    return rootMemos.map(m => [m]);
+    if (rootMemos.length === 0) return [];
+
+    let processed = [];
+    const proximityLimit = 40; // 40미터 이내면 겹침으로 판단
+
+    // 1. 근접 그룹 형성
+    let unassigned = [...rootMemos];
+    let groups = [];
+    
+    while (unassigned.length > 0) {
+      const anchor = unassigned.shift();
+      const group = [anchor];
+      const remaining = [];
+      
+      for (const m of unassigned) {
+        if (getDistance(anchor.lat, anchor.lng, m.lat, m.lng) < proximityLimit) {
+          group.push(m);
+        } else {
+          remaining.push(m);
+        }
+      }
+      groups.push(group);
+      unassigned = remaining;
+    }
+
+    // 2. 그룹 내 좌표 분산 (Circular/Spiral Offset)
+    return groups.map(group => {
+      if (group.length === 1) return group;
+
+      return group.map((memo, index) => {
+        if (index === 0) return memo; // 첫 번째는 제자리
+
+        // 인덱스에 따라 원형으로 배치 (반경 약 25m 내외 오프셋)
+        const angle = (index * (2 * Math.PI)) / (group.length - 1);
+        const radius = 0.00025; // 위경도 단위 약 25~30m
+        
+        return {
+          ...memo,
+          lat: memo.lat + Math.sin(angle) * radius,
+          lng: memo.lng + Math.cos(angle) * (radius * 1.2) // 경도 보정
+        };
+      });
+    });
   }, [memos]);
 
   // 초기 메모 데이터 로드
@@ -404,6 +458,7 @@ const Main = () => {
         ))}
 
         {/* 지도 메모 표시 로직: 줌 레벨에 따른 동적 렌더링 (레벨 6 이상일 때 숫자 뱃지로 축약) */}
+        {/* 지도 메모 표시 로직: 줌 레벨에 따른 동적 렌더링 (레벨 6 이상일 때 숫자 뱃지로 축약) */}
         {mapLevel >= 6 ? (
           <MarkerClusterer
             averageCenter={true}
@@ -431,351 +486,137 @@ const Main = () => {
             ))}
           </MarkerClusterer>
         ) : (
-          groupedMemos.map((group) => {
-            const anchorMemo = group[group.length - 1]; // 그룹의 기준 좌표는 가장 하단에 렌더링될 최신 메모
-            const hiddenCount = group.length - 1;
-            const isGroupExpanded = expandedGroupIds.includes(anchorMemo.id);
-
-            return (
-              <CustomOverlayMap
-                key={`group-${anchorMemo.id}`}
-                position={{ lat: anchorMemo.lat, lng: anchorMemo.lng }}
-                xAnchor={0}
-                yAnchor={0}
-                zIndex={isGroupExpanded ? 999 : 10}
-                clickable={true}
-              >
-                {/* 0x0 크기의 앵커 기준점 */}
-                <div className="relative w-0 h-0 group animate-pop-in pointer-events-none">
-                  {/* 기준(최신) 말풍선 Wrapper - 왼쪽 꼬리 정렬 복구 */}
-                  <div className="absolute bottom-0 left-[-18px] flex flex-col pb-[6px] pointer-events-auto">
+          groupedMemos.flatMap((group) => group.map((memo) => (
+            <CustomOverlayMap
+              key={`memo-${memo.id}`}
+              position={{ lat: memo.lat, lng: memo.lng }}
+              xAnchor={0}
+              yAnchor={0}
+              zIndex={replyTargetId === memo.id ? 999 : 10}
+              clickable={true}
+            >
+              <div className="relative w-0 h-0 group animate-pop-in pointer-events-none">
+                <div className="absolute bottom-0 left-[-18px] flex flex-col pb-[6px] pointer-events-auto">
+                  <div 
+                    className="relative px-3 py-2 border-[1.5px] border-[#FF4D00] rounded-[8px] shadow-lg flex flex-col gap-1 w-max min-w-[120px] max-w-[240px] select-none bg-white [touch-action:manipulation]"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (map) {
+                        map.panTo(new window.kakao.maps.LatLng(memo.lat, memo.lng));
+                      }
+                      setSelectedStarbucksId(null); 
+                      // 다른 열린 그룹 및 답글 창 관리
+                      setExpandedGroupIds([]);
+                    }}
+                  >
+                    {/* 닉네임 */}
+                    <div className="w-full text-left leading-none mb-0.5">
+                      <span className="text-[11px] font-bold tracking-tight text-[#FF4D00] opacity-80">
+                        {memo.nickname || getVirtualNickname(memo.id)}
+                      </span>
+                    </div>
                     
-                    <div 
-                      className={`relative px-3 py-2 border-[1.5px] border-[#FF4D00] rounded-[8px] shadow-lg flex flex-col gap-1 w-max min-w-[120px] max-w-[240px] select-none ${hiddenCount > 0 ? 'cursor-pointer' : ''} bg-white [touch-action:manipulation]`}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        // 1. 클릭 시 지도를 해당 위치로 중앙 정렬 (스타벅스 마커와 동일한 동작)
-                        if (map) {
-                          map.panTo(new window.kakao.maps.LatLng(anchorMemo.lat, anchorMemo.lng));
-                        }
+                    {/* 텍스트 영역 */}
+                    <div className="w-full relative z-10 text-left">
+                      <span className="text-[14px] font-medium leading-tight tracking-tight break-all whitespace-pre-wrap text-black">
+                        {memo.text}
+                      </span>
+                    </div>
 
-                        // 2. 그룹 상태 및 스타벅스 선택 상태 처리
-                        if (hiddenCount > 0) {
-                          toggleGroupExpand(anchorMemo.id, e);
-                        } else {
-                          setSelectedStarbucksId(null); 
-                          // 단독 바블 클릭 시에도 다른 열린 그룹 및 답글 창 닫기
-                          setExpandedGroupIds([]);
-                          setShowReplyIds([]);
-                          setReplyTargetId(null);
-                        }
-                      }}
-                      onDoubleClick={(e) => e.stopPropagation()}
-                      onTouchStart={(e) => e.stopPropagation()}
-                    >
-                      
-                      {/* 펼쳐진 이전 메모들 (왼쪽 정렬 복구) */}
-                      {hiddenCount > 0 && isGroupExpanded && (
-                        <div 
-                          className="absolute bottom-full left-[-1.5px] mb-[6px] flex flex-col items-start gap-[6px] cursor-default select-none [touch-action:manipulation]" 
-                          onClick={(e) => e.stopPropagation()}
-                          onDoubleClick={(e) => e.stopPropagation()}
-                          onTouchStart={(e) => e.stopPropagation()}
-                        >
-                           {group.slice(0, hiddenCount).map(memo => (
-                            <div key={memo.id} className="relative px-3 py-2 bg-white border-[1.5px] border-[#FF4D00] rounded-[8px] shadow-lg flex flex-col gap-1 w-max min-w-[120px] max-w-[240px] animate-pop-in">
-                              {/* 닉네임 (동네+성격+접미사) */}
-                              <div className="w-full text-left leading-none mb-0.5">
-                                <span className="text-[11px] font-bold text-[#FF4D00] opacity-80 tracking-tight">
-                                  {memo.nickname || getVirtualNickname(memo.id)}
-                                </span>
-                              </div>
-                              <div className="w-full relative z-10 text-left">
-                                <span className="text-[14px] font-medium text-black leading-tight tracking-tight break-all whitespace-pre-wrap">
-                                  {memo.text}
-                                </span>
-                              </div>
+                    {/* 답글 영역 */}
+                    {(() => {
+                      const memoReplies = memos.filter(r => r.parent_id === memo.id);
+                      const hasReplies = memoReplies.length > 0;
+                      const isShowing = showReplyIds.includes(memo.id);
 
-                              {/* [개선] 그룹 내 메모별 답글: 스크롤 제거 & 입력창 자동 연동 */}
-                              {(() => {
-                                const memoReplies = memos.filter(r => r.parent_id === memo.id);
-                                const hasReplies = memoReplies.length > 0;
-                                const isShowing = showReplyIds.includes(memo.id);
+                      return (
+                        <div className="mt-2 flex flex-col gap-1.5 p-2 rounded-lg bg-gray-50 text-left">
+                          <button 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const nextShowing = !isShowing;
+                              setShowReplyIds(prev => 
+                                nextShowing ? [...prev, memo.id] : prev.filter(id => id !== memo.id)
+                              );
+                              if (nextShowing) setReplyTargetId(memo.id);
+                              else setReplyTargetId(null);
+                            }}
+                            className="text-[11px] font-bold flex items-center gap-1 transition-opacity text-[#FF4D00]/70 hover:opacity-100"
+                          >
+                            {hasReplies ? `답글 ${memoReplies.length}개` : '답글 달기'}
+                            {hasReplies && (
+                              <span className="ml-1 opacity-60">
+                                {isShowing ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                              </span>
+                            )}
+                          </button>
 
-                                return (
-                                  <div className="mt-2 flex flex-col gap-1.5 p-2 rounded-lg bg-gray-50 shadow-sm">
-                                    <div className="flex items-center justify-between px-1">
-                                      <button 
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          const nextShowing = !isShowing;
-                                          
-                                          setShowReplyIds(prev => 
-                                            nextShowing ? [...prev, memo.id] : prev.filter(id => id !== memo.id)
-                                          );
-
-                                          if (nextShowing) {
-                                            setReplyTargetId(memo.id);
-                                          } else {
-                                            setReplyTargetId(null);
-                                          }
-                                        }}
-                                        className="text-[11px] font-bold flex items-center gap-1 text-[#FF4D00]/70 hover:opacity-100 transition-opacity"
-                                      >
-                                        {hasReplies ? `답글 ${memoReplies.length}개` : '답글 달기'}
-                                        {hasReplies && (
-                                          <span className="ml-1 opacity-60">
-                                            {isShowing ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-                                          </span>
-                                        )}
-                                      </button>
-                                    </div>
-
-                                    {isShowing && hasReplies && (
-                                      <div className="flex flex-col gap-2 mt-1 pr-1">
-                                        {memoReplies.map(reply => (
-                                          <div key={reply.id} className="flex flex-col border-b border-black/5 last:border-0 pb-1.5 break-all whitespace-pre-wrap group/reply-sub">
-                                            <div className="flex justify-between items-center mb-0.5">
-                                              <span className="text-[10px] font-bold text-[#FF4D00]">
-                                                {reply.nickname}
-                                              </span>
-                                              <button 
-                                                onClick={(e) => {
-                                                  e.stopPropagation();
-                                                  handleDeleteMemo(reply.id);
-                                                }}
-                                                className="opacity-0 group-hover/reply-sub:opacity-100 transition-opacity p-0.5 hover:scale-110 text-zinc-400 hover:text-red-500"
-                                                title="답글 삭제"
-                                              >
-                                                <X size={10} />
-                                              </button>
-                                            </div>
-                                            <span className="text-[12px] text-zinc-700 leading-snug">
-                                              {reply.text}
-                                            </span>
-                                          </div>
-                                        ))}
-                                      </div>
-                                    )}
-
-                                    {isShowing && replyTargetId === memo.id && (
-                                      <div className="flex flex-col gap-1 mt-1">
-                                        <input 
-                                          autoFocus
-                                          onClick={(e) => e.stopPropagation()}
-                                          className="w-full text-[14px] px-2 py-1.5 rounded border border-gray-200 outline-none focus:border-[#FF4D00] shadow-inner"
-                                          placeholder="답글 남기기..."
-                                          value={replyText}
-                                          onChange={(e) => setReplyText(e.target.value)}
-                                          onKeyDown={(e) => {
-                                            if (e.key === 'Enter') handleReplySubmit(memo.id);
-                                            if (e.key === 'Escape') {
-                                              setReplyTargetId(null);
-                                              setShowReplyIds(prev => prev.filter(id => id !== memo.id));
-                                            }
-                                          }}
-                                        />
-                                        <div className="flex justify-end gap-1">
-                                          <button 
-                                            onClick={(e) => {
-                                              e.stopPropagation();
-                                              setReplyTargetId(null);
-                                              setShowReplyIds(prev => prev.filter(id => id !== memo.id));
-                                            }} 
-                                            className="text-[10px] text-gray-400 px-2 py-1"
-                                          >
-                                            닫기
-                                          </button>
-                                          <button 
-                                            onClick={(e) => { e.stopPropagation(); handleReplySubmit(memo.id); }} 
-                                            className="text-[10px] font-bold text-white bg-[#FF4D00] px-2 py-0.5 rounded"
-                                          >
-                                            등록
-                                          </button>
-                                        </div>
-                                      </div>
-                                    )}
-                                  </div>
-                                );
-                              })()}
-
-                              <div className="text-[10px] text-zinc-400 font-medium tracking-wide relative z-10 text-left flex items-center gap-1 mt-0.5">
-                                <span>{formatDateTime(memo.created_at)}</span>
-                                <span className="text-zinc-300">|</span>
-                                <button 
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleDeleteMemo(memo.id);
-                                  }}
-                                  className="hover:text-[#FF4D00] transition-colors"
-                                  aria-label="메모 삭제"
-                                >
-                                  삭제
-                                </button>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-
-                      {/* 확장 안 되었을 때 +N 뱃지 */}
-                      {hiddenCount > 0 && !isGroupExpanded && (
-                        <div className="absolute -top-[10px] -right-[12px] bg-white text-[#FF4D00] text-[13px] font-extrabold px-1.5 py-0.5 rounded-full border-2 border-[#FF4D00] shadow-md z-30 flex items-center justify-center leading-none min-w-[32px] pointer-events-none">
-                          +{hiddenCount}
-                        </div>
-                      )}
-
-                       {/* 닉네임 (동네+성격+접미사) */}
-                      <div className="w-full text-left leading-none mb-0.5">
-                        <span className="text-[11px] font-bold tracking-tight text-[#FF4D00] opacity-80">
-                          {anchorMemo.nickname || getVirtualNickname(anchorMemo.id)}
-                        </span>
-                      </div>
-                      
-                      {/* 기준 최신 메모 상단 텍스트 영역 */}
-                      <div className="w-full relative z-10 text-left">
-                        <span className="text-[14px] font-medium leading-tight tracking-tight break-all whitespace-pre-wrap text-black">
-                          {anchorMemo.text}
-                        </span>
-                      </div>
-
-                      {/* 답글 리스트 및 개수 표시 영역 */}
-                      {(() => {
-                        const memoReplies = memos.filter(r => r.parent_id === anchorMemo.id);
-                        const hasReplies = memoReplies.length > 0;
-                        const isShowing = showReplyIds.includes(anchorMemo.id);
-
-                        return (
-                          <div className="mt-2 flex flex-col gap-1.5 p-2 rounded-lg bg-gray-50">
-                            {/* 상단: 개수 표시 및 접기/펴기 버튼 (클릭 시 입력창도 같이 표시) */}
-                            <div className="flex items-center justify-between px-1">
-                              <button 
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  const nextShowing = !isShowing;
-                                  
-                                  // 펼침 상태 토글
-                                  setShowReplyIds(prev => 
-                                    nextShowing ? [...prev, anchorMemo.id] : prev.filter(id => id !== anchorMemo.id)
-                                  );
-
-                                  // 펼칠 때 입력창도 같이 열기
-                                  if (nextShowing) {
-                                    setReplyTargetId(anchorMemo.id);
-                                  } else {
-                                    setReplyTargetId(null);
-                                  }
-                                }}
-                                className="text-[11px] font-bold flex items-center gap-1 transition-opacity text-[#FF4D00]/70 hover:opacity-100"
-                              >
-                                {hasReplies ? `답글 ${memoReplies.length}개` : '답글 달기'}
-                                {hasReplies && (
-                                  <span className="ml-1 opacity-60">
-                                    {isShowing ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-                                  </span>
-                                )}
-                              </button>
-                            </div>
-
-                            {/* 답글 리스트 (스크롤 없이 줄바꿈 처리) */}
-                            {isShowing && hasReplies && (
-                              <div className="flex flex-col gap-2 mt-1 pr-1">
-                                {memoReplies.map(reply => (
-                                  <div key={reply.id} className="flex flex-col border-b border-black/5 last:border-0 pb-1.5 break-all whitespace-pre-wrap group/reply">
-                                    <div className="flex justify-between items-center mb-0.5">
-                                      <span className="text-[10px] font-bold text-[#FF4D00]">
-                                        {reply.nickname}
-                                      </span>
-                                      <button 
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          handleDeleteMemo(reply.id);
-                                        }}
-                                        className="opacity-0 group-hover/reply:opacity-100 transition-opacity p-0.5 hover:scale-110 text-zinc-400 hover:text-red-500"
-                                        title="답글 삭제"
-                                      >
-                                        <X size={10} />
-                                      </button>
-                                    </div>
-                                    <span className="text-[12px] leading-snug text-zinc-700">
-                                      {reply.text}
+                          {isShowing && hasReplies && (
+                            <div className="flex flex-col gap-2 mt-1 pr-1 border-t border-black/5 pt-1.5">
+                              {memoReplies.map(reply => (
+                                <div key={reply.id} className="flex flex-col border-b border-black/5 last:border-0 pb-1.5 break-all whitespace-pre-wrap group/reply">
+                                  <div className="flex justify-between items-center mb-0.5">
+                                    <span className="text-[10px] font-bold text-[#FF4D00]">
+                                      {reply.nickname}
                                     </span>
+                                    <button 
+                                      onClick={(e) => { e.stopPropagation(); handleDeleteMemo(reply.id); }}
+                                      className="opacity-0 group-hover/reply:opacity-100 transition-opacity p-0.5 text-zinc-400 hover:text-red-500"
+                                    >
+                                      <X size={10} />
+                                    </button>
                                   </div>
-                                ))}
-                              </div>
-                            )}
-                            
-                            {/* 답글 입력창 (펼쳐졌을 때 자동 노출) */}
-                            {isShowing && replyTargetId === anchorMemo.id && (
-                              <div className="flex flex-col gap-1 mt-1">
-                                <input 
-                                  autoFocus
-                                  onClick={(e) => e.stopPropagation()}
-                                  className="w-full text-[14px] px-2 py-1.5 rounded border border-gray-200 outline-none focus:border-[#FF4D00] shadow-inner"
-                                  placeholder="대화에 참여해보세요..."
-                                  value={replyText}
-                                  onChange={(e) => setReplyText(e.target.value)}
-                                  onKeyDown={(e) => {
-                                    if (e.key === 'Enter') handleReplySubmit(anchorMemo.id);
-                                    if (e.key === 'Escape') {
-                                      setReplyTargetId(null);
-                                      setShowReplyIds(prev => prev.filter(id => id !== anchorMemo.id));
-                                    }
-                                  }}
-                                />
-                                <div className="flex justify-end gap-1">
-                                  <button 
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setReplyTargetId(null);
-                                      setShowReplyIds(prev => prev.filter(id => id !== anchorMemo.id));
-                                    }} 
-                                    className="text-[10px] text-gray-400 px-2 py-1"
-                                  >
-                                    닫기
-                                  </button>
-                                  <button 
-                                    onClick={(e) => { e.stopPropagation(); handleReplySubmit(anchorMemo.id); }} 
-                                    className="text-[10px] font-bold text-white bg-[#FF4D00] px-2 py-1 rounded"
-                                  >
-                                    등록
-                                  </button>
+                                  <span className="text-[12px] leading-snug text-zinc-700">
+                                    {reply.text}
+                                  </span>
                                 </div>
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })()}
-                      
-                      {/* 기준 최신 메모 하단 날짜 + 삭제 버튼 */}
-                      <div className={`text-[10px] font-medium tracking-wide relative z-10 text-left flex items-center gap-1 mt-1.5 ${isGroupExpanded ? 'text-white/80' : 'text-zinc-400'}`}>
-                        <span>{formatDateTime(anchorMemo.created_at)}</span>
-                        <span className={isGroupExpanded ? 'text-white/50' : 'text-zinc-300'}>|</span>
-                        <button 
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDeleteMemo(anchorMemo.id);
-                          }}
-                          className={`transition-colors ${isGroupExpanded ? 'hover:text-white' : 'hover:text-[#FF4D00]'}`}
-                          aria-label="메모 삭제"
-                        >
-                          삭제
-                        </button>
-                      </div>
+                              ))}
+                            </div>
+                          )}
+                          
+                          {isShowing && replyTargetId === memo.id && (
+                            <div className="flex flex-col gap-1 mt-1">
+                              <input 
+                                autoFocus
+                                onClick={(e) => e.stopPropagation()}
+                                className="w-full text-[14px] px-2 py-1.5 rounded border border-gray-200 outline-none focus:border-[#FF4D00] shadow-inner"
+                                placeholder="생각을 남겨보세요..."
+                                value={replyText}
+                                onChange={(e) => setReplyText(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') handleReplySubmit(memo.id);
+                                }}
+                              />
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()}
+                    
+                    {/* 하단 날짜 + 삭제 */}
+                    <div className="text-[10px] font-medium tracking-wide relative z-10 text-left flex items-center gap-1 mt-1.5 text-zinc-400">
+                      <span>{formatDateTime(memo.created_at)}</span>
+                      <span className="text-zinc-300">|</span>
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); handleDeleteMemo(memo.id); }}
+                        className="hover:text-[#FF4D00] transition-colors"
+                      >
+                        삭제
+                      </button>
+                    </div>
 
-                      {/* SVG 기반 완벽한 꼬리 연결 (위치 추가 하향 조정) */}
-                      <div className="absolute top-[calc(100%-0.2px)] left-[12px] w-[16px] h-[10px] z-20 pointer-events-none overflow-visible">
-                        <svg width="16" height="10" viewBox="0 0 16 10" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <path d="M2 0 H14 L9.5 7.5 Q8 9 6.5 7.5 Z" fill={isGroupExpanded ? "#FF4D00" : "white"} />
-                          <path d="M2 0 L6.5 7.5 Q8 9 9.5 7.5 L14 0" stroke="#FF4D00" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                        </svg>
-                      </div>
+                    {/* 꼬리 */}
+                    <div className="absolute top-[calc(100%-0.2px)] left-[12px] w-[16px] h-[10px] z-20 pointer-events-none overflow-visible">
+                      <svg width="16" height="10" viewBox="0 0 16 10" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M2 0 H14 L9.5 7.5 Q8 9 6.5 7.5 Z" fill="white" />
+                        <path d="M2 0 L6.5 7.5 Q8 9 9.5 7.5 L14 0" stroke="#FF4D00" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
                     </div>
                   </div>
                 </div>
-              </CustomOverlayMap>
-            );
-          })
+              </div>
+            </CustomOverlayMap>
+          )))
         )}
 
       </Map>
