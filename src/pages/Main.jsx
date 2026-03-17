@@ -18,7 +18,7 @@ const formatDateTime = (dateString) => {
 };
 /**
  * [Page] 메인 페이지 (지도 메모 기능 통합 버전)
- * @version 22.4
+ * @version 22.5
  * @author Antigravity
  * @description 
  * - 바블 리스트 간격 복구 및 닉네임 하단 여백 최적화 버전입니다.
@@ -398,6 +398,8 @@ const Main = () => {
                   const isOpening = selectedStarbucksId !== place.id;
                   if (isOpening) {
                     setExpandedGroupIds([]); // 스타벅스 말풍선 열 때 메모 말풍선 닫기
+                    setShowReplyIds([]);    // 답글 창 닫기
+                    setReplyTargetId(null); // 입력창 닫기
                   }
                   setSelectedStarbucksId(selectedStarbucksId === place.id ? null : place.id);
                 }
@@ -491,6 +493,10 @@ const Main = () => {
                           toggleGroupExpand(anchorMemo.id, e);
                         } else {
                           setSelectedStarbucksId(null); 
+                          // 단독 바블 클릭 시에도 다른 열린 그룹 및 답글 창 닫기
+                          setExpandedGroupIds([]);
+                          setShowReplyIds([]);
+                          setReplyTargetId(null);
                         }
                       }}
                       onDoubleClick={(e) => e.stopPropagation()}
