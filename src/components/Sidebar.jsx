@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Clock, MessageSquare, Trash2, Send, ChevronLeft } from 'lucide-react';
+import { X, Clock, MessageSquare, Trash2, Send } from 'lucide-react';
 
 /**
  * [Component] LNB 사이드바 / 모바일 바텀시트
- * @version 1.9
- * @description 데스크톱 전용 사이드 패널 토글(닫기) 버튼 추가
+ * @version 2.0
+ * @description 데스크톱 토글 버튼 제거 및 UI 정합성 유지
  */
 const Sidebar = ({ 
   memo, 
@@ -76,15 +76,6 @@ const Sidebar = ({
               max-h-[85vh] md:max-h-none
             `}
           >
-            {/* Desktop Toggle Button - v1.9 추가 */}
-            <motion.button
-              whileHover={{ x: 2, backgroundColor: '#f9f9f9' }}
-              whileTap={{ scale: 0.95 }}
-              onClick={onClose}
-              className="hidden md:flex absolute -right-8 top-1/2 -translate-y-1/2 w-8 h-20 bg-white border border-l-0 border-gray-100 shadow-[4px_0_12px_rgba(0,0,0,0.08)] items-center justify-center rounded-r-2xl z-20 transition-colors"
-            >
-              <ChevronLeft size={20} className="text-gray-500" />
-            </motion.button>
 
             {/* Header - Logo 적용 (v1.2) */}
             <div className="sticky top-0 bg-white/90 backdrop-blur-md z-10 px-6 py-5 flex items-center justify-between border-b border-gray-100 flex-shrink-0">
