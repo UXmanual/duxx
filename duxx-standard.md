@@ -1,4 +1,4 @@
-# DUXX Project Standard Specification (v1.4.0)
+# DUXX Project Standard Specification (v1.4.1)
 
 이 문서는 DUXX 프로젝트의 핵심 아키텍처와 관리 규칙을 정의합니다. 새로운 에이전트나 개발자가 프로젝트에 참여할 때 이 가이드를 반드시 준수해야 합니다.
 
@@ -44,6 +44,7 @@
 - **스타벅스 리저브 오버레이**: `yAnchor: 1.85` (마커와의 고정 여백 공간)
 - **스타벅스 노출 규칙**: 별도의 버튼 없이 항상 노출됨 (Always Visible)
 - **모바일 시점 오프셋**: `160px` (바텀시트 오픈 시 마커가 시트에 가려지지 않도록 시점을 위로 조정한 값)
+- **폭발 효과 위치 원칙**: 모든 터트리기 동작(지도, LNB, 바텀시트 버튼 등)은 클릭한 버튼 위치가 아닌, **해당 바블의 실제 지도상 좌표를 계산해 그 지점에서 폭발 발생** (True Location Burst)
 
 ### 3.2. 닉네임 생성 규칙
 - **형식**: `[지역명] [페르소나] [이모지]` (예: 역삼동 미식가 😋)
@@ -68,4 +69,5 @@
 ---
 
 **Confirmed by Admin: Hyeon**
-**Latest Standard Version: 1.4.0**
+**Confirmed by Admin: Hyeon**
+**Latest Standard Version: 1.4.1**

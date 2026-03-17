@@ -21,9 +21,9 @@ const formatDateTime = (dateString) => {
 
 /**
  * [Page] 메인 페이지 (지도 메모 기능 통합 버전)
- * @version 33.9
+ * @version 34.0
  * @description 
- * - LNB/바텀시트 터트리기 버튼 파편 효과 연동 및 렌더링 최적화 버전입니다. (v33.9)
+ * - 팝(Pop) 위치 정밀 고정: 어느 버튼을 눌러도 실제 바블 위치에서 폭발을 발생시키는 고도화 버전입니다. (v34.0)
  */
 
 // 닉네임 조합용 상수
@@ -259,23 +259,32 @@ const Main = () => {
   const handlePopBubble = async (id, e) => {
     if (e) e.stopPropagation();
     
-    // v33.8: 진짜 바블이 터지는 듯한 물리 파워 파편 효과 (canvas-confetti)
-    if (e && e.clientX && e.clientY) {
+    // v34.0: 버튼 위치가 아닌, 실제 바블의 지도상 위치를 계산해 파편 폭발 발생 (True Location Burst)
+    const targetMemo = memos.find(m => m.id === id);
+    if (targetMemo && map) {
+      const projection = map.getProjection();
+      const latlng = new window.kakao.maps.LatLng(targetMemo.lat, targetMemo.lng);
+      const point = projection.pointFromCoords(latlng);
+      const containerNode = map.getNode();
+      const rect = containerNode.getBoundingClientRect();
+      
       const origin = {
-        x: e.clientX / window.innerWidth,
-        y: e.clientY / window.innerHeight
+        x: (rect.left + point.x) / window.innerWidth,
+        // 바블이 좌표 하단 중앙 기준이므로, 시각적 센터를 위해 25px 정도 위에서 터트림
+        y: (rect.top + point.y - 25) / window.innerHeight 
       };
       
       confetti({
-        particleCount: 50,
+        particleCount: 80,
         spread: 360,
-        startVelocity: 35,
+        startVelocity: 45,
         gravity: 1.2,
         ticks: 60,
         origin: origin,
-        colors: ['#FF4D00', '#FF8A00', '#FF1E00', '#FFF'],
+        colors: ['#FF4D00', '#FF8A00', '#FF1E00', '#FFF', '#FFE5D9'],
         shapes: ['circle'],
-        scalar: 0.8
+        scalar: 0.9,
+        zIndex: 10001
       });
     }
 
