@@ -5,6 +5,7 @@ import { Crosshair, MessageSquare, X, Coffee, ChevronDown, ChevronUp } from 'luc
 import { supabase } from '../lib/supabaseClient';
 import { starbucksReserveStores } from '../data/starbucksReserve';
 import { AI_PERSONAS } from '../data/aiPersonas';
+import Sidebar from '../components/Sidebar';
 
 const formatDateTime = (dateString) => {
   if (!dateString) return '';
@@ -18,7 +19,7 @@ const formatDateTime = (dateString) => {
 };
 /**
  * [Page] 메인 페이지 (지도 메모 기능 통합 버전)
- * @version 28.3
+ * @version 29.0
  * @author Antigravity
  * @description 
  * - 바블 리스트 간격 복구 및 닉네임 하단 여백 최적화 버전입니다.
@@ -53,6 +54,7 @@ const Main = () => {
   const [showReplyIds, setShowReplyIds] = useState([]); // 답글 펼침 상태 관리
   const [replyTargetId, setReplyTargetId] = useState(null); // 답글 작성 중인 메모 ID
   const [replyText, setReplyText] = useState(''); // 답글 입력 텍스트
+  const [selectedMemoId, setSelectedMemoId] = useState(null); // LNB에 표시할 메모 ID
 
   const [starbucksPlaces, setStarbucksPlaces] = useState(starbucksReserveStores);
   const [isStarbucksVisible, setIsStarbucksVisible] = useState(true);
@@ -306,6 +308,7 @@ const Main = () => {
       const isExpanding = !prev.includes(id);
       if (isExpanding) {
         setSelectedStarbucksId(null); 
+        setSelectedMemoId(id); // LNB 열기
         return [id];
       }
       return [];
@@ -496,7 +499,8 @@ const Main = () => {
                       e.stopPropagation();
                       if (map) map.panTo(new window.kakao.maps.LatLng(memo.lat, memo.lng));
                       setSelectedStarbucksId(null); 
-                      setExpandedGroupIds([]);
+                      setSelectedMemoId(memo.id); // LNB 열기
+                      setExpandedGroupIds([memo.id]);
                       setShowReplyIds([memo.id]); 
                       setReplyTargetId(memo.id);
                     }}
@@ -565,6 +569,19 @@ const Main = () => {
         )}
 
       </Map>
+
+      {/* LNB 사이드바 / 바텀시트 (v29.0) */}
+      <Sidebar 
+        memo={memos.find(m => m.id === selectedMemoId)}
+        replies={memos.filter(m => m.parent_id === selectedMemoId)}
+        onClose={() => setSelectedMemoId(null)}
+        onDelete={handleDeleteMemo}
+        onReplySubmit={handleReplySubmit}
+        onPop={handlePopBubble}
+        replyText={replyText}
+        setReplyText={setReplyText}
+        formatDateTime={formatDateTime}
+      />
 
       {/* [Interface Layer] 우측 컨트롤 스택 */}
       <div className="fixed bottom-6 right-6 z-[9999] pointer-events-none">
