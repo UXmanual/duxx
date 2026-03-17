@@ -18,7 +18,7 @@ const formatDateTime = (dateString) => {
 };
 /**
  * [Page] 메인 페이지 (지도 메모 기능 통합 버전)
- * @version 25.5
+ * @version 25.6
  * @author Antigravity
  * @description 
  * - 바블 리스트 간격 복구 및 닉네임 하단 여백 최적화 버전입니다.
@@ -81,15 +81,14 @@ const Main = () => {
     return R * c;
   };
 
-  // 겹침 방지 극대화 (Vertical Stacking) 강화 버전 (v25.5)
+  // 겹침 방지 극대화 (Zoom-Adaptive Vertical Stacking) 버전 (v25.6)
   const groupedMemos = useMemo(() => {
     const rootMemos = memos.filter(m => !m.parent_id);
     if (rootMemos.length === 0) return [];
 
-    // 감지 범위는 유지
     const proximityLimit = 150;
 
-    // 1. 근접 그룹 형성 (최신순 정렬: b - a)
+    // 1. 근접 그룹 형성
     let sortedMemos = [...rootMemos].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
     let unassigned = [...sortedMemos];
     let groups = [];
@@ -110,24 +109,27 @@ const Main = () => {
       unassigned = remaining;
     }
 
-    // 2. 수직 스택 (Vertical Stacking) - 간격을 대폭 늘려(약 200m) 겹침 차단
+    // 2. 가변 수직 스택 (Zoom-Adaptive Stacking)
     return groups.map(group => {
       if (group.length === 1) return group;
 
       return group.map((memo, index) => {
-        if (index === 0) return memo; // 최신 바블은 원래 좌표
+        if (index === 0) return memo; 
 
-        // 바블 높이가 크므로 간격을 0.0018(약 200m)로 대폭 상향
-        const verticalGap = 0.0018; 
+        // 줌 레벨(mapLevel)에 따른 동적 간격 계산
+        // 레벨 4 기준 0.0018, 레벨 5는 그 2배인 0.0036으로 벌려줌
+        const baseGap = 0.0018;
+        const zoomMultiplier = Math.pow(2, mapLevel - 4);
+        const dynamicVerticalGap = baseGap * zoomMultiplier;
         
         return {
           ...memo,
-          lat: memo.lat + (index * verticalGap),
+          lat: memo.lat + (index * dynamicVerticalGap),
           lng: memo.lng 
         };
       });
     });
-  }, [memos]);
+  }, [memos, mapLevel]); // mapLevel 의존성 추가
 
   // 초기 메모 데이터 로드
   const fetchMemos = async () => {
