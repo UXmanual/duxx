@@ -18,7 +18,7 @@ const formatDateTime = (dateString) => {
 };
 /**
  * [Page] 메인 페이지 (지도 메모 기능 통합 버전)
- * @version 27.0
+ * @version 28.0
  * @author Antigravity
  * @description 
  * - 바블 리스트 간격 복구 및 닉네임 하단 여백 최적화 버전입니다.
@@ -81,9 +81,20 @@ const Main = () => {
     return R * c;
   };
 
-  // 루트 메모 리스트 (분산 로직 제거 - 원본 위치 그대로 표기) (v27.0)
+  // 루트 메모 리스트 (분산 로직 제거 & 팝 기능 필터링 추가) (v28.0)
   const rootMemos = useMemo(() => {
-    return memos.filter(m => !m.parent_id);
+    const now = new Date();
+    return memos.filter(m => {
+      if (m.parent_id) return false;
+      
+      // 터진 바블(popped_at 존재)인 경우 30분이 지났는지 확인
+      if (m.popped_at) {
+        const poppedTime = new Date(m.popped_at);
+        const diffMinutes = (now - poppedTime) / (1000 * 60);
+        return diffMinutes < 30; // 30분 이내면 유지, 넘으면 삭제
+      }
+      return true;
+    });
   }, [memos]);
 
   // 초기 메모 데이터 로드
@@ -256,6 +267,31 @@ const Main = () => {
         setMemos(prev => prev.filter(m => m.id !== id && m.parent_id !== id));
       }
     }
+  };
+
+  // 바블 터트리기 (Pop) 기능 (v28.0)
+  const handlePopBubble = async (id, e) => {
+    if (e) e.stopPropagation();
+    const now = new Date().toISOString();
+    
+    // 1. 로컬 상태 즉시 업데이트 (애니메이션 필드 추가)
+    setMemos(prev => prev.map(m => 
+      m.id === id ? { ...m, popped_at: now, is_popping: true } : m
+    ));
+
+    // 2. DB 업데이트 (popped_at 컬럼 기록)
+    try {
+      await supabase.from('memos').update({ popped_at: now }).eq('id', id);
+    } catch (err) {
+      console.error('Pop update failed:', err);
+    }
+
+    // 3. 애니메이션 종료 후 상태 정리 (시각적 일관성 유지)
+    setTimeout(() => {
+      setMemos(prev => prev.map(m => 
+        m.id === id ? { ...m, is_popping: false } : m
+      ));
+    }, 1000);
   };
 
   // 말풍선 그룹 확장 토글 처리
@@ -450,28 +486,66 @@ const Main = () => {
               zIndex={replyTargetId === memo.id ? 999 : 10}
               clickable={true}
             >
-              <div className="relative w-0 h-0 group animate-pop-in pointer-events-none">
-                {/* 화이트 글래스 캡슐 디자인 (테두리 2px 통일) - v26.6 */}
-                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 flex flex-col pb-2 pointer-events-auto">
+              <div className={`relative w-0 h-0 group pointer-events-none ${memo.is_popping ? 'animate-bubble-pop' : 'animate-pop-in'}`}>
+                {/* 화이트 글래스 캡슐 디자인 - v28.0 (오퍼시티 가변형) */}
+                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 flex flex-col pb-2 pointer-events-auto transition-opacity duration-500"
+                     style={{ opacity: memo.popped_at ? 0.4 : 1 }}>
                   <div 
-                    className="relative px-5 py-2.5 bg-white/90 backdrop-blur-md border-2 border-[#FF4D00] rounded-full shadow-[0_8px_24px_rgba(255,77,0,0.12)] flex items-center justify-center min-w-[50px] max-w-[180px] select-none hover:scale-105 hover:bg-white transition-all duration-300 cursor-pointer active:scale-95 group/bubble"
+                    className={`relative px-4 py-2 bg-white/90 backdrop-blur-md border-2 border-[#FF4D00] rounded-full shadow-[0_8px_24px_rgba(255,77,0,0.12)] flex items-center gap-2 min-w-[50px] max-w-[220px] select-none transition-all duration-300 group/bubble ${!memo.popped_at ? 'hover:scale-105 hover:shadow-[0_12px_32px_rgba(255,77,0,0.2)]' : ''}`}
                     onClick={(e) => {
                       e.stopPropagation();
-                      if (map) {
-                        map.panTo(new window.kakao.maps.LatLng(memo.lat, memo.lng));
-                      }
+                      if (map) map.panTo(new window.kakao.maps.LatLng(memo.lat, memo.lng));
                       setSelectedStarbucksId(null); 
                       setExpandedGroupIds([]);
                       setShowReplyIds([memo.id]); 
                       setReplyTargetId(memo.id);
                     }}
                   >
-                    {/* 텍스트 영역 - 무조건 1줄 제한 (Ellipsis) */}
-                    <div className="w-full relative z-10 text-center overflow-hidden">
+                    {/* 텍스트 영역 - 무조건 1줄 제한 */}
+                    <div className="flex-1 overflow-hidden">
                       <span className="text-[13px] font-bold leading-none tracking-tight whitespace-nowrap truncate text-[#1A1A1A] block">
                         {memo.text}
                       </span>
                     </div>
+
+                    {/* 터트리기 아이콘 - 이미 터진 바블이 아닐 때만 노출 */}
+                    {!memo.popped_at && (
+                      <button
+                        onClick={(e) => handlePopBubble(memo.id, e)}
+                        className="flex-shrink-0 w-5 h-5 flex items-center justify-center rounded-full hover:bg-[#FF4D00]/10 transition-colors pointer-events-auto"
+                        title="터트리기"
+                      >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FF4D00" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="animate-pulse">
+                          <circle cx="12" cy="12" r="3" fill="#FF4D00" />
+                          <path d="M12 2v2M12 20v2M2 12h2M20 12h2M19.07 4.93l-1.41 1.41M6.34 17.66l-1.41 1.41M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41" />
+                        </svg>
+                      </button>
+                    )}
+
+                    {/* 터진 상태 표시 아이콘 */}
+                    {memo.popped_at && (
+                      <div className="flex-shrink-0 opacity-50">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#666" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M18 6L6 18M6 6l12 12" />
+                        </svg>
+                      </div>
+                    )}
+
+                    {/* 터질 때 사방으로 퍼지는 파편 효과 (애니메이션용) */}
+                    {memo.is_popping && (
+                      <div className="absolute inset-0 pointer-events-none">
+                        {[...Array(8)].map((_, i) => (
+                          <div 
+                            key={i}
+                            className="absolute top-1/2 left-1/2 w-1.5 h-1.5 bg-[#FF4D00] rounded-full animate-burst-particle"
+                            style={{ 
+                              '--angle': `${i * 45}deg`,
+                              '--delay': `${i * 0.05}s` 
+                            }}
+                          />
+                        ))}
+                      </div>
+                    )}
 
                     {/* [추후 LNB용] 데이터 보존 */}
                     <div className="hidden">
@@ -539,6 +613,26 @@ const Main = () => {
         }
         .animate-pop-in {
           animation: pop-in 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        /* 바블 터트리기 애니메이션 (v28.0) */
+        @keyframes bubble-pop {
+          0% { transform: scale(1); filter: brightness(1.2); }
+          20% { transform: scale(1.1); }
+          50% { transform: scale(0.9); opacity: 1; }
+          100% { transform: scale(1.5); opacity: 0; }
+        }
+        .animate-bubble-pop {
+          animation: bubble-pop 0.5s ease-out forwards;
+        }
+
+        /* 파편 사방으로 퍼지는 효과 */
+        @keyframes burst-particle {
+          0% { transform: translate(-50%, -50%) rotate(var(--angle)) translateY(0) scale(1); opacity: 1; }
+          100% { transform: translate(-50%, -50%) rotate(var(--angle)) translateY(-40px) scale(0); opacity: 0; }
+        }
+        .animate-burst-particle {
+          animation: burst-particle 0.6s ease-out var(--delay) forwards;
         }
 
         .animate-memo-icon {
