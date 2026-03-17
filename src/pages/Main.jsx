@@ -21,9 +21,9 @@ const formatDateTime = (dateString) => {
 
 /**
  * [Page] 메인 페이지 (지도 메모 기능 통합 버전)
- * @version 34.0
+ * @version 34.1
  * @description 
- * - 팝(Pop) 위치 정밀 고정: 어느 버튼을 눌러도 실제 바블 위치에서 폭발을 발생시키는 고도화 버전입니다. (v34.0)
+ * - 바블 터트리기 폭발 센터 정밀 조정 및 CSS 파편 제거 버전입니다. (v34.1)
  */
 
 // 닉네임 조합용 상수
@@ -270,21 +270,21 @@ const Main = () => {
       
       const origin = {
         x: (rect.left + point.x) / window.innerWidth,
-        // 바블이 좌표 하단 중앙 기준이므로, 시각적 센터를 위해 25px 정도 위에서 터트림
-        y: (rect.top + point.y - 25) / window.innerHeight 
+        // v34.1: 바블의 시각적 중앙(약 45px 위)에서 터지도록 오프셋 정밀 조정
+        y: (rect.top + point.y - 45) / window.innerHeight 
       };
       
       confetti({
-        particleCount: 80,
+        particleCount: 100,
         spread: 360,
-        startVelocity: 45,
-        gravity: 1.2,
-        ticks: 60,
+        startVelocity: 40,
+        gravity: 1,
+        ticks: 70,
         origin: origin,
         colors: ['#FF4D00', '#FF8A00', '#FF1E00', '#FFF', '#FFE5D9'],
         shapes: ['circle'],
         scalar: 0.9,
-        zIndex: 10001
+        zIndex: 10002
       });
     }
 
@@ -380,19 +380,10 @@ const Main = () => {
             <CustomOverlayMap key={`memo-${memo.id}`} position={{ lat: memo.lat, lng: memo.lng }} xAnchor={0} yAnchor={0} zIndex={replyTargetId === memo.id ? 999 : (memo.popped_at ? 1 : 10)}>
               <div className={`relative w-0 h-0 group pointer-events-none ${memo.is_popping ? 'animate-bubble-pop' : ''}`}>
                 <div className="absolute bottom-0 left-1/2 -translate-x-1/2 pb-2 pointer-events-auto transition-opacity duration-500" style={{ opacity: memo.popped_at ? 0.4 : 1 }}>
-                  {/* 터지는 파편 효과 및 쇼크웨이브 고도화 (v33.7) */}
+                  {/* 터지는 쇼크웨이브 효과만 유지 (v34.1: 파편은 컨페티로 대체함) */}
                   {memo.is_popping && (
                     <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-[1001]">
                       <div className="absolute w-12 h-12 border-4 border-[#FF4D00] rounded-full animate-shockwave" />
-                      {[...Array(12)].map((_, i) => (
-                        <div key={i} className="absolute w-2 h-2 bg-[#FF4D00] rounded-full animate-burst-particle" 
-                          style={{ 
-                            '--angle': `${i * 30}deg`, 
-                            '--dist': `${60 + Math.random() * 40}px`,
-                            '--delay': `${Math.random() * 0.1}s`,
-                            '--scale': `${0.6 + Math.random() * 0.8}`
-                          }} />
-                      ))}
                     </div>
                   )}
                   <div className={`relative px-4 py-2 bg-white/90 backdrop-blur-md border-2 border-[#FF4D00] rounded-full shadow-lg flex items-center gap-2 min-w-[50px] max-w-[220px] cursor-pointer ${memo.is_popping ? 'animate-bubble-pop' : ''}`}
