@@ -4,8 +4,8 @@ import { X, Clock, MessageSquare, Trash2, Send } from 'lucide-react';
 
 /**
  * [Component] LNB 사이드바 / 모바일 바텀시트
- * @version 2.0
- * @description 데스크톱 토글 버튼 제거 및 UI 정합성 유지
+ * @version 2.1
+ * @description 모바일 바텀시트 슬라이드 업 애니메이션 및 투명 오버레이 적용
  */
 const Sidebar = ({ 
   memo, 
@@ -19,6 +19,14 @@ const Sidebar = ({
   formatDateTime 
 }) => {
   const [timeLeft, setTimeLeft] = useState('');
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+  // 화면 크기 변화 감지
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // 최신 답글이 위로 오도록 정렬 (v1.5 추가)
   const sortedReplies = [...replies].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
@@ -55,19 +63,19 @@ const Sidebar = ({
     <AnimatePresence>
       {memo && (
         <>
-          {/* Background Overlay - Mobile Only */}
+          {/* Background Overlay - Mobile Only (v2.1: 투명하게 수정) */}
           <motion.div 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/30 backdrop-blur-sm z-[9999] md:hidden"
+            className="fixed inset-0 bg-transparent z-[9999] md:hidden"
             onClick={onClose}
           />
           
           <motion.div 
-            initial={{ x: -400, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            exit={{ x: -400, opacity: 0 }}
+            initial={isMobile ? { y: '100%', opacity: 1 } : { x: -400, opacity: 0 }}
+            animate={isMobile ? { y: 0, opacity: 1 } : { x: 0, opacity: 1 }}
+            exit={isMobile ? { y: '100%', opacity: 1 } : { x: -400, opacity: 0 }}
             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
             className={`
               fixed z-[10000] bg-white shadow-2xl flex flex-col
@@ -76,7 +84,6 @@ const Sidebar = ({
               max-h-[85vh] md:max-h-none
             `}
           >
-
             {/* Header - Logo 적용 (v1.2) */}
             <div className="sticky top-0 bg-white/90 backdrop-blur-md z-10 px-6 py-5 flex items-center justify-between border-b border-gray-100 flex-shrink-0">
               <div className="flex items-center">
