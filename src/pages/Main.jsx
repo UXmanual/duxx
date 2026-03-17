@@ -18,7 +18,7 @@ const formatDateTime = (dateString) => {
 };
 /**
  * [Page] 메인 페이지 (지도 메모 기능 통합 버전)
- * @version 25.6
+ * @version 25.7
  * @author Antigravity
  * @description 
  * - 바블 리스트 간격 복구 및 닉네임 하단 여백 최적화 버전입니다.
@@ -507,8 +507,10 @@ const Main = () => {
                         map.panTo(new window.kakao.maps.LatLng(memo.lat, memo.lng));
                       }
                       setSelectedStarbucksId(null); 
-                      // 다른 열린 그룹 및 답글 창 관리
+                      // [개선] 다른 바블을 누르면 기존에 열려있던 모든 답글 창과 입력창을 닫음
                       setExpandedGroupIds([]);
+                      setShowReplyIds([]);
+                      setReplyTargetId(null);
                     }}
                   >
                     {/* 닉네임 */}
@@ -537,11 +539,15 @@ const Main = () => {
                             onClick={(e) => {
                               e.stopPropagation();
                               const nextShowing = !isShowing;
-                              setShowReplyIds(prev => 
-                                nextShowing ? [...prev, memo.id] : prev.filter(id => id !== memo.id)
-                              );
-                              if (nextShowing) setReplyTargetId(memo.id);
-                              else setReplyTargetId(null);
+                              
+                              // [개선] 답글 버튼 클릭 시 현재 바블 외의 다른 창은 모두 닫기 (배타적 활성)
+                              if (nextShowing) {
+                                setShowReplyIds([memo.id]);
+                                setReplyTargetId(memo.id);
+                              } else {
+                                setShowReplyIds([]);
+                                setReplyTargetId(null);
+                              }
                             }}
                             className="text-[11px] font-bold flex items-center gap-1 transition-opacity text-[#FF4D00]/70 hover:opacity-100"
                           >
