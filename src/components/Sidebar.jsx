@@ -4,7 +4,7 @@ import { X, Clock, MessageSquare, Trash2, Send } from 'lucide-react';
 
 /**
  * [Component] LNB 사이드바 / 모바일 바텀시트
- * @version 30.7
+ * @version 30.8
  * @description 픽셀 기반 드래그 추종성 강화 및 점프 오류 수정
  */
 const Sidebar = ({ 
@@ -103,7 +103,7 @@ const Sidebar = ({
             transition={{ type: 'spring', damping: 30, stiffness: 250 }}
             drag={isMobile ? "y" : false}
             dragConstraints={{ top: 0, bottom: windowHeight }}
-            dragElastic={0.1}
+            dragElastic={0.02}
             onDragEnd={(e, info) => {
               const offset = info.offset.y;
               const velocity = info.velocity.y;
@@ -124,7 +124,7 @@ const Sidebar = ({
               fixed z-[10000] bg-white shadow-2xl flex flex-col
               md:left-0 md:top-0 md:h-screen md:w-[380px]
               bottom-0 left-0 w-full rounded-t-[32px] md:rounded-none
-              ${isMobile ? 'h-screen' : 'h-auto'}
+              h-screen md:h-full overflow-hidden
             `}
           >
             {/* Mobile Drag Handle Area */}

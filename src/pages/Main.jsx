@@ -19,10 +19,10 @@ const formatDateTime = (dateString) => {
 };
 /**
  * [Page] 메인 페이지 (지도 메모 기능 통합 버전)
- * @version 30.6
+ * @version 30.8
  * @author Antigravity
  * @description 
- * - 모바일 헤더 제거 및 바텀시트 애니메이션 안정화 버전입니다.
+ * - 바텀시트 상단 오버드래그 및 바운스 현상 수정 버전입니다.
  */
 
 // 닉네임 조합용 상수
