@@ -4,8 +4,8 @@ import { X, Clock, MessageSquare, Trash2, Send } from 'lucide-react';
 
 /**
  * [Component] LNB 사이드바 / 모바일 바텀시트
- * @version 31.8
- * @description 답글 입력창 절대 하단 고정(Absolute Bottom) 및 스와이프 조작성 최적화
+ * @version 31.9
+ * @description 단계별 스냅 시스템(0%-40%-90%) 적용 및 드래그 조작감 고도화
  */
 const Sidebar = ({ 
   memo, 
@@ -87,23 +87,57 @@ const Sidebar = ({
   const handlePan = (e, info) => {
     if (!isMobile) return;
     let newH = sheetHeight.get() - info.delta.y;
-    const maxH = windowHeight * 0.95; // 상단 최대치 약간 상향
+    const maxH = windowHeight * 0.92; // 상단 제한
     if (newH > maxH) newH = maxH;
     sheetHeight.set(newH);
   };
 
+  /**
+   * 단계별 스냅 로직 0 - 40 - 90
+   * 사용자의 스와이프 속도와 위치를 고려하여 다음 단계로 이동시킴
+   */
   const handlePanEnd = (e, info) => {
     if (!isMobile) return;
     const currentH = sheetHeight.get();
-    const velocity = info.velocity.y;
-    const snapTransition = { type: 'spring', damping: 35, stiffness: 450 };
+    const velocity = info.velocity.y; // 양수면 아래로, 음수면 위로
+    const snapTransition = { type: 'spring', damping: 38, stiffness: 450 };
 
-    if (velocity < -400 || currentH > windowHeight * 0.6) {
-      animate(sheetHeight, windowHeight * 0.9, snapTransition); // 90% 스냅
-    } else if (velocity > 400 || currentH < windowHeight * 0.25) {
-      animate(sheetHeight, 0, snapTransition).then(() => onClose()); // 닫기
-    } else {
-      animate(sheetHeight, windowHeight * 0.4, snapTransition); // 40% 복귀
+    const halfH = windowHeight * 0.4;
+    const fullH = windowHeight * 0.9;
+    const threshold = windowHeight * 0.15; // 15% 정도 움직였을 때 스냅 변경
+
+    // 1. 위쪽 영역(Full 근처)에 있을 때
+    if (currentH > windowHeight * 0.65) {
+      if (velocity > 400 || currentH < fullH - threshold) {
+        // 아래로 강하게 던지거나 일정 거리 미달 시 Half(40)로 복귀
+        animate(sheetHeight, halfH, snapTransition);
+      } else {
+        // Full(90) 고정
+        animate(sheetHeight, fullH, snapTransition);
+      }
+    } 
+    // 2. 중간 영역(Half 근처)에 있을 때
+    else if (currentH > windowHeight * 0.2) {
+      if (velocity < -400 && currentH > halfH - threshold) {
+        // 위로 강하게 던지면 Full(90)로
+        animate(sheetHeight, fullH, snapTransition);
+      } else if (velocity > 400 || currentH < halfH - threshold) {
+        // 아래로 강하게 던지거나 너무 낮아지면 닫기(0)
+        animate(sheetHeight, 0, snapTransition).then(() => onClose());
+      } else {
+        // Half(40) 고정
+        animate(sheetHeight, halfH, snapTransition);
+      }
+    } 
+    // 3. 하단 영역일 때
+    else {
+      if (velocity < -600) {
+        // 하단에서 아주 강하게 위로 밀면 Half(40)로
+        animate(sheetHeight, halfH, snapTransition);
+      } else {
+        // 닫기
+        animate(sheetHeight, 0, snapTransition).then(() => onClose());
+      }
     }
   };
 
@@ -116,7 +150,7 @@ const Sidebar = ({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/10 z-[9999] md:hidden shadow-inner"
+            className="fixed inset-0 bg-black/10 z-[9999] md:hidden"
             onClick={onClose}
           />
           
@@ -139,7 +173,7 @@ const Sidebar = ({
           >
             {/* [Fixed Draggable Area] 핸들 + 상단 카드 */}
             <motion.div 
-              className="flex-shrink-0 touch-none select-none cursor-grab active:cursor-grabbing bg-white relative z-30 border-b border-gray-50/50"
+              className="flex-shrink-0 touch-none select-none cursor-grab active:cursor-grabbing bg-white relative z-30"
               onPan={handlePan}
               onPanEnd={handlePanEnd}
             >
@@ -186,7 +220,7 @@ const Sidebar = ({
                   <div className="relative p-5 bg-gray-50 rounded-[24px] border border-gray-100 max-h-[160px] overflow-hidden">
                     <p className="text-gray-800 text-sm leading-relaxed font-medium whitespace-pre-wrap">{memo.text}</p>
                   </div>
-                  <div className="flex items-center gap-4 text-[10px] font-bold px-1 pb-1">
+                  <div className="flex items-center gap-4 text-[10px] font-bold px-1">
                     <span className={`flex items-center gap-1.5 ${memo.popped_at ? 'text-[#FF4D00]' : 'text-blue-500'}`}>
                       <div className={`w-1.5 h-1.5 rounded-full animate-pulse ${memo.popped_at ? 'bg-[#FF4D00]' : 'bg-blue-500'}`} />
                       {memo.popped_at ? `${timeLeft} 후 소멸` : '활성화 상태'}
@@ -206,7 +240,7 @@ const Sidebar = ({
             >
               <div className="space-y-5">
                 <div className="flex items-center justify-between">
-                  <h3 className="font-black text-gray-900 text-xs uppercase tracking-wider">Replies <span className="text-[#FF4D00] ml-1">{replies.length}</span></h3>
+                  <h3 className="font-black text-gray-900 text-[10px] uppercase tracking-wider">Replies <span className="text-[#FF4D00] ml-1">{replies.length}</span></h3>
                   <div className="h-px bg-gray-50 flex-1 ml-4" />
                 </div>
                 
@@ -235,14 +269,13 @@ const Sidebar = ({
                   )}
                 </div>
               </div>
-              {/* 인풋 영역이 absolute이므로 겹치지 않게 하단 여백 추가 */}
               <div className="h-32" />
             </div>
 
-            {/* [Bottom Fixed Area] 답글 입력창 - 컨테이너 하단에 절대 고정 */}
+            {/* [Bottom Fixed Area] 답글 입력창 */}
             <div className={`
               ${isMobile ? 'absolute bottom-0 left-0 w-full' : 'relative'}
-              px-6 py-5 bg-white border-t border-gray-100 flex-shrink-0 z-40
+              px-6 py-5 bg-white border-t border-gray-50 flex-shrink-0 z-40
             `}>
               <div className="relative flex items-center">
                 <input 
@@ -258,7 +291,6 @@ const Sidebar = ({
                   <Send size={18} strokeWidth={2.5} />
                 </button>
               </div>
-              {/* 모바일 하단바 여백 */}
               {isMobile && <div style={{ height: 'env(safe-area-inset-bottom, 16px)' }} />}
             </div>
           </motion.div>

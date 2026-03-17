@@ -19,10 +19,10 @@ const formatDateTime = (dateString) => {
 };
 /**
  * [Page] 메인 페이지 (지도 메모 기능 통합 버전)
- * @version 31.8
+ * @version 31.9
  * @author Antigravity
  * @description 
- * - 모바일 바텀시트 인풋 하단 절대 고정 및 조작성 최적화 버전입니다.
+ * - 모바일 바텀시트 단계별 스냅 시스템(0-40-90) 적용 버전입니다.
  */
 
 // 닉네임 조합용 상수
