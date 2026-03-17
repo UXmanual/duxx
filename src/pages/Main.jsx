@@ -18,7 +18,7 @@ const formatDateTime = (dateString) => {
 };
 /**
  * [Page] 메인 페이지 (지도 메모 기능 통합 버전)
- * @version 25.4
+ * @version 25.5
  * @author Antigravity
  * @description 
  * - 바블 리스트 간격 복구 및 닉네임 하단 여백 최적화 버전입니다.
@@ -81,14 +81,15 @@ const Main = () => {
     return R * c;
   };
 
-  // 겹침 방지 극대화 (Vertical Stacking) 버전 (v25.4)
+  // 겹침 방지 극대화 (Vertical Stacking) 강화 버전 (v25.5)
   const groupedMemos = useMemo(() => {
     const rootMemos = memos.filter(m => !m.parent_id);
     if (rootMemos.length === 0) return [];
 
+    // 감지 범위는 유지
     const proximityLimit = 150;
 
-    // 1. 근접 그룹 형성 (최신순 정렬 먼저 수행)
+    // 1. 근접 그룹 형성 (최신순 정렬: b - a)
     let sortedMemos = [...rootMemos].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
     let unassigned = [...sortedMemos];
     let groups = [];
@@ -109,22 +110,20 @@ const Main = () => {
       unassigned = remaining;
     }
 
-    // 2. 수직 스택 (Vertical Stacking) - 최신글 기준 위로 차곡차곡 쌓기
+    // 2. 수직 스택 (Vertical Stacking) - 간격을 대폭 늘려(약 200m) 겹침 차단
     return groups.map(group => {
       if (group.length === 1) return group;
 
-      // 이미 최신순으로 정렬되어 있으므로 index 0이 가장 최신(기준점)
       return group.map((memo, index) => {
-        if (index === 0) return memo; 
+        if (index === 0) return memo; // 최신 바블은 원래 좌표
 
-        // 바블 높이를 고려한 위도(lat) 오프셋 (약 80~100m 간격)
-        // 위로만 쌓아서 겹침을 방지
-        const verticalGap = 0.00075; 
+        // 바블 높이가 크므로 간격을 0.0018(약 200m)로 대폭 상향
+        const verticalGap = 0.0018; 
         
         return {
           ...memo,
           lat: memo.lat + (index * verticalGap),
-          lng: memo.lng // 좌우는 기준 좌표 유지하여 정렬감 부여
+          lng: memo.lng 
         };
       });
     });
