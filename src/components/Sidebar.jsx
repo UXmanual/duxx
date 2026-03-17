@@ -4,8 +4,8 @@ import { X, Clock, MessageSquare, Trash2, Send } from 'lucide-react';
 
 /**
  * [Component] LNB 사이드바 / 모바일 바텀시트
- * @version 1.2
- * @description 바블의 상세 정보 표시 및 실시간 소멸 카운트다운 적용
+ * @version 1.3
+ * @description AI 답글 프로필 커스텀 및 전송 버튼 활성화 상태 최적화
  */
 const Sidebar = ({ 
   memo, 
@@ -177,12 +177,17 @@ const Sidebar = ({
                           className="group/reply"
                         >
                           <div className="flex gap-3">
-                            <div className={`flex-shrink-0 w-9 h-9 rounded-xl flex items-center justify-center text-xs font-black shadow-sm ${reply.is_ai ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-700'}`}>
-                              {reply.is_ai ? 'AI' : reply.nickname?.charAt(0)}
+                            <div className={`flex-shrink-0 w-9 h-9 rounded-xl flex items-center justify-center text-xs font-black shadow-sm ${reply.is_ai ? 'bg-indigo-50 text-indigo-600 border border-indigo-100' : 'bg-gray-100 text-gray-700'}`}>
+                              {reply.nickname?.charAt(0)}
                             </div>
                             <div className="flex-1 space-y-1.5">
                               <div className="flex items-center justify-between">
-                                <span className="text-xs font-black text-gray-800">{reply.nickname}</span>
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-xs font-black text-gray-800">{reply.nickname}</span>
+                                  {reply.is_ai && (
+                                    <span className="text-[9px] bg-indigo-50 text-indigo-500 px-1 rounded-sm font-bold border border-indigo-100/50">A</span>
+                                  )}
+                                </div>
                                 <span className="text-[10px] text-gray-400 font-medium tracking-tight bg-gray-50 px-2 py-0.5 rounded-full">{formatDateTime(reply.created_at)}</span>
                               </div>
                               <p className="text-sm text-gray-600 leading-relaxed bg-white border border-gray-100 p-4 rounded-tr-2xl rounded-b-2xl shadow-sm group-hover/reply:border-[#FF4D00]/20 transition-all">
@@ -213,8 +218,7 @@ const Sidebar = ({
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={() => onReplySubmit(memo.id)}
-                  disabled={!replyText.trim()}
-                  className="absolute right-2 w-11 h-11 bg-[#FF4D00] text-white rounded-2xl flex items-center justify-center disabled:opacity-30 shadow-lg shadow-[#FF4D00]/30"
+                  className="absolute right-2 w-11 h-11 bg-[#FF4D00] text-white rounded-2xl flex items-center justify-center shadow-lg shadow-[#FF4D00]/30"
                 >
                   <Send size={18} strokeWidth={2.5} />
                 </motion.button>
