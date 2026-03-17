@@ -4,8 +4,8 @@ import { X, Clock, MessageSquare, Trash2, Send } from 'lucide-react';
 
 /**
  * [Component] LNB 사이드바 / 모바일 바텀시트
- * @version 1.6
- * @description 답글 입력창 placeholder 수정 및 전송 버튼 레이아웃 최적화
+ * @version 1.7
+ * @description 데스크톱/모바일 전체 오버레이 클릭 시 닫기 기능 적용
  */
 const Sidebar = ({ 
   memo, 
@@ -55,12 +55,12 @@ const Sidebar = ({
     <AnimatePresence>
       {memo && (
         <>
-          {/* Background Overlay for Mobile */}
+          {/* Background Overlay for All Devices (v1.7) */}
           <motion.div 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/30 backdrop-blur-sm z-[9999] md:hidden"
+            className="fixed inset-0 bg-black/30 backdrop-blur-sm z-[9999]"
             onClick={onClose}
           />
           
