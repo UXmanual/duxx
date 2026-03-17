@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Map, CustomOverlayMap, MapMarker, MarkerClusterer, useKakaoLoader } from 'react-kakao-maps-sdk';
 import { useTheme } from '../context/ThemeContext';
-import { Crosshair, MessageSquare, X, Coffee } from 'lucide-react';
+import { Crosshair, MessageSquare, X, Coffee, ChevronDown, ChevronUp } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import { starbucksReserveStores } from '../data/starbucksReserve';
 import { AI_PERSONAS } from '../data/aiPersonas';
@@ -18,7 +18,7 @@ const formatDateTime = (dateString) => {
 };
 /**
  * [Page] 메인 페이지 (지도 메모 기능 통합 버전)
- * @version 22.9
+ * @version 23.0
  * @author Antigravity
  * @description 
  * - 바블 리스트 간격 복구 및 닉네임 하단 여백 최적화 버전입니다.
@@ -480,7 +480,7 @@ const Main = () => {
                   <div className={`absolute bottom-0 left-[-18px] flex flex-col pb-[6px] pointer-events-auto ${isDark ? 'custom-marker-original-color' : ''}`}>
                     
                     <div 
-                      className={`relative px-3 py-2 border-[1.5px] border-[#FF4D00] rounded-[8px] shadow-lg flex flex-col gap-1 w-max min-w-[120px] max-w-[240px] select-none ${hiddenCount > 0 ? 'cursor-pointer' : ''} ${isGroupExpanded ? 'bg-[#FF4D00]' : 'bg-white'} [touch-action:manipulation]`}
+                      className={`relative px-3 py-2 border-[1.5px] border-[#FF4D00] rounded-[8px] shadow-lg flex flex-col gap-1 w-max min-w-[120px] max-w-[240px] select-none ${hiddenCount > 0 ? 'cursor-pointer' : ''} bg-white [touch-action:manipulation]`}
                       onClick={(e) => {
                         e.stopPropagation();
                         // 1. 클릭 시 지도를 해당 위치로 중앙 정렬 (스타벅스 마커와 동일한 동작)
@@ -551,11 +551,10 @@ const Main = () => {
                                         }}
                                         className="text-[11px] font-bold flex items-center gap-1 text-[#FF4D00]/70 hover:opacity-100 transition-opacity"
                                       >
-                                        <MessageSquare size={11} fill={hasReplies ? "currentColor" : "none"} />
                                         {hasReplies ? `답글 ${memoReplies.length}개` : '답글 달기'}
                                         {hasReplies && (
-                                          <span className="ml-1 text-[9px] opacity-60">
-                                            {isShowing ? '▲ 접기' : '▼ 보기'}
+                                          <span className="ml-1 opacity-60">
+                                            {isShowing ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
                                           </span>
                                         )}
                                       </button>
@@ -657,14 +656,14 @@ const Main = () => {
 
                        {/* 닉네임 (동네+성격+접미사) */}
                       <div className="w-full text-left leading-none mb-0.5">
-                        <span className={`text-[11px] font-bold tracking-tight ${isGroupExpanded ? 'text-white/70' : 'text-[#FF4D00] opacity-80'}`}>
+                        <span className="text-[11px] font-bold tracking-tight text-[#FF4D00] opacity-80">
                           {anchorMemo.nickname || getVirtualNickname(anchorMemo.id)}
                         </span>
                       </div>
                       
                       {/* 기준 최신 메모 상단 텍스트 영역 */}
                       <div className="w-full relative z-10 text-left">
-                        <span className={`text-[14px] font-medium leading-tight tracking-tight break-all whitespace-pre-wrap ${isGroupExpanded ? 'text-white' : 'text-black'}`}>
+                        <span className="text-[14px] font-medium leading-tight tracking-tight break-all whitespace-pre-wrap text-black">
                           {anchorMemo.text}
                         </span>
                       </div>
@@ -676,7 +675,7 @@ const Main = () => {
                         const isShowing = showReplyIds.includes(anchorMemo.id);
 
                         return (
-                          <div className={`mt-2 flex flex-col gap-1.5 p-2 rounded-lg ${isGroupExpanded ? 'bg-black/10' : 'bg-gray-50'}`}>
+                          <div className="mt-2 flex flex-col gap-1.5 p-2 rounded-lg bg-gray-50">
                             {/* 상단: 개수 표시 및 접기/펴기 버튼 (클릭 시 입력창도 같이 표시) */}
                             <div className="flex items-center justify-between px-1">
                               <button 
@@ -696,13 +695,12 @@ const Main = () => {
                                     setReplyTargetId(null);
                                   }
                                 }}
-                                className={`text-[11px] font-bold flex items-center gap-1 transition-opacity ${isGroupExpanded ? 'text-white/70' : 'text-[#FF4D00]/70'} hover:opacity-100`}
+                                className="text-[11px] font-bold flex items-center gap-1 transition-opacity text-[#FF4D00]/70 hover:opacity-100"
                               >
-                                <MessageSquare size={12} fill={hasReplies ? "currentColor" : "none"} />
                                 {hasReplies ? `답글 ${memoReplies.length}개` : '답글 달기'}
                                 {hasReplies && (
-                                  <span className="ml-1 text-[9px] opacity-60">
-                                    {isShowing ? '▲ 접기' : '▼ 보기'}
+                                  <span className="ml-1 opacity-60">
+                                    {isShowing ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
                                   </span>
                                 )}
                               </button>
@@ -714,7 +712,7 @@ const Main = () => {
                                 {memoReplies.map(reply => (
                                   <div key={reply.id} className="flex flex-col border-b border-black/5 last:border-0 pb-1.5 break-all whitespace-pre-wrap group/reply">
                                     <div className="flex justify-between items-center mb-0.5">
-                                      <span className={`text-[10px] font-bold ${isGroupExpanded ? 'text-white/70' : 'text-[#FF4D00]'}`}>
+                                      <span className="text-[10px] font-bold text-[#FF4D00]">
                                         {reply.nickname}
                                       </span>
                                       <button 
@@ -722,13 +720,13 @@ const Main = () => {
                                           e.stopPropagation();
                                           handleDeleteMemo(reply.id);
                                         }}
-                                        className={`opacity-0 group-hover/reply:opacity-100 transition-opacity p-0.5 hover:scale-110 ${isGroupExpanded ? 'text-white/50 hover:text-white' : 'text-zinc-400 hover:text-red-500'}`}
+                                        className="opacity-0 group-hover/reply:opacity-100 transition-opacity p-0.5 hover:scale-110 text-zinc-400 hover:text-red-500"
                                         title="답글 삭제"
                                       >
                                         <X size={10} />
                                       </button>
                                     </div>
-                                    <span className={`text-[12px] leading-snug ${isGroupExpanded ? 'text-white/90' : 'text-zinc-700'}`}>
+                                    <span className="text-[12px] leading-snug text-zinc-700">
                                       {reply.text}
                                     </span>
                                   </div>
