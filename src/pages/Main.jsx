@@ -18,7 +18,7 @@ const formatDateTime = (dateString) => {
 };
 /**
  * [Page] 메인 페이지 (지도 메모 기능 통합 버전)
- * @version 25.7
+ * @version 26.0
  * @author Antigravity
  * @description 
  * - 바블 리스트 간격 복구 및 닉네임 하단 여백 최적화 버전입니다.
@@ -498,129 +498,38 @@ const Main = () => {
               clickable={true}
             >
               <div className="relative w-0 h-0 group animate-pop-in pointer-events-none">
-                <div className="absolute bottom-0 left-[-18px] flex flex-col pb-[6px] pointer-events-auto">
+                {/* 프리미엄 컴팩트 디자인 - 날씨 위젯 스타일 계승 */}
+                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 flex flex-col pb-2 pointer-events-auto">
                   <div 
-                    className="relative px-3 py-2 border-[1.5px] border-[#FF4D00] rounded-[8px] shadow-lg flex flex-col gap-1 w-max min-w-[120px] max-w-[240px] select-none bg-white [touch-action:manipulation]"
+                    className="relative px-4 py-2 bg-white/90 backdrop-blur-md border-[1px] border-[#FF4D00]/20 rounded-2xl shadow-[0_8px_32px_rgba(255,77,0,0.12)] flex flex-col gap-1 w-max min-w-[60px] max-w-[200px] select-none hover:scale-105 transition-transform duration-200 cursor-pointer active:scale-95"
                     onClick={(e) => {
                       e.stopPropagation();
                       if (map) {
                         map.panTo(new window.kakao.maps.LatLng(memo.lat, memo.lng));
                       }
                       setSelectedStarbucksId(null); 
-                      // [개선] 다른 바블을 누르면 기존에 열려있던 모든 답글 창과 입력창을 닫음
+                      // 기능 로직은 유지하되, 현재는 선택 집중 효과만 수행
                       setExpandedGroupIds([]);
-                      setShowReplyIds([]);
-                      setReplyTargetId(null);
+                      setShowReplyIds([memo.id]); 
+                      setReplyTargetId(memo.id);
                     }}
                   >
-                    {/* 닉네임 */}
-                    <div className="w-full text-left leading-none mb-0.5">
-                      <span className="text-[11px] font-bold tracking-tight text-[#FF4D00] opacity-80">
-                        {memo.nickname || getVirtualNickname(memo.id)}
-                      </span>
-                    </div>
-                    
-                    {/* 텍스트 영역 */}
-                    <div className="w-full relative z-10 text-left">
-                      <span className="text-[14px] font-medium leading-tight tracking-tight break-all whitespace-pre-wrap text-black">
+                    {/* 텍스트 영역 - 오직 내용만 심플하게 노출 */}
+                    <div className="w-full relative z-10 text-center">
+                      <span className="text-[13.5px] font-semibold leading-tight tracking-tight break-all whitespace-pre-wrap text-[#1A1A1A]">
                         {memo.text}
                       </span>
                     </div>
 
-                    {/* 답글 영역 */}
-                    {(() => {
-                      const memoReplies = memos.filter(r => r.parent_id === memo.id);
-                      const hasReplies = memoReplies.length > 0;
-                      const isShowing = showReplyIds.includes(memo.id);
-
-                      return (
-                        <div className="mt-2 flex flex-col gap-1.5 p-2 rounded-lg bg-gray-50 text-left">
-                          <button 
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              const nextShowing = !isShowing;
-                              
-                              // [개선] 답글 버튼 클릭 시 현재 바블 외의 다른 창은 모두 닫기 (배타적 활성)
-                              if (nextShowing) {
-                                setShowReplyIds([memo.id]);
-                                setReplyTargetId(memo.id);
-                              } else {
-                                setShowReplyIds([]);
-                                setReplyTargetId(null);
-                              }
-                            }}
-                            className="text-[11px] font-bold flex items-center gap-1 transition-opacity text-[#FF4D00]/70 hover:opacity-100"
-                          >
-                            {hasReplies ? `답글 ${memoReplies.length}개` : '답글 달기'}
-                            {hasReplies && (
-                              <span className="ml-1 opacity-60">
-                                {isShowing ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-                              </span>
-                            )}
-                          </button>
-
-                          {isShowing && hasReplies && (
-                            <div className="flex flex-col gap-2 mt-1 pr-1 border-t border-black/5 pt-1.5">
-                              {memoReplies.map(reply => (
-                                <div key={reply.id} className="flex flex-col border-b border-black/5 last:border-0 pb-1.5 break-all whitespace-pre-wrap group/reply">
-                                  <div className="flex justify-between items-center mb-0.5">
-                                    <span className="text-[10px] font-bold text-[#FF4D00]">
-                                      {reply.nickname}
-                                    </span>
-                                    <button 
-                                      onClick={(e) => { e.stopPropagation(); handleDeleteMemo(reply.id); }}
-                                      className="opacity-0 group-hover/reply:opacity-100 transition-opacity p-0.5 text-zinc-400 hover:text-red-500"
-                                    >
-                                      <X size={10} />
-                                    </button>
-                                  </div>
-                                  <span className="text-[12px] leading-snug text-zinc-700">
-                                    {reply.text}
-                                  </span>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                          
-                          {isShowing && replyTargetId === memo.id && (
-                            <div className="flex flex-col gap-1 mt-1">
-                              <input 
-                                autoFocus
-                                onClick={(e) => e.stopPropagation()}
-                                className="w-full text-[14px] px-2 py-1.5 rounded border border-gray-200 outline-none focus:border-[#FF4D00] shadow-inner"
-                                placeholder="생각을 남겨보세요..."
-                                value={replyText}
-                                onChange={(e) => setReplyText(e.target.value)}
-                                onKeyDown={(e) => {
-                                  if (e.key === 'Enter') handleReplySubmit(memo.id);
-                                }}
-                              />
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })()}
-                    
-                    {/* 하단 날짜 + 삭제 */}
-                    <div className="text-[10px] font-medium tracking-wide relative z-10 text-left flex items-center gap-1 mt-1.5 text-zinc-400">
-                      <span>{formatDateTime(memo.created_at)}</span>
-                      <span className="text-zinc-300">|</span>
-                      <button 
-                        onClick={(e) => { e.stopPropagation(); handleDeleteMemo(memo.id); }}
-                        className="hover:text-[#FF4D00] transition-colors"
-                      >
-                        삭제
-                      </button>
-                    </div>
-
-                    {/* 꼬리 */}
-                    <div className="absolute top-[calc(100%-0.2px)] left-[12px] w-[16px] h-[10px] z-20 pointer-events-none overflow-visible">
-                      <svg width="16" height="10" viewBox="0 0 16 10" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M2 0 H14 L9.5 7.5 Q8 9 6.5 7.5 Z" fill="white" />
-                        <path d="M2 0 L6.5 7.5 Q8 9 9.5 7.5 L14 0" stroke="#FF4D00" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
+                    {/* [추후 LNB용] 기능 데이터 보존 섹션 (화면 노출 제외) */}
+                    <div className="hidden">
+                      <span className="info-nickname">{memo.nickname || getVirtualNickname(memo.id)}</span>
+                      <span className="info-time">{formatDateTime(memo.created_at)}</span>
                     </div>
                   </div>
+                  
+                  {/* 심플한 하단 포인트 (꼬리 대신 세련된 점) */}
+                  <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-1.5 h-1.5 bg-[#FF4D00] rounded-full shadow-lg border border-white" />
                 </div>
               </div>
             </CustomOverlayMap>
