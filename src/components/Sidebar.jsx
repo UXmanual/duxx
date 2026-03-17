@@ -4,8 +4,8 @@ import { X, Clock, MessageSquare, Trash2, Send } from 'lucide-react';
 
 /**
  * [Component] LNB 사이드바 / 모바일 바텀시트
- * @version 32.0
- * @description 단계별 스냅 시스템(0%-45%-90%) 적용 및 드래그 조작감 고도화
+ * @version 32.1
+ * @description PC/모바일 레이아웃 복구 및 국문 텍스트 통일 (Replies -> 답글)
  */
 const Sidebar = ({ 
   memo, 
@@ -87,59 +87,84 @@ const Sidebar = ({
   const handlePan = (e, info) => {
     if (!isMobile) return;
     let newH = sheetHeight.get() - info.delta.y;
-    const maxH = windowHeight * 0.92; // 상단 제한
+    const maxH = windowHeight * 0.92;
     if (newH > maxH) newH = maxH;
     sheetHeight.set(newH);
   };
 
-  /**
-   * 단계별 스냅 로직 0 - 40 - 90
-   * 사용자의 스와이프 속도와 위치를 고려하여 다음 단계로 이동시킴
-   */
   const handlePanEnd = (e, info) => {
     if (!isMobile) return;
     const currentH = sheetHeight.get();
-    const velocity = info.velocity.y; // 양수면 아래로, 음수면 위로
+    const velocity = info.velocity.y;
     const snapTransition = { type: 'spring', damping: 38, stiffness: 450 };
 
     const halfH = windowHeight * 0.45;
     const fullH = windowHeight * 0.9;
-    const threshold = windowHeight * 0.15; // 15% 정도 움직였을 때 스냅 변경
+    const threshold = windowHeight * 0.15;
 
-    // 1. 위쪽 영역(Full 근처)에 있을 때
     if (currentH > windowHeight * 0.65) {
       if (velocity > 400 || currentH < fullH - threshold) {
-        // 아래로 강하게 던지거나 일정 거리 미달 시 Half(45)로 복귀
         animate(sheetHeight, halfH, snapTransition);
       } else {
-        // Full(90) 고정
         animate(sheetHeight, fullH, snapTransition);
       }
-    } 
-    // 2. 중간 영역(Half 근처)에 있을 때
-    else if (currentH > windowHeight * 0.2) {
+    } else if (currentH > windowHeight * 0.2) {
       if (velocity < -400 && currentH > halfH - threshold) {
-        // 위로 강하게 던지면 Full(90)로
         animate(sheetHeight, fullH, snapTransition);
       } else if (velocity > 400 || currentH < halfH - threshold) {
-        // 아래로 강하게 던지거나 너무 낮아지면 닫기(0)
         animate(sheetHeight, 0, snapTransition).then(() => onClose());
       } else {
-        // Half(45) 고정
         animate(sheetHeight, halfH, snapTransition);
       }
-    } 
-    // 3. 하단 영역일 때
-    else {
+    } else {
       if (velocity < -600) {
-        // 하단에서 아주 강하게 위로 밀면 Half(45)로
         animate(sheetHeight, halfH, snapTransition);
       } else {
-        // 닫기
         animate(sheetHeight, 0, snapTransition).then(() => onClose());
       }
     }
   };
+
+  // 공통 바블 본문 카드 컴포넌트
+  const MemoContentCard = ({ isCompact = false }) => (
+    <div className={`space-y-4 ${isCompact ? '' : 'mb-8'}`}>
+      <div className="flex items-start justify-between">
+        <div className="flex items-center gap-3">
+          <div className="w-11 h-11 bg-gradient-to-br from-[#FF4D00] to-[#FF8A00] rounded-2xl flex items-center justify-center text-white font-black shadow-lg shadow-[#FF4D00]/20">
+            {memo.nickname?.charAt(0) || 'B'}
+          </div>
+          <div>
+            <p className="font-bold text-gray-900 text-sm">{memo.nickname}</p>
+            <span className="text-[10px] px-2 py-0.5 bg-gray-100 text-gray-500 rounded-full font-medium">
+              {formatDateTime(memo.created_at)}
+            </span>
+          </div>
+        </div>
+        {!memo.popped_at && (
+          <button 
+            onClick={(e) => { e.stopPropagation(); onPop(memo.id); }}
+            className="p-2.5 bg-white border border-gray-100 shadow-sm rounded-xl hover:border-[#FF4D00]/30 transition-all"
+          >
+            <motion.svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FF4D00" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 2v2M12 20v2M2 12h2M20 12h2M19.07 4.93l-1.41 1.41M6.34 17.66l-1.41 1.41M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41" />
+            </motion.svg>
+          </button>
+        )}
+      </div>
+      <div className={`relative p-5 bg-gray-50 rounded-[24px] border border-gray-100 ${isMobile ? 'max-h-[160px]' : ''} overflow-hidden`}>
+        <p className="text-gray-800 text-sm leading-relaxed font-medium whitespace-pre-wrap">{memo.text}</p>
+      </div>
+      <div className="flex items-center gap-4 text-[10px] font-bold px-1">
+        <span className={`flex items-center gap-1.5 ${memo.popped_at ? 'text-[#FF4D00]' : 'text-blue-500'}`}>
+          <div className={`w-1.5 h-1.5 rounded-full animate-pulse ${memo.popped_at ? 'bg-[#FF4D00]' : 'bg-blue-500'}`} />
+          {memo.popped_at ? `${timeLeft} 후 소멸` : '활성화 상태'}
+        </span>
+        <span className="flex items-center gap-1.5 text-gray-400">
+          <MessageSquare size={12} strokeWidth={2.5} /> 답글 {replies.length}
+        </span>
+      </div>
+    </div>
+  );
 
   return (
     <AnimatePresence>
@@ -171,19 +196,22 @@ const Sidebar = ({
               overflow-hidden
             `}
           >
-            {/* [Fixed Draggable Area] 핸들 + 상단 카드 */}
+            {/* [Header Area] PC 헤더 / 모바일 드래그 카드 */}
             <motion.div 
-              className="flex-shrink-0 touch-none select-none cursor-grab active:cursor-grabbing bg-white relative z-30"
-              onPan={handlePan}
-              onPanEnd={handlePanEnd}
+              className={`flex-shrink-0 touch-none select-none relative z-30 bg-white ${isMobile ? 'cursor-grab active:cursor-grabbing' : ''}`}
+              onPan={isMobile ? handlePan : undefined}
+              onPanEnd={isMobile ? handlePanEnd : undefined}
             >
-              {isMobile && (
-                <div className="w-full flex justify-center pt-5 pb-2">
-                  <div className="w-14 h-1.5 bg-gray-200 rounded-full" />
+              {isMobile ? (
+                // 모바일 상단 드래그 영역
+                <div className="px-6 pt-5 pb-4 space-y-4">
+                  <div className="w-full flex justify-center pb-2">
+                    <div className="w-14 h-1.5 bg-gray-200 rounded-full" />
+                  </div>
+                  <MemoContentCard isCompact={true} />
                 </div>
-              )}
-              
-              {!isMobile ? (
+              ) : (
+                // PC 상단 헤더
                 <div className="px-6 py-5 flex items-center justify-between border-b border-gray-100">
                   <div className="flex items-center">
                     <span className="logo-font text-[20px] tracking-[0] uppercase text-[#FF4D00] select-none">BABBLE</span>
@@ -192,56 +220,25 @@ const Sidebar = ({
                     <X size={20} className="text-gray-400" />
                   </motion.button>
                 </div>
-              ) : (
-                <div className="px-6 py-4 space-y-4">
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-11 h-11 bg-gradient-to-br from-[#FF4D00] to-[#FF8A00] rounded-2xl flex items-center justify-center text-white font-black shadow-lg shadow-[#FF4D00]/20">
-                        {memo.nickname?.charAt(0) || 'B'}
-                      </div>
-                      <div>
-                        <p className="font-bold text-gray-900 text-sm">{memo.nickname}</p>
-                        <span className="text-[10px] px-2 py-0.5 bg-gray-100 text-gray-500 rounded-full font-medium">
-                          {formatDateTime(memo.created_at)}
-                        </span>
-                      </div>
-                    </div>
-                    {!memo.popped_at && (
-                      <button 
-                        onClick={(e) => { e.stopPropagation(); onPop(memo.id); }}
-                        className="p-2.5 bg-white border border-gray-100 shadow-sm rounded-xl"
-                      >
-                        <motion.svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FF4D00" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M12 2v2M12 20v2M2 12h2M20 12h2M19.07 4.93l-1.41 1.41M6.34 17.66l-1.41 1.41M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41" />
-                        </motion.svg>
-                      </button>
-                    )}
-                  </div>
-                  <div className="relative p-5 bg-gray-50 rounded-[24px] border border-gray-100 max-h-[160px] overflow-hidden">
-                    <p className="text-gray-800 text-sm leading-relaxed font-medium whitespace-pre-wrap">{memo.text}</p>
-                  </div>
-                  <div className="flex items-center gap-4 text-[10px] font-bold px-1">
-                    <span className={`flex items-center gap-1.5 ${memo.popped_at ? 'text-[#FF4D00]' : 'text-blue-500'}`}>
-                      <div className={`w-1.5 h-1.5 rounded-full animate-pulse ${memo.popped_at ? 'bg-[#FF4D00]' : 'bg-blue-500'}`} />
-                      {memo.popped_at ? `${timeLeft} 후 소멸` : '활성화 상태'}
-                    </span>
-                    <span className="flex items-center gap-1.5 text-gray-400">
-                      <MessageSquare size={12} strokeWidth={2.5} /> 답글 {replies.length}
-                    </span>
-                  </div>
-                </div>
               )}
             </motion.div>
 
-            {/* [Scrollable Area] 댓글 영역 */}
+            {/* [Scrollable Area] 댓글 및 본문(PC전용) 영역 */}
             <div 
               className="flex-1 overflow-y-auto custom-scrollbar px-6 pt-4 pb-6"
               onPointerDown={(e) => e.stopPropagation()} 
             >
+              {!isMobile && (
+                // PC에서는 스크롤 영역 상단에 본문 정보 노출
+                <div className="pt-2">
+                  <MemoContentCard />
+                </div>
+              )}
+
               <div className="space-y-5">
                 <div className="flex items-center justify-between">
-                  <h3 className="font-black text-gray-900 text-[10px] uppercase tracking-wider">Replies <span className="text-[#FF4D00] ml-1">{replies.length}</span></h3>
-                  <div className="h-px bg-gray-50 flex-1 ml-4" />
+                  <h3 className="font-black text-gray-900 text-sm">답글 <span className="text-[#FF4D00] ml-1">{replies.length}</span></h3>
+                  <div className="h-px bg-gray-100 flex-1 ml-4" />
                 </div>
                 
                 <div className="space-y-4">
@@ -275,7 +272,7 @@ const Sidebar = ({
             {/* [Bottom Fixed Area] 답글 입력창 */}
             <div className={`
               ${isMobile ? 'absolute bottom-0 left-0 w-full' : 'relative'}
-              px-6 py-5 bg-white border-t border-gray-50 flex-shrink-0 z-40
+              px-6 py-5 bg-white border-t border-gray-100 flex-shrink-0 z-40
             `}>
               <div className="relative flex items-center">
                 <input 
