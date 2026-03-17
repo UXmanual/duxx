@@ -4,8 +4,8 @@ import { X, Clock, MessageSquare, Trash2, Send } from 'lucide-react';
 
 /**
  * [Component] LNB 사이드바 / 모바일 바텀시트
- * @version 1.4
- * @description UI 한글화 및 버블 터트리기 호버 애니메이션(두근거림) 적용
+ * @version 1.5
+ * @description 최신 답글 상단 정렬 및 UI 디테일 개선
  */
 const Sidebar = ({ 
   memo, 
@@ -20,7 +20,10 @@ const Sidebar = ({
 }) => {
   const [timeLeft, setTimeLeft] = useState('');
 
-  // 실시간 소멸 카운트다운 로직 (v1.2 추가)
+  // 최신 답글이 위로 오도록 정렬 (v1.5 추가)
+  const sortedReplies = [...replies].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+  // 실시간 소멸 카운트다운 로직
   useEffect(() => {
     if (!memo?.popped_at) {
       setTimeLeft('');
@@ -165,7 +168,7 @@ const Sidebar = ({
                   </div>
                   
                   <div className="space-y-5">
-                    {replies.length === 0 ? (
+                    {sortedReplies.length === 0 ? (
                       <div className="text-center py-12 px-6 border-2 border-dashed border-gray-100 rounded-[24px]">
                         <div className="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-3">
                           <MessageSquare size={20} className="text-gray-300" />
@@ -173,7 +176,7 @@ const Sidebar = ({
                         <p className="text-gray-400 text-xs font-bold">첫 번째 답글의 주인공이 되어보세요!</p>
                       </div>
                     ) : (
-                      replies.map((reply, idx) => (
+                      sortedReplies.map((reply, idx) => (
                         <motion.div 
                           key={reply.id} 
                           initial={{ opacity: 0, y: 10 }}
