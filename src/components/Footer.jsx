@@ -3,7 +3,7 @@ import pkg from '../../package.json';
 
 /**
  * [Component] 푸터
- * @version 31.4
+ * @version 31.5
  * @author Antigravity
  * @description 
  * - 푸터의 배포 시간 정보를 제거하고 빌드 버전만 노출하도록 간소화했습니다.

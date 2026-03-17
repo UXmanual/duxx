@@ -4,8 +4,8 @@ import { X, Clock, MessageSquare, Trash2, Send } from 'lucide-react';
 
 /**
  * [Component] LNB 사이드바 / 모바일 바텀시트
- * @version 31.4
- * @description 높이(Height) 애니메이션 기반 안정화 및 인풋 노출 최적화 버전
+ * @version 31.5
+ * @description 드래그 영역 확대(본문 포함) 및 상단 튕김 현상 제거 버전
  */
 const Sidebar = ({ 
   memo, 
@@ -80,7 +80,7 @@ const Sidebar = ({
     return () => clearInterval(timer);
   }, [memo?.popped_at]);
 
-  // 매우 즉각적인 반응을 위한 transition 설정
+  // 즉각적인 반응을 위한 transition 설정
   const fastSnapTransition = {
     type: 'spring',
     stiffness: 500,
@@ -102,7 +102,6 @@ const Sidebar = ({
           />
           
           <motion.div 
-            // 높이(height)를 직접 조절하여 인풋창이 가려지지 않도록 수정
             variants={{
               half: isMobile ? { height: windowHeight * 0.4, y: 0 } : { x: 0, opacity: 1, y: 0, width: '380px' },
               full: isMobile ? { height: windowHeight * 0.9, y: 0 } : { x: 0, opacity: 1, y: 0, width: '380px' },
@@ -113,12 +112,12 @@ const Sidebar = ({
             exit="closed"
             transition={fastSnapTransition}
             
-            // 모바일 전용 드래그 설정 (y축 변위만 감지하여 상태 전환)
             drag={isMobile ? "y" : false}
             dragControls={dragControls}
             dragListener={false} 
             dragConstraints={{ top: 0, bottom: 0 }}
-            dragElastic={0} // 드래그 시 하단이 들리는 현상 방지
+            dragElastic={0}
+            dragMomentum={false} // 팅김 방지를 위해 모멘텀 제거
             onDragEnd={(e, info) => {
               const velocity = info.velocity.y;
               const offset = info.offset.y;
@@ -143,10 +142,10 @@ const Sidebar = ({
               overflow-hidden
             `}
           >
-            {/* Mobile Drag Handle Area */}
+            {/* Mobile Drag Handle Bar */}
             {isMobile && (
               <div 
-                className="w-full flex justify-center pt-5 pb-4 flex-shrink-0 cursor-grab active:cursor-grabbing touch-none"
+                className="w-full flex justify-center pt-5 pb-4 flex-shrink-0 cursor-grab active:cursor-grabbing touch-none select-none"
                 onPointerDown={(e) => dragControls.start(e)}
               >
                 <div className="w-14 h-1.5 bg-gray-200 rounded-full" />
@@ -178,8 +177,11 @@ const Sidebar = ({
               onPointerDown={(e) => e.stopPropagation()} 
             >
               <div className="p-6 space-y-8">
-                {/* Main Content Card */}
-                <div className="space-y-5">
+                {/* Main Content Card (드래그 가능 영역 확대) */}
+                <div 
+                  className={`space-y-5 ${isMobile ? 'cursor-grab active:cursor-grabbing touch-none select-none' : ''}`}
+                  onPointerDown={isMobile ? (e) => dragControls.start(e) : undefined}
+                >
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-3">
                       <motion.div 
@@ -206,6 +208,8 @@ const Sidebar = ({
                           transition: { duration: 0.5, repeat: Infinity, ease: "easeInOut" }
                         }}
                         whileTap={{ scale: 0.8 }}
+                        // 버튼 터치 시 드래그 방지를 위해 전파 중단
+                        onPointerDown={(e) => e.stopPropagation()}
                         onClick={() => onPop(memo.id)}
                         className="p-3 bg-white border border-gray-100 shadow-sm hover:border-[#FF4D00]/30 hover:bg-[#FF4D00]/5 rounded-2xl transition-all overflow-hidden"
                         title="터트리기"
