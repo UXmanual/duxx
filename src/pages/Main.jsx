@@ -18,7 +18,7 @@ const formatDateTime = (dateString) => {
 };
 /**
  * [Page] 메인 페이지 (지도 메모 기능 통합 버전)
- * @version 22.2
+ * @version 22.3
  * @author Antigravity
  * @description 
  * - 바블 리스트 간격 복구 및 닉네임 하단 여백 최적화 버전입니다.
@@ -268,7 +268,7 @@ const Main = () => {
 
   const handleDeleteMemo = async (id) => {
     if (!supabase) return;
-    if (confirm('이 메모를 삭제하시겠습니까? (답글도 함께 삭제됩니다)')) {
+    if (confirm('이 메모를 삭제하시겠습니까?')) {
       const { error } = await supabase.from('memos').delete().eq('id', id);
       if (!error) {
         setMemos(prev => prev.filter(m => m.id !== id && m.parent_id !== id));
