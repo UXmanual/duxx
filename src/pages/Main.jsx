@@ -21,9 +21,9 @@ const formatDateTime = (dateString) => {
 
 /**
  * [Page] 메인 페이지 (지도 메모 기능 통합 버전)
- * @version 34.2
+ * @version 34.3
  * @description 
- * - 폭발 명중률 100%: 실제 DOM 요소를 추적하여 터트리기 아이콘 위치를 정확히 타격하는 버전입니다. (v34.2)
+ * - 선택 바블의 쉐도우 효과 개선 및 가독성 최적화 버전입니다. (v34.3)
  */
 
 // 닉네임 조합용 상수
@@ -398,7 +398,7 @@ const Main = () => {
                       <div className="absolute w-12 h-12 border-4 border-[#FF4D00] rounded-full animate-shockwave" />
                     </div>
                   )}
-                  <div className={`relative px-4 py-2 bg-white/90 backdrop-blur-md border-2 rounded-full shadow-lg flex items-center gap-2 min-w-[50px] max-w-[220px] cursor-pointer transition-all duration-300 ${memo.is_popping ? 'animate-bubble-pop' : ''} ${selectedMemoId === memo.id ? 'border-[#FF4D00] ring-4 ring-[#FF4D00]/30 z-[50] scale-105 shadow-[#FF4D00]/20' : 'border-[#FF4D00]'}`}
+                  <div className={`relative px-4 py-2 bg-white/90 backdrop-blur-md border-2 rounded-full shadow-lg flex items-center gap-2 min-w-[50px] max-w-[220px] cursor-pointer transition-all duration-300 ${memo.is_popping ? 'animate-bubble-pop' : ''} ${selectedMemoId === memo.id ? 'border-[#FF4D00] ring-4 ring-[#FF4D00]/30 z-[50] scale-105 shadow-[0_12px_32px_rgba(255,77,0,0.35)]' : 'border-[#FF4D00]'}`}
                     onClick={(e) => { 
                     e.stopPropagation(); 
                     panToWithOffset(memo.lat, memo.lng);
