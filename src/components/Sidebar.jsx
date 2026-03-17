@@ -1,11 +1,11 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Clock, MessageSquare, Trash2, Send } from 'lucide-react';
+import { X, Clock, MessageSquare, Trash2, Send, ChevronLeft } from 'lucide-react';
 
 /**
  * [Component] LNB 사이드바 / 모바일 바텀시트
- * @version 1.8
- * @description 데스크톱 딤 제거 및 외부 클릭 감지 로직 적용
+ * @version 1.9
+ * @description 데스크톱 전용 사이드 패널 토글(닫기) 버튼 추가
  */
 const Sidebar = ({ 
   memo, 
@@ -19,24 +19,9 @@ const Sidebar = ({
   formatDateTime 
 }) => {
   const [timeLeft, setTimeLeft] = useState('');
-  const sidebarRef = useRef(null);
 
   // 최신 답글이 위로 오도록 정렬 (v1.5 추가)
   const sortedReplies = [...replies].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-
-  // 데스크톱 외부 클릭 시 닫기 로직 (v1.8 추가)
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      // 모바일(768px 미만)은 오버레이가 처리하므로 제외
-      if (window.innerWidth >= 768 && sidebarRef.current && !sidebarRef.current.contains(event.target)) {
-        // 이미 닫히고 있는 중이 아닐 때만 호출
-        onClose();
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [onClose]);
 
   // 실시간 소멸 카운트다운 로직
   useEffect(() => {
@@ -70,7 +55,7 @@ const Sidebar = ({
     <AnimatePresence>
       {memo && (
         <>
-          {/* Background Overlay - Mobile Only (v1.8 원복) */}
+          {/* Background Overlay - Mobile Only */}
           <motion.div 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -80,18 +65,27 @@ const Sidebar = ({
           />
           
           <motion.div 
-            ref={sidebarRef}
             initial={{ x: -400, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
             exit={{ x: -400, opacity: 0 }}
             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
             className={`
-              fixed z-[10000] bg-white shadow-2xl overflow-hidden flex flex-col
+              fixed z-[10000] bg-white shadow-2xl flex flex-col
               md:left-0 md:top-0 md:h-screen md:w-[380px]
               bottom-0 left-0 w-full rounded-t-[32px] md:rounded-none
               max-h-[85vh] md:max-h-none
             `}
           >
+            {/* Desktop Toggle Button - v1.9 추가 */}
+            <motion.button
+              whileHover={{ x: 2, backgroundColor: '#f9f9f9' }}
+              whileTap={{ scale: 0.95 }}
+              onClick={onClose}
+              className="hidden md:flex absolute -right-8 top-1/2 -translate-y-1/2 w-8 h-20 bg-white border border-l-0 border-gray-100 shadow-[4px_0_12px_rgba(0,0,0,0.08)] items-center justify-center rounded-r-2xl z-20 transition-colors"
+            >
+              <ChevronLeft size={20} className="text-gray-500" />
+            </motion.button>
+
             {/* Header - Logo 적용 (v1.2) */}
             <div className="sticky top-0 bg-white/90 backdrop-blur-md z-10 px-6 py-5 flex items-center justify-between border-b border-gray-100 flex-shrink-0">
               <div className="flex items-center">
