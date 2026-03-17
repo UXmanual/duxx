@@ -18,7 +18,7 @@ const formatDateTime = (dateString) => {
 };
 /**
  * [Page] 메인 페이지 (지도 메모 기능 통합 버전)
- * @version 25.3
+ * @version 25.4
  * @author Antigravity
  * @description 
  * - 바블 리스트 간격 복구 및 닉네임 하단 여백 최적화 버전입니다.
@@ -81,16 +81,16 @@ const Main = () => {
     return R * c;
   };
 
-  // 겹침 방지 극대화 (Spiderfy Spiral) 버전 (v25.3)
+  // 겹침 방지 극대화 (Vertical Stacking) 버전 (v25.4)
   const groupedMemos = useMemo(() => {
     const rootMemos = memos.filter(m => !m.parent_id);
     if (rootMemos.length === 0) return [];
 
-    // 감지 범위를 150m로 확대
     const proximityLimit = 150;
 
-    // 1. 근접 그룹 형성
-    let unassigned = [...rootMemos];
+    // 1. 근접 그룹 형성 (최신순 정렬 먼저 수행)
+    let sortedMemos = [...rootMemos].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    let unassigned = [...sortedMemos];
     let groups = [];
     
     while (unassigned.length > 0) {
@@ -109,22 +109,22 @@ const Main = () => {
       unassigned = remaining;
     }
 
-    // 2. 나선형 분산 (Spiral Offset) - 아예 닿지 않게 반경 대폭 학대
+    // 2. 수직 스택 (Vertical Stacking) - 최신글 기준 위로 차곡차곡 쌓기
     return groups.map(group => {
       if (group.length === 1) return group;
 
+      // 이미 최신순으로 정렬되어 있으므로 index 0이 가장 최신(기준점)
       return group.map((memo, index) => {
         if (index === 0) return memo; 
 
-        // 하나씩 쌓일 때마다 각도뿐 아니라 거리(radius)도 늘려나가는 나선형 구조
-        const angle = index * 1.0; // 일정한 회전각
-        const radiusHeightFactor = 0.0012; // 수직 기본 단위 (약 120m)
-        const spiralRadius = radiusHeightFactor + (index * 0.0003); // 뒤로 갈수록 더 멀리
+        // 바블 높이를 고려한 위도(lat) 오프셋 (약 80~100m 간격)
+        // 위로만 쌓아서 겹침을 방지
+        const verticalGap = 0.00075; 
         
         return {
           ...memo,
-          lat: memo.lat + Math.sin(angle) * spiralRadius,
-          lng: memo.lng + Math.cos(angle) * (spiralRadius * 2.0) // 가로(경도)는 바블 너비 때문에 더 넓게 벌림
+          lat: memo.lat + (index * verticalGap),
+          lng: memo.lng // 좌우는 기준 좌표 유지하여 정렬감 부여
         };
       });
     });
