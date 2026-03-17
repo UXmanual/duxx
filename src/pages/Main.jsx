@@ -20,9 +20,9 @@ const formatDateTime = (dateString) => {
 
 /**
  * [Page] 메인 페이지 (지도 메모 기능 통합 버전)
- * @version 33.2
+ * @version 33.3
  * @description 
- * - 스타벅스 리저브 마커 항시 노출 및 오버레이 위치 최적화 버전입니다. (v33.2)
+ * - 스타벅스 리저브 오버레이 간격 조정 및 최적화 버전입니다. (v33.3)
  */
 
 // 닉네임 조합용 상수
@@ -320,7 +320,7 @@ const Main = () => {
             {selectedStarbucksId === place.id && (
               <CustomOverlayMap 
                 position={{ lat: place.lat, lng: place.lng }} 
-                yAnchor={2.2} 
+                yAnchor={1.85} 
                 zIndex={1000}
                 clickable={true}
               >
