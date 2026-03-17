@@ -4,8 +4,8 @@ import { X, Clock, MessageSquare, Trash2, Send } from 'lucide-react';
 
 /**
  * [Component] LNB 사이드바 / 모바일 바텀시트
- * @version 32.1
- * @description PC/모바일 레이아웃 복구 및 국문 텍스트 통일 (Replies -> 답글)
+ * @version 32.2
+ * @description 입력창 디자인 정밀 조정(테두리 강화, 버튼 쉐도우 제거)
  */
 const Sidebar = ({ 
   memo, 
@@ -278,12 +278,12 @@ const Sidebar = ({
                 <input 
                   type="text" value={replyText} onChange={(e) => setReplyText(e.target.value)}
                   placeholder="말하고싶은 바블을 남겨주세요"
-                  className="w-full pl-6 pr-16 py-4 bg-gray-50 border border-gray-100 rounded-[22px] text-[13px] font-bold focus:outline-none focus:ring-4 focus:ring-[#FF4D00]/10 focus:bg-white transition-all shadow-sm"
+                  className="w-full pl-6 pr-16 py-4 bg-gray-50 border border-gray-200 rounded-[22px] text-[13px] font-bold focus:outline-none focus:ring-4 focus:ring-[#FF4D00]/10 focus:bg-white transition-all"
                   onKeyPress={(e) => e.key === 'Enter' && onReplySubmit(memo.id)}
                 />
                 <button 
                   onClick={() => onReplySubmit(memo.id)}
-                  className="absolute right-1.5 w-11 h-11 bg-[#FF4D00] text-white rounded-2xl flex items-center justify-center shadow-lg shadow-[#FF4D00]/30 active:scale-95 transition-transform"
+                  className="absolute right-1.5 w-11 h-11 bg-[#FF4D00] text-white rounded-2xl flex items-center justify-center active:scale-95 transition-transform"
                 >
                   <Send size={18} strokeWidth={2.5} />
                 </button>

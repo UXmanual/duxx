@@ -19,10 +19,10 @@ const formatDateTime = (dateString) => {
 };
 /**
  * [Page] 메인 페이지 (지도 메모 기능 통합 버전)
- * @version 32.1
+ * @version 32.2
  * @author Antigravity
  * @description 
- * - PC LNB 레이아웃 복구 및 국문 텍스트 통일 버전입니다.
+ * - 입력창 테두리 강화 및 전송 버튼 쉐도우 제거 버전입니다.
  */
 
 // 닉네임 조합용 상수
