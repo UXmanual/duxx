@@ -19,10 +19,10 @@ const formatDateTime = (dateString) => {
 };
 /**
  * [Page] 메인 페이지 (지도 메모 기능 통합 버전)
- * @version 32.5
+ * @version 32.6
  * @author Antigravity
  * @description 
- * - AI 닉네임 드로우 규칙 최적화 및 터트리기 버튼 스케일 애니메이션 추가 버전입니다.
+ * - 만료된 바블 자동 삭제 및 LNB 자동 닫기 기능 추가 버전입니다.
  */
 
 // 닉네임 조합용 상수
@@ -162,6 +162,46 @@ const Main = () => {
     prefetchLocation();
     fetchMemos();
   }, []);
+
+  // 만료된(30분 경과) 바블 자동 삭제 및 LNB 닫기 처리 (v32.6)
+  useEffect(() => {
+    const cleanupExpiredMemos = async () => {
+      const now = new Date();
+      const expiredIds = [];
+      
+      setMemos(prevMemos => {
+        const nextMemos = prevMemos.filter(m => {
+          if (!m.popped_at) return true;
+          const poppedTime = new Date(m.popped_at);
+          const diffMinutes = (now - poppedTime) / (1000 * 60);
+          const isExpired = diffMinutes >= 30;
+
+          if (isExpired) {
+            expiredIds.push(m.id);
+            // 현재 사이드바에 열려있는 메모가 만료된 경우 닫기
+            if (m.id === selectedMemoId) {
+              setSelectedMemoId(null);
+            }
+          }
+          return !isExpired;
+        });
+
+        return nextMemos.length !== prevMemos.length ? nextMemos : prevMemos;
+      });
+
+      // DB에서도 삭제 (백그라운드)
+      if (expiredIds.length > 0 && supabase) {
+        try {
+          await supabase.from('memos').delete().in('id', expiredIds);
+        } catch (err) {
+          console.error('Auto cleanup failed:', err);
+        }
+      }
+    };
+
+    const reaper = setInterval(cleanupExpiredMemos, 10000); // 10초마다 체크
+    return () => clearInterval(reaper);
+  }, [selectedMemoId]);
 
   useEffect(() => {
     if (map) fetchMemos();

@@ -4,8 +4,8 @@ import { X, Clock, MessageSquare, Trash2, Send } from 'lucide-react';
 
 /**
  * [Component] LNB 사이드바 / 모바일 바텀시트
- * @version 32.5
- * @description 터트리기 버튼 스케일 애니메이션 추가 (v32.5)
+ * @version 32.6
+ * @description 만료된 바블 자동 삭제 처리 대응 (v32.6)
  */
 const Sidebar = ({ 
   memo, 
