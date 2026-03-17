@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useDragControls } from 'framer-motion';
 import { X, Clock, MessageSquare, Trash2, Send } from 'lucide-react';
 
 /**
  * [Component] LNB 사이드바 / 모바일 바텀시트
- * @version 31.2
- * @description 높이 기반 가변형 바텀시트 고도화 (인풋 바운스 제거 및 하단 노출 이슈 해결)
+ * @version 31.3
+ * @description Y축 변동 기반 바텀시트 안정화 및 인풋 떨림 해결 버전
  */
 const Sidebar = ({ 
   memo, 
@@ -22,6 +22,7 @@ const Sidebar = ({
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [sheetHeight, setSheetHeight] = useState('half'); // 'half', 'full'
   const [windowHeight, setWindowHeight] = useState(window.innerHeight);
+  const dragControls = useDragControls();
 
   // 화면 크기 변화 감지 및 바디 스크롤 잠금
   useEffect(() => {
@@ -31,7 +32,9 @@ const Sidebar = ({
     };
     window.addEventListener('resize', handleResize);
     
+    // 모바일 열기 시 애니메이션 버그 방지를 위해 상태 초기화
     if (memo && isMobile) {
+      setSheetHeight('half');
       document.body.style.overflow = 'hidden';
       document.body.style.position = 'fixed';
       document.body.style.width = '100%';
@@ -78,8 +81,8 @@ const Sidebar = ({
     return () => clearInterval(timer);
   }, [memo?.popped_at]);
 
-  // 상태 변화 시 스냅 효과를 위한 스프링 설정
-  const springTransition = { type: 'spring', damping: 35, stiffness: 450 };
+  // 애니메이션 설정
+  const springTransition = { type: 'spring', damping: 30, stiffness: 400 };
 
   return (
     <AnimatePresence>
@@ -95,32 +98,35 @@ const Sidebar = ({
           />
           
           <motion.div 
-            // 모바일에서는 높이 변경, 하단 붕 뜸 방지를 위해 padding-bottom 활용
+            // Y축 위치 기반으로 상태 제어 (성능 및 안정성 위주)
             variants={{
-              half: isMobile ? { height: '40dvh' } : { x: 0, opacity: 1, y: 0 },
-              full: isMobile ? { height: '90dvh' } : { x: 0, opacity: 1, y: 0 },
-              closed: isMobile ? { height: '0dvh' } : { x: -400, opacity: 0 }
+              half: { y: windowHeight * 0.6 }, // 40% 노출 (하단에서 40% 위치)
+              full: { y: windowHeight * 0.1 }, // 90% 노출 (상단에서 10% 위치)
+              closed: { y: windowHeight }      // 0% 노출 (완전히 아래로)
             }}
             initial="closed"
-            animate={isMobile ? sheetHeight : "half"}
+            animate={isMobile ? sheetHeight : { y: 0, x: 0, opacity: 1 }}
             exit="closed"
             transition={springTransition}
             
+            // 모바일 전용 드래그 설정
             drag={isMobile ? "y" : false}
-            dragConstraints={{ top: 0, bottom: 0 }}
-            dragElastic={0} // 드래그 시 실제 위치가 딸려가지 않게 설정하여 지도가 스치지 않도록 함
+            dragControls={dragControls}
+            dragListener={false} // 핸들로만 조작
+            dragConstraints={{ top: windowHeight * 0.1, bottom: windowHeight }}
+            dragElastic={0.02}
             onDragEnd={(e, info) => {
               const velocity = info.velocity.y;
               const offset = info.offset.y;
 
               if (sheetHeight === 'half') {
-                if (offset < -30 || velocity < -500) {
+                if (offset < -50 || velocity < -500) {
                   setSheetHeight('full');
-                } else if (offset > 50 || velocity > 500) {
+                } else if (offset > 100 || velocity > 500) {
                   onClose();
                 }
               } else if (sheetHeight === 'full') {
-                if (offset > 50 || velocity > 500) {
+                if (offset > 100 || velocity > 500) {
                   setSheetHeight('half');
                 }
               }
@@ -130,17 +136,15 @@ const Sidebar = ({
               fixed z-[10000] bg-white shadow-2xl flex flex-col
               md:left-0 md:top-0 md:h-screen md:w-[380px]
               bottom-0 left-0 w-full rounded-t-[32px] md:rounded-none
-              overflow-hidden
+              overflow-hidden h-screen
             `}
-            style={{ 
-              // 하단 붕 뜸 현상 원천 차단을 위해 충분한 여유분 추가
-              paddingBottom: isMobile ? '200px' : '0',
-              marginBottom: isMobile ? '-200px' : '0'
-            }}
           >
-            {/* Mobile Drag Handle Area */}
+            {/* Mobile Drag Handle Area (여기서만 드래그 시작 가능) */}
             {isMobile && (
-              <div className="w-full flex justify-center pt-5 pb-3 flex-shrink-0 cursor-grab active:cursor-grabbing">
+              <div 
+                className="w-full flex justify-center pt-5 pb-5 flex-shrink-0 cursor-grab active:cursor-grabbing z-30"
+                onPointerDown={(e) => dragControls.start(e)}
+              >
                 <div className="w-14 h-1.5 bg-gray-200 rounded-full" />
               </div>
             )}
@@ -288,8 +292,8 @@ const Sidebar = ({
               </div>
             </div>
 
-            {/* Reply Input Box - 바운스 제거를 위해 모션 제외한 일반 div로 노출 (v31.2) */}
-            <div className="px-6 py-4 bg-white border-t border-gray-50 flex-shrink-0 safe-bottom">
+            {/* Reply Input Box - 바텀시트 하단에 견고하게 고정 */}
+            <div className="px-6 py-5 bg-white border-t border-gray-50 flex-shrink-0 z-20">
               <div className="relative flex items-center">
                 <input 
                   type="text" 
@@ -306,6 +310,8 @@ const Sidebar = ({
                   <Send size={18} strokeWidth={2.5} />
                 </button>
               </div>
+              {/* 모바일 홈 바 대응 여백 */}
+              {isMobile && <div className="h-4" />}
             </div>
           </motion.div>
         </>
