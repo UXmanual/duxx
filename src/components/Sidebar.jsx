@@ -4,7 +4,7 @@ import { X, Clock, MessageSquare, Trash2, Send } from 'lucide-react';
 
 /**
  * [Component] LNB 사이드바 / 모바일 바텀시트
- * @version 33.7
+ * @version 33.9
  * @description 터트리기 버튼 스타일 수정 및 터트리기 애니메이션 고도화 (v33.6)
  */
 const Sidebar = ({ 
@@ -142,7 +142,7 @@ const Sidebar = ({
         </div>
         {!memo.popped_at && (
           <button 
-            onClick={(e) => { e.stopPropagation(); onPop(memo.id); }}
+            onClick={(e) => { e.stopPropagation(); onPop(memo.id, e); }}
             className="p-2.5 bg-white border border-gray-100 rounded-xl hover:bg-gray-50 transition-all group"
           >
             <motion.svg 

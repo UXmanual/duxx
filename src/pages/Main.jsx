@@ -21,9 +21,9 @@ const formatDateTime = (dateString) => {
 
 /**
  * [Page] 메인 페이지 (지도 메모 기능 통합 버전)
- * @version 33.8
+ * @version 33.9
  * @description 
- * - canvas-confetti 기반의 '진짜 터지는' 고해상도 파편 효과 적용 버전입니다. (v33.8)
+ * - LNB/바텀시트 터트리기 버튼 파편 효과 연동 및 렌더링 최적화 버전입니다. (v33.9)
  */
 
 // 닉네임 조합용 상수
