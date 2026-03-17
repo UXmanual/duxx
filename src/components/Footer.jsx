@@ -3,7 +3,7 @@ import pkg from '../../package.json';
 
 /**
  * [Component] 푸터
- * @version 20.9
+ * @version 30.1
  * @author Antigravity
  * @description 
  * - 푸터의 배포 시간 정보를 제거하고 빌드 버전만 노출하도록 간소화했습니다.
@@ -19,9 +19,6 @@ const Footer = () => {
             <p className="text-[14px] font-bold tracking-[0]">
               Build v{pkg.version}
             </p>
-            <span className="text-[12px] opacity-60">
-              Last Deployed: 2026.03.16 23:50
-            </span>
           </div>
           {/* 저작권: 블랙 0.3 */}
           <p className="font-black text-[14px] tracking-[0] select-none">
