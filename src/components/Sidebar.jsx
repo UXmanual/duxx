@@ -4,8 +4,8 @@ import { X, Clock, MessageSquare, Trash2, Send } from 'lucide-react';
 
 /**
  * [Component] LNB 사이드바 / 모바일 바텀시트
- * @version 30.6
- * @description 모바일 헤더 제거 및 바텀시트 점프 오류 수정
+ * @version 30.7
+ * @description 픽셀 기반 드래그 추종성 강화 및 점프 오류 수정
  */
 const Sidebar = ({ 
   memo, 
@@ -21,10 +21,14 @@ const Sidebar = ({
   const [timeLeft, setTimeLeft] = useState('');
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [sheetHeight, setSheetHeight] = useState('half'); // 'half', 'full'
+  const [windowHeight, setWindowHeight] = useState(window.innerHeight);
 
   // 화면 크기 변화 감지 및 바디 스크롤 잠금
   useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+      setWindowHeight(window.innerHeight);
+    };
     window.addEventListener('resize', handleResize);
     
     if (memo && isMobile) {
@@ -43,7 +47,7 @@ const Sidebar = ({
     };
   }, [memo, isMobile]);
 
-  // 최신 답글이 위로 오도록 정렬 (v1.5 추가)
+  // 최신 답글이 위로 오도록 정렬
   const sortedReplies = [...replies].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
   // 실시간 소멸 카운트다운 로직
@@ -78,7 +82,7 @@ const Sidebar = ({
     <AnimatePresence>
       {memo && (
         <>
-          {/* Background Overlay - Mobile Only (v2.1: 투명하게 수정) */}
+          {/* Background Overlay - Mobile Only */}
           <motion.div 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -87,31 +91,31 @@ const Sidebar = ({
             onClick={onClose}
           />
           
-           <motion.div 
+          <motion.div 
             variants={{
-              half: { y: '50vh' },
+              half: { y: windowHeight * 0.5 },
               full: { y: 0 },
-              closed: { y: '100vh' }
+              closed: { y: windowHeight }
             }}
             initial={isMobile ? "closed" : { x: -400, opacity: 0 }}
             animate={isMobile ? sheetHeight : { x: 0, opacity: 1, y: 0 }}
             exit={isMobile ? "closed" : { x: -400, opacity: 0 }}
-            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+            transition={{ type: 'spring', damping: 30, stiffness: 250 }}
             drag={isMobile ? "y" : false}
-            dragConstraints={{ top: 0 }}
-            dragElastic={0.05}
+            dragConstraints={{ top: 0, bottom: windowHeight }}
+            dragElastic={0.1}
             onDragEnd={(e, info) => {
               const offset = info.offset.y;
               const velocity = info.velocity.y;
 
               if (sheetHeight === 'half') {
-                if (offset < -50 || velocity < -500) {
+                if (offset < -100 || velocity < -500) {
                   setSheetHeight('full');
-                } else if (offset > 100 || velocity > 500) {
+                } else if (offset > 150 || velocity > 500) {
                   onClose();
                 }
               } else if (sheetHeight === 'full') {
-                if (offset > 100 || velocity > 500) {
+                if (offset > 150 || velocity > 500) {
                   setSheetHeight('half');
                 }
               }
@@ -123,9 +127,9 @@ const Sidebar = ({
               ${isMobile ? 'h-screen' : 'h-auto'}
             `}
           >
-            {/* Mobile Drag Handle Area (항상 드래그 가능) */}
+            {/* Mobile Drag Handle Area */}
             {isMobile && (
-              <div className="w-full flex justify-center pt-4 pb-4 flex-shrink-0 drag-handle cursor-grab active:cursor-grabbing">
+              <div className="w-full flex justify-center pt-5 pb-5 flex-shrink-0 drag-handle cursor-grab active:cursor-grabbing">
                 <div className="w-14 h-1.5 bg-gray-200 rounded-full" />
               </div>
             )}
