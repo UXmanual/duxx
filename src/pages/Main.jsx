@@ -18,7 +18,7 @@ const formatDateTime = (dateString) => {
 };
 /**
  * [Page] 메인 페이지 (지도 메모 기능 통합 버전)
- * @version 25.1
+ * @version 25.2
  * @author Antigravity
  * @description 
  * - 바블 리스트 간격 복구 및 닉네임 하단 여백 최적화 버전입니다.
@@ -81,13 +81,12 @@ const Main = () => {
     return R * c;
   };
 
-  // 겹침 방지 분산 알고리즘 (Spiderfy) 적용된 메모 그룹화 (v25.1)
+  // 겹침 방지 분산 알고리즘 (Spiderfy) 강화 버전 (v25.2)
   const groupedMemos = useMemo(() => {
     const rootMemos = memos.filter(m => !m.parent_id);
     if (rootMemos.length === 0) return [];
 
-    let processed = [];
-    const proximityLimit = 40; // 40미터 이내면 겹침으로 판단
+    const proximityLimit = 100; // 100미터 이내 바블들을 분산 대상으로 잡음
 
     // 1. 근접 그룹 형성
     let unassigned = [...rootMemos];
@@ -109,21 +108,21 @@ const Main = () => {
       unassigned = remaining;
     }
 
-    // 2. 그룹 내 좌표 분산 (Circular/Spiral Offset)
+    // 2. 그룹 내 좌표 분산 (강화된 Spiral Offset)
     return groups.map(group => {
       if (group.length === 1) return group;
 
       return group.map((memo, index) => {
-        if (index === 0) return memo; // 첫 번째는 제자리
+        if (index === 0) return memo; // 첫 번째는 기준점 제자리
 
-        // 인덱스에 따라 원형으로 배치 (반경 약 25m 내외 오프셋)
         const angle = (index * (2 * Math.PI)) / (group.length - 1);
-        const radius = 0.00025; // 위경도 단위 약 25~30m
+        // 바블 크기(약 240px)를 고려하여 분산 반경을 대폭 확대 (약 80~100m 거리)
+        const radius = 0.0008; 
         
         return {
           ...memo,
-          lat: memo.lat + Math.sin(angle) * radius,
-          lng: memo.lng + Math.cos(angle) * (radius * 1.2) // 경도 보정
+          lat: memo.lat + Math.sin(angle) * (radius * 1.2), // 위도 오프셋 더 크게 (위아래 겹침 방지)
+          lng: memo.lng + Math.cos(angle) * (radius * 1.8) // 경도 오프셋 보정
         };
       });
     });
