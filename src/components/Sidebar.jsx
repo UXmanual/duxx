@@ -1,11 +1,11 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Clock, MessageSquare, Trash2, Send } from 'lucide-react';
 
 /**
- * [Component] LNB 사이드바 / 모바일 바텀시트 (Framer Motion 적용 버전)
- * @version 1.1
- * @description 바블의 상세 정보(작성자, 내용, 답글, 시간, 터트리기)를 표시합니다.
+ * [Component] LNB 사이드바 / 모바일 바텀시트
+ * @version 1.2
+ * @description 바블의 상세 정보 표시 및 실시간 소멸 카운트다운 적용
  */
 const Sidebar = ({ 
   memo, 
@@ -18,6 +18,36 @@ const Sidebar = ({
   setReplyText,
   formatDateTime 
 }) => {
+  const [timeLeft, setTimeLeft] = useState('');
+
+  // 실시간 소멸 카운트다운 로직 (v1.2 추가)
+  useEffect(() => {
+    if (!memo?.popped_at) {
+      setTimeLeft('');
+      return;
+    }
+
+    const updateTimer = () => {
+      const poppedTime = new Date(memo.popped_at);
+      const now = new Date();
+      const diffMs = now - poppedTime;
+      const remainingMs = (30 * 60 * 1000) - diffMs;
+
+      if (remainingMs <= 0) {
+        setTimeLeft('00:00');
+        return;
+      }
+
+      const minutes = Math.floor(remainingMs / (1000 * 60));
+      const seconds = Math.floor((remainingMs % (1000 * 60)) / 1000);
+      setTimeLeft(`${minutes}:${seconds.toString().padStart(2, '0')}`);
+    };
+
+    updateTimer();
+    const timer = setInterval(updateTimer, 1000);
+    return () => clearInterval(timer);
+  }, [memo?.popped_at]);
+
   return (
     <AnimatePresence>
       {memo && (
@@ -43,11 +73,12 @@ const Sidebar = ({
               max-h-[85vh] md:max-h-none
             `}
           >
-            {/* Header */}
+            {/* Header - Logo 적용 (v1.2) */}
             <div className="sticky top-0 bg-white/90 backdrop-blur-md z-10 px-6 py-5 flex items-center justify-between border-b border-gray-100 flex-shrink-0">
-              <div className="flex flex-col">
-                <h2 className="text-lg font-black text-gray-900 leading-tight">상세 정보</h2>
-                <p className="text-[11px] text-[#FF4D00] font-bold uppercase tracking-wider">Bubble Details</p>
+              <div className="flex items-center">
+                <span className="logo-font text-[20px] tracking-[0] uppercase text-[#FF4D00] select-none">
+                  BABBLE
+                </span>
               </div>
               <motion.button 
                 whileHover={{ scale: 1.1 }}
@@ -112,18 +143,12 @@ const Sidebar = ({
                     <div className="flex items-center gap-4">
                       <span className={`flex items-center gap-1.5 ${memo.popped_at ? 'text-[#FF4D00]' : 'text-blue-500'}`}>
                         <div className={`w-1.5 h-1.5 rounded-full animate-pulse ${memo.popped_at ? 'bg-[#FF4D00]' : 'bg-blue-500'}`} />
-                        {memo.popped_at ? '터진 바블 (30분 후 소멸)' : '활성화 상태'}
+                        {memo.popped_at ? `${timeLeft} 후 소멸` : '활성화 상태'}
                       </span>
-                      <span className="flex items-center gap-1.5">
+                      <span className="flex items-center gap-1.5 text-gray-400">
                         <MessageSquare size={12} strokeWidth={2.5} /> 답글 {replies.length}
                       </span>
                     </div>
-                    <button 
-                      onClick={() => onDelete(memo.id)}
-                      className="text-gray-300 hover:text-red-500 flex items-center gap-1 transition-all"
-                    >
-                      <Trash2 size={12} /> 삭제
-                    </button>
                   </div>
                 </div>
 
