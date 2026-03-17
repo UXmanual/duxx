@@ -21,9 +21,9 @@ const formatDateTime = (dateString) => {
 
 /**
  * [Page] 메인 페이지 (지도 메모 기능 통합 버전)
- * @version 34.1
+ * @version 34.2
  * @description 
- * - 바블 터트리기 폭발 센터 정밀 조정 및 CSS 파편 제거 버전입니다. (v34.1)
+ * - 폭발 명중률 100%: 실제 DOM 요소를 추적하여 터트리기 아이콘 위치를 정확히 타격하는 버전입니다. (v34.2)
  */
 
 // 닉네임 조합용 상수
@@ -259,32 +259,44 @@ const Main = () => {
   const handlePopBubble = async (id, e) => {
     if (e) e.stopPropagation();
     
-    // v34.0: 버튼 위치가 아닌, 실제 바블의 지도상 위치를 계산해 파편 폭발 발생 (True Location Burst)
-    const targetMemo = memos.find(m => m.id === id);
-    if (targetMemo && map) {
-      const projection = map.getProjection();
-      const latlng = new window.kakao.maps.LatLng(targetMemo.lat, targetMemo.lng);
-      const point = projection.pointFromCoords(latlng);
-      const containerNode = map.getNode();
-      const rect = containerNode.getBoundingClientRect();
-      
-      const origin = {
-        x: (rect.left + point.x) / window.innerWidth,
-        // v34.1: 바블의 시각적 중앙(약 45px 위)에서 터지도록 오프셋 정밀 조정
-        y: (rect.top + point.y - 45) / window.innerHeight 
+    // v34.2: DOM 요소를 직접 찾아 아이콘 위치를 100% 정확하게 타격
+    const popElement = document.querySelector(`[data-pop-id="${id}"]`);
+    let origin;
+
+    if (popElement) {
+      const rect = popElement.getBoundingClientRect();
+      origin = {
+        x: (rect.left + rect.width / 2) / window.innerWidth,
+        y: (rect.top + rect.height / 2) / window.innerHeight
       };
-      
+    } else {
+      // 폴백: 요소를 찾지 못한 경우 (시야 밖 등) 계산식 활용
+      const targetMemo = memos.find(m => m.id === id);
+      if (targetMemo && map) {
+        const projection = map.getProjection();
+        const latlng = new window.kakao.maps.LatLng(targetMemo.lat, targetMemo.lng);
+        const point = projection.pointFromCoords(latlng);
+        const containerNode = map.getNode();
+        const containerRect = containerNode.getBoundingClientRect();
+        origin = {
+          x: (containerRect.left + point.x) / window.innerWidth,
+          y: (containerRect.top + point.y - 45) / window.innerHeight 
+        };
+      }
+    }
+
+    if (origin) {
       confetti({
         particleCount: 100,
         spread: 360,
-        startVelocity: 40,
-        gravity: 1,
-        ticks: 70,
+        startVelocity: 45,
+        gravity: 1.1,
+        ticks: 80,
         origin: origin,
         colors: ['#FF4D00', '#FF8A00', '#FF1E00', '#FFF', '#FFE5D9'],
         shapes: ['circle'],
         scalar: 0.9,
-        zIndex: 10002
+        zIndex: 10005
       });
     }
 
@@ -386,7 +398,7 @@ const Main = () => {
                       <div className="absolute w-12 h-12 border-4 border-[#FF4D00] rounded-full animate-shockwave" />
                     </div>
                   )}
-                  <div className={`relative px-4 py-2 bg-white/90 backdrop-blur-md border-2 border-[#FF4D00] rounded-full shadow-lg flex items-center gap-2 min-w-[50px] max-w-[220px] cursor-pointer ${memo.is_popping ? 'animate-bubble-pop' : ''}`}
+                  <div className={`relative px-4 py-2 bg-white/90 backdrop-blur-md border-2 rounded-full shadow-lg flex items-center gap-2 min-w-[50px] max-w-[220px] cursor-pointer transition-all duration-300 ${memo.is_popping ? 'animate-bubble-pop' : ''} ${selectedMemoId === memo.id ? 'border-[#FF4D00] ring-4 ring-[#FF4D00]/30 z-[50] scale-105 shadow-[#FF4D00]/20' : 'border-[#FF4D00]'}`}
                     onClick={(e) => { 
                     e.stopPropagation(); 
                     panToWithOffset(memo.lat, memo.lng);
@@ -400,7 +412,11 @@ const Main = () => {
                     {memos.filter(m => m.parent_id === memo.id).length > 0 && <div className="absolute -top-2 -right-2 bg-[#FF4D00] text-white text-[10px] font-black px-1.5 py-0.5 rounded-full border border-white min-w-[20px] flex justify-center">{memos.filter(m => m.parent_id === memo.id).length}</div>}
                     <div className="flex-1 overflow-hidden font-bold text-[13px] truncate whitespace-nowrap">{memo.text}</div>
                     {!memo.popped_at && (
-                      <button onClick={(e) => handlePopBubble(memo.id, e)} className="w-6 h-6 rounded-full flex items-center justify-center hover:bg-[#FF4D00]/10">
+                      <button 
+                        data-pop-id={memo.id}
+                        onClick={(e) => handlePopBubble(memo.id, e)} 
+                        className="w-6 h-6 rounded-full flex items-center justify-center hover:bg-[#FF4D00]/10 transition-colors"
+                      >
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FF4D00" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="animate-pulse"><path d="M12 2v2M12 20v2M2 12h2M20 12h2M19.07 4.93l-1.41 1.41M6.34 17.66l-1.41 1.41M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41" /></svg>
                       </button>
                     )}
