@@ -18,7 +18,7 @@ const formatDateTime = (dateString) => {
 };
 /**
  * [Page] 메인 페이지 (지도 메모 기능 통합 버전)
- * @version 22.5
+ * @version 22.7
  * @author Antigravity
  * @description 
  * - 바블 리스트 간격 복구 및 닉네임 하단 여백 최적화 버전입니다.
@@ -592,7 +592,7 @@ const Main = () => {
                                       <div className="flex flex-col gap-1 mt-1">
                                         <input 
                                           autoFocus
-                                          className="w-full text-[12px] px-2 py-1.5 rounded border border-gray-200 outline-none focus:border-[#FF4D00] shadow-inner"
+                                          className="w-full text-[16px] px-2 py-1.5 rounded border border-gray-200 outline-none focus:border-[#FF4D00] shadow-inner"
                                           placeholder="답글 남기기..."
                                           value={replyText}
                                           onChange={(e) => setReplyText(e.target.value)}
@@ -740,7 +740,7 @@ const Main = () => {
                               <div className="flex flex-col gap-1 mt-1">
                                 <input 
                                   autoFocus
-                                  className="w-full text-[12px] px-2 py-1.5 rounded border border-gray-200 outline-none focus:border-[#FF4D00] shadow-inner"
+                                  className="w-full text-[16px] px-2 py-1.5 rounded border border-gray-200 outline-none focus:border-[#FF4D00] shadow-inner"
                                   placeholder="대화에 참여해보세요..."
                                   value={replyText}
                                   onChange={(e) => setReplyText(e.target.value)}
