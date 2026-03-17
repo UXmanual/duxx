@@ -4,8 +4,8 @@ import { X, Clock, MessageSquare, Trash2, Send } from 'lucide-react';
 
 /**
  * [Component] LNB 사이드바 / 모바일 바텀시트
- * @version 30.9
- * @description 40%/90% 가변형 바텀시트 및 드래그 핸들 제어 최적화
+ * @version 31.0
+ * @description 40%/90% 가변형 바텀시트 고도화 및 하단 인풋 고정 수정
  */
 const Sidebar = ({ 
   memo, 
@@ -101,24 +101,25 @@ const Sidebar = ({
             initial={isMobile ? "closed" : { x: -400, opacity: 0 }}
             animate={isMobile ? sheetHeight : { x: 0, opacity: 1, y: 0 }}
             exit={isMobile ? "closed" : { x: -400, opacity: 0 }}
-            transition={{ type: 'spring', damping: 35, stiffness: 300 }}
+            // 인스턴트한 느낌을 위해 물리엔진 값 조정 (반응 속도 상향)
+            transition={{ type: 'spring', damping: 25, stiffness: 350, restDelta: 0.5 }}
             drag={isMobile ? "y" : false}
             dragControls={dragControls}
-            dragListener={false} // 핸들로만 드래그 허용
+            dragListener={false} 
             dragConstraints={{ top: windowHeight * 0.1, bottom: windowHeight }}
-            dragElastic={0.05}
+            dragElastic={0.02}
             onDragEnd={(e, info) => {
               const offset = info.offset.y;
               const velocity = info.velocity.y;
 
               if (sheetHeight === 'half') {
-                if (offset < -50 || velocity < -500) {
+                if (offset < -50 || velocity < -300) {
                   setSheetHeight('full');
-                } else if (offset > 100 || velocity > 500) {
+                } else if (offset > 80 || velocity > 300) {
                   onClose();
                 }
               } else if (sheetHeight === 'full') {
-                if (offset > 100 || velocity > 500) {
+                if (offset > 100 || velocity > 300) {
                   setSheetHeight('half');
                 }
               }
@@ -130,7 +131,7 @@ const Sidebar = ({
               h-screen md:h-full overflow-hidden
             `}
           >
-            {/* Mobile Drag Handle Area (여기서만 드래그 시작) */}
+            {/* Mobile Drag Handle Area */}
             {isMobile && (
               <div 
                 className="w-full flex justify-center pt-5 pb-5 flex-shrink-0 cursor-grab active:cursor-grabbing"
@@ -159,9 +160,10 @@ const Sidebar = ({
               </div>
             )}
 
+            {/* Content Area - Scrollable */}
             <div 
               className="flex-1 overflow-y-auto custom-scrollbar"
-              onPointerDown={(e) => e.stopPropagation()} // 내부 영역 터치 시 드래그 전파 방지
+              onPointerDown={(e) => e.stopPropagation()} 
             >
               <div className="p-6 space-y-8">
                 {/* Main Content Card */}
@@ -230,7 +232,7 @@ const Sidebar = ({
                 </div>
 
                 {/* Replies Section */}
-                <div className="space-y-5 pb-24">
+                <div className="space-y-5">
                   <div className="flex items-center justify-between">
                     <h3 className="font-black text-gray-900 text-sm">답글 <span className="text-[#FF4D00] ml-1">{replies.length}</span></h3>
                     <div className="h-px bg-gray-100 flex-1 ml-4" />
@@ -277,18 +279,20 @@ const Sidebar = ({
                     )}
                   </div>
                 </div>
+                {/* 인풋 영역이 덮지 않도록 하단 여백 추가 (v31.0) */}
+                <div className="h-[120px] md:h-0" />
               </div>
             </div>
 
-            {/* Reply Input Box */}
-            <div className="p-6 bg-white/80 backdrop-blur-lg border-t border-gray-100 flex-shrink-0">
+            {/* Reply Input Box - Fixed Bottom */}
+            <div className="p-6 pb-12 md:pb-6 bg-white border-t border-gray-100 flex-shrink-0 sticky bottom-0 left-0 w-full z-20">
               <div className="relative flex items-center">
                 <input 
                   type="text" 
                   value={replyText}
                   onChange={(e) => setReplyText(e.target.value)}
                   placeholder="말하고싶은 바블을 남겨주세요"
-                  className="w-full pl-6 pr-16 py-4 bg-gray-50 border border-gray-100 rounded-[20px] text-[13px] font-bold focus:outline-none focus:ring-4 focus:ring-[#FF4D00]/10 focus:bg-white focus:border-[#FF4D00]/30 transition-all placeholder:text-gray-300"
+                  className="w-full pl-6 pr-16 py-4 bg-gray-50 border border-gray-100 rounded-[20px] text-[13px] font-bold focus:outline-none focus:ring-4 focus:ring-[#FF4D00]/10 focus:bg-white focus:border-[#FF4D00]/30 transition-all placeholder:text-gray-300 shadow-sm"
                   onKeyPress={(e) => e.key === 'Enter' && onReplySubmit(memo.id)}
                 />
                 <motion.button 
