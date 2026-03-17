@@ -19,10 +19,10 @@ const formatDateTime = (dateString) => {
 };
 /**
  * [Page] 메인 페이지 (지도 메모 기능 통합 버전)
- * @version 31.3
+ * @version 31.4
  * @author Antigravity
  * @description 
- * - 모바일 바텀시트 Y축 제어 방식 안정화 및 인풋 떨림 해결 버전입니다.
+ * - 모바일 바텀시트 높이 조절 방식 안정화 및 인풋 노출 최적화 버전입니다.
  */
 
 // 닉네임 조합용 상수

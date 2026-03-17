@@ -4,8 +4,8 @@ import { X, Clock, MessageSquare, Trash2, Send } from 'lucide-react';
 
 /**
  * [Component] LNB 사이드바 / 모바일 바텀시트
- * @version 31.3
- * @description Y축 변동 기반 바텀시트 안정화 및 인풋 떨림 해결 버전
+ * @version 31.4
+ * @description 높이(Height) 애니메이션 기반 안정화 및 인풋 노출 최적화 버전
  */
 const Sidebar = ({ 
   memo, 
@@ -32,7 +32,6 @@ const Sidebar = ({
     };
     window.addEventListener('resize', handleResize);
     
-    // 모바일 열기 시 애니메이션 버그 방지를 위해 상태 초기화
     if (memo && isMobile) {
       setSheetHeight('half');
       document.body.style.overflow = 'hidden';
@@ -81,8 +80,13 @@ const Sidebar = ({
     return () => clearInterval(timer);
   }, [memo?.popped_at]);
 
-  // 애니메이션 설정
-  const springTransition = { type: 'spring', damping: 30, stiffness: 400 };
+  // 매우 즉각적인 반응을 위한 transition 설정
+  const fastSnapTransition = {
+    type: 'spring',
+    stiffness: 500,
+    damping: 40,
+    restDelta: 0.1
+  };
 
   return (
     <AnimatePresence>
@@ -98,23 +102,23 @@ const Sidebar = ({
           />
           
           <motion.div 
-            // Y축 위치 기반으로 상태 제어 (성능 및 안정성 위주)
+            // 높이(height)를 직접 조절하여 인풋창이 가려지지 않도록 수정
             variants={{
-              half: { y: windowHeight * 0.6 }, // 40% 노출 (하단에서 40% 위치)
-              full: { y: windowHeight * 0.1 }, // 90% 노출 (상단에서 10% 위치)
-              closed: { y: windowHeight }      // 0% 노출 (완전히 아래로)
+              half: isMobile ? { height: windowHeight * 0.4, y: 0 } : { x: 0, opacity: 1, y: 0, width: '380px' },
+              full: isMobile ? { height: windowHeight * 0.9, y: 0 } : { x: 0, opacity: 1, y: 0, width: '380px' },
+              closed: isMobile ? { height: 0, y: 0 } : { x: -400, opacity: 0 }
             }}
             initial="closed"
-            animate={isMobile ? sheetHeight : { y: 0, x: 0, opacity: 1 }}
+            animate={isMobile ? sheetHeight : "half"}
             exit="closed"
-            transition={springTransition}
+            transition={fastSnapTransition}
             
-            // 모바일 전용 드래그 설정
+            // 모바일 전용 드래그 설정 (y축 변위만 감지하여 상태 전환)
             drag={isMobile ? "y" : false}
             dragControls={dragControls}
-            dragListener={false} // 핸들로만 조작
-            dragConstraints={{ top: windowHeight * 0.1, bottom: windowHeight }}
-            dragElastic={0.02}
+            dragListener={false} 
+            dragConstraints={{ top: 0, bottom: 0 }}
+            dragElastic={0} // 드래그 시 하단이 들리는 현상 방지
             onDragEnd={(e, info) => {
               const velocity = info.velocity.y;
               const offset = info.offset.y;
@@ -122,7 +126,7 @@ const Sidebar = ({
               if (sheetHeight === 'half') {
                 if (offset < -50 || velocity < -500) {
                   setSheetHeight('full');
-                } else if (offset > 100 || velocity > 500) {
+                } else if (offset > 80 || velocity > 500) {
                   onClose();
                 }
               } else if (sheetHeight === 'full') {
@@ -134,15 +138,15 @@ const Sidebar = ({
 
             className={`
               fixed z-[10000] bg-white shadow-2xl flex flex-col
-              md:left-0 md:top-0 md:h-screen md:w-[380px]
+              md:left-0 md:top-0 md:h-screen
               bottom-0 left-0 w-full rounded-t-[32px] md:rounded-none
-              overflow-hidden h-screen
+              overflow-hidden
             `}
           >
-            {/* Mobile Drag Handle Area (여기서만 드래그 시작 가능) */}
+            {/* Mobile Drag Handle Area */}
             {isMobile && (
               <div 
-                className="w-full flex justify-center pt-5 pb-5 flex-shrink-0 cursor-grab active:cursor-grabbing z-30"
+                className="w-full flex justify-center pt-5 pb-4 flex-shrink-0 cursor-grab active:cursor-grabbing touch-none"
                 onPointerDown={(e) => dragControls.start(e)}
               >
                 <div className="w-14 h-1.5 bg-gray-200 rounded-full" />
@@ -287,12 +291,12 @@ const Sidebar = ({
                     )}
                   </div>
                 </div>
-                {/* 인풋 영역 높이만큼 여백 */}
-                <div className="h-20 md:h-0" />
+                {/* 하단 인풋 여백 */}
+                <div className="h-20" />
               </div>
             </div>
 
-            {/* Reply Input Box - 바텀시트 하단에 견고하게 고정 */}
+            {/* Reply Input Box - 바텀시트 하단에 고정 */}
             <div className="px-6 py-5 bg-white border-t border-gray-50 flex-shrink-0 z-20">
               <div className="relative flex items-center">
                 <input 
@@ -300,7 +304,7 @@ const Sidebar = ({
                   value={replyText}
                   onChange={(e) => setReplyText(e.target.value)}
                   placeholder="말하고싶은 바블을 남겨주세요"
-                  className="w-full pl-6 pr-16 py-4 bg-gray-50 border border-gray-100 rounded-[20px] text-[13px] font-bold focus:outline-none focus:ring-4 focus:ring-[#FF4D00]/10 focus:bg-white focus:border-[#FF4D00]/30 transition-all placeholder:text-gray-300"
+                  className="w-full pl-6 pr-16 py-4 bg-gray-50 border border-gray-100 rounded-[20px] text-[13px] font-bold focus:outline-none focus:ring-4 focus:ring-[#FF4D00]/10 focus:bg-white focus:border-[#FF4D00]/30 transition-all placeholder:text-gray-300 shadow-sm"
                   onKeyPress={(e) => e.key === 'Enter' && onReplySubmit(memo.id)}
                 />
                 <button 
@@ -310,8 +314,8 @@ const Sidebar = ({
                   <Send size={18} strokeWidth={2.5} />
                 </button>
               </div>
-              {/* 모바일 홈 바 대응 여백 */}
-              {isMobile && <div className="h-4" />}
+              {/* iOS 세이프 에어리어 대응 */}
+              <div className="h-safe-bottom" style={{ height: 'env(safe-area-inset-bottom, 16px)' }} />
             </div>
           </motion.div>
         </>
