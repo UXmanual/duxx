@@ -4,8 +4,8 @@ import { X, Clock, MessageSquare, Trash2, Send } from 'lucide-react';
 
 /**
  * [Component] LNB 사이드바 / 모바일 바텀시트
- * @version 30.5
- * @description 50vh/100vh 확장형 바텀시트 및 스크롤 간섭 수정
+ * @version 30.6
+ * @description 모바일 헤더 제거 및 바텀시트 점프 오류 수정
  */
 const Sidebar = ({ 
   memo, 
@@ -88,16 +88,18 @@ const Sidebar = ({
           />
           
            <motion.div 
-            initial={isMobile ? { y: '100%' } : { x: -400, opacity: 0 }}
-            animate={isMobile 
-              ? { y: sheetHeight === 'half' ? '50%' : '0%' } 
-              : { x: 0, opacity: 1 }
-            }
-            exit={isMobile ? { y: '100%' } : { x: -400, opacity: 0 }}
+            variants={{
+              half: { y: '50vh' },
+              full: { y: 0 },
+              closed: { y: '100vh' }
+            }}
+            initial={isMobile ? "closed" : { x: -400, opacity: 0 }}
+            animate={isMobile ? sheetHeight : { x: 0, opacity: 1, y: 0 }}
+            exit={isMobile ? "closed" : { x: -400, opacity: 0 }}
             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
             drag={isMobile ? "y" : false}
-            dragConstraints={{ top: 0, bottom: 0 }}
-            dragElastic={0.1}
+            dragConstraints={{ top: 0 }}
+            dragElastic={0.05}
             onDragEnd={(e, info) => {
               const offset = info.offset.y;
               const velocity = info.velocity.y;
@@ -123,27 +125,29 @@ const Sidebar = ({
           >
             {/* Mobile Drag Handle Area (항상 드래그 가능) */}
             {isMobile && (
-              <div className="w-full flex justify-center pt-3 pb-3 flex-shrink-0 drag-handle cursor-grab active:cursor-grabbing">
-                <div className="w-12 h-1.5 bg-gray-200 rounded-full" />
+              <div className="w-full flex justify-center pt-4 pb-4 flex-shrink-0 drag-handle cursor-grab active:cursor-grabbing">
+                <div className="w-14 h-1.5 bg-gray-200 rounded-full" />
               </div>
             )}
             
-            {/* Header - Logo 적용 (v1.2) - 핸들 역할 병행 */}
-            <div className="sticky top-0 bg-white/90 backdrop-blur-md z-10 px-6 py-4 flex items-center justify-between border-b border-gray-100 flex-shrink-0 drag-handle">
-              <div className="flex items-center">
-                <span className="logo-font text-[20px] tracking-[0] uppercase text-[#FF4D00] select-none">
-                  BABBLE
-                </span>
+            {/* Desktop Only Header */}
+            {!isMobile && (
+              <div className="sticky top-0 bg-white/90 backdrop-blur-md z-10 px-6 py-5 flex items-center justify-between border-b border-gray-100 flex-shrink-0">
+                <div className="flex items-center">
+                  <span className="logo-font text-[20px] tracking-[0] uppercase text-[#FF4D00] select-none">
+                    BABBLE
+                  </span>
+                </div>
+                <motion.button 
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                  onClick={onClose} 
+                  className="p-2.5 hover:bg-gray-100 rounded-full transition-all"
+                >
+                  <X size={20} className="text-gray-400" />
+                </motion.button>
               </div>
-              <motion.button 
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
-                onClick={onClose} 
-                className="p-2.5 hover:bg-gray-100 rounded-full transition-all"
-              >
-                <X size={20} className="text-gray-400" />
-              </motion.button>
-            </div>
+            )}
 
             <div 
               className="flex-1 overflow-y-auto custom-scrollbar"
