@@ -18,7 +18,7 @@ const formatDateTime = (dateString) => {
 };
 /**
  * [Page] 메인 페이지 (지도 메모 기능 통합 버전)
- * @version 23.1
+ * @version 23.2
  * @author Antigravity
  * @description 
  * - 바블 리스트 간격 복구 및 닉네임 하단 여백 최적화 버전입니다.
@@ -368,7 +368,7 @@ const Main = () => {
             xAnchor={0.5}
             yAnchor={0.5}
           >
-            <div className="relative flex items-center justify-center pointer-events-none select-none">
+            <div className={`relative flex items-center justify-center pointer-events-none select-none ${isDark ? 'invert-fix' : ''}`}>
               <div className="absolute w-8 h-8 bg-[#FF4D00] rounded-full animate-ping opacity-30" />
               <div className="relative w-[24px] h-[24px] bg-[#FF4D00] border-2 border-white rounded-full flex items-center justify-center shadow-[0_2px_8px_rgba(0,0,0,0.3)]">
                 <div className="w-[6px] h-[6px] bg-white rounded-full" />
@@ -477,7 +477,7 @@ const Main = () => {
                 {/* 0x0 크기의 앵커 기준점 */}
                 <div className="relative w-0 h-0 group animate-pop-in pointer-events-none">
                   {/* 기준(최신) 말풍선 Wrapper - 왼쪽 꼬리 정렬 복구 */}
-                  <div className="absolute bottom-0 left-[-18px] flex flex-col pb-[6px] pointer-events-auto">
+                  <div className={`absolute bottom-0 left-[-18px] flex flex-col pb-[6px] pointer-events-auto ${isDark ? 'invert-fix' : ''}`}>
                     
                     <div 
                       className={`relative px-3 py-2 border-[1.5px] border-[#FF4D00] rounded-[8px] shadow-lg flex flex-col gap-1 w-max min-w-[120px] max-w-[240px] select-none ${hiddenCount > 0 ? 'cursor-pointer' : ''} bg-white [touch-action:manipulation]`}
@@ -864,7 +864,9 @@ const Main = () => {
         }
         .kakao-dark-theme img { filter: none !important; }
         
-        
+        .invert-fix {
+          filter: invert(100%) hue-rotate(180deg) !important;
+        }
 
         @keyframes pop-in {
           0% { transform: scale(0.8) translateY(10px); opacity: 0; }
