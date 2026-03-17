@@ -19,10 +19,10 @@ const formatDateTime = (dateString) => {
 };
 /**
  * [Page] 메인 페이지 (지도 메모 기능 통합 버전)
- * @version 31.6
+ * @version 31.7
  * @author Antigravity
  * @description 
- * - 모바일 바텀시트 리얼타임 인터랙티브 스와이프 및 드래그 영역 최적화 버전입니다.
+ * - 모바일 바텀시트 인터랙티브 스와이프 복구 및 안정화 버전입니다.
  */
 
 // 닉네임 조합용 상수

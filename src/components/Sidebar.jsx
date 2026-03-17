@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence, useDragControls, useMotionValue, animate } from 'framer-motion';
+import { motion, AnimatePresence, useMotionValue, animate } from 'framer-motion';
 import { X, Clock, MessageSquare, Trash2, Send } from 'lucide-react';
 
 /**
  * [Component] LNB 사이드바 / 모바일 바텀시트
- * @version 31.6
- * @description 인터랙티브 높이 조절(onPan) 방식 적용으로 '손가락 밀착' 스와이프 구현 및 상단 점프 현상 해결
+ * @version 31.7
+ * @description 인터랙티브 높이 스와이프 및 드래그 가시성 오류 수정 버전
  */
 const Sidebar = ({ 
   memo, 
@@ -22,9 +22,8 @@ const Sidebar = ({
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [windowHeight, setWindowHeight] = useState(window.innerHeight);
   
-  // 리얼타임 높이 제어를 위한 MotionValue
-  const sheetH = useMotionValue(0);
-  const isDragging = useRef(false);
+  // 리얼타임 높이 제어를 위한 MotionValue (초기값 0)
+  const sheetHeight = useMotionValue(0);
 
   // 화면 크기 변화 감지
   useEffect(() => {
@@ -34,10 +33,13 @@ const Sidebar = ({
     };
     window.addEventListener('resize', handleResize);
     
-    // 모바일 리셋 및 바디 잠금
+    // 바텀시트 열릴 때 초기 높이 설정 (40%)
     if (memo && isMobile) {
-      // 초기 오픈 시 40%로 애니메이션
-      animate(sheetH, window.innerHeight * 0.4, { type: 'spring', damping: 35, stiffness: 450 });
+      animate(sheetHeight, window.innerHeight * 0.4, { 
+        type: 'spring', 
+        damping: 35, 
+        stiffness: 400 
+      });
       
       document.body.style.overflow = 'hidden';
       document.body.style.position = 'fixed';
@@ -57,7 +59,7 @@ const Sidebar = ({
   // 최신 답글 정렬
   const sortedReplies = [...replies].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
-  // 소멸 카운트다운
+  // 실시간 소멸 카운트다운
   useEffect(() => {
     if (!memo?.popped_at) {
       setTimeLeft('');
@@ -81,41 +83,40 @@ const Sidebar = ({
     return () => clearInterval(timer);
   }, [memo?.popped_at]);
 
-  // 인터랙티브 스와이프 제어 (Hand-follow logic)
-  const onPan = (e, info) => {
+  // 드래그(Pan) 핸들러 - 사용자의 손가락 움직임에 따라 높이 조절
+  const handlePan = (e, info) => {
     if (!isMobile) return;
-    isDragging.current = true;
     
-    // 현재 높이에서 델타만큼 반대로 계산 (위로 밀면 y 델타가 음수이므로 높이는 증가)
-    let newHeight = sheetH.get() - info.delta.y;
+    // Y축 이동량의 반대 방향으로 높이 조절 (위로 올리면 높이 증가)
+    let newH = sheetHeight.get() - info.delta.y;
     
-    // 90% 상단 한계점 고정 (팅김 방지)
-    if (newHeight > windowHeight * 0.9) {
-      newHeight = windowHeight * 0.9;
-    }
+    // 최대 높이 제한 (90%)
+    const maxH = windowHeight * 0.9;
+    if (newH > maxH) newH = maxH;
     
-    sheetH.set(newHeight);
+    sheetHeight.set(newH);
   };
 
-  const onPanEnd = (e, info) => {
+  // 드래그 종료 시 스냅 로직
+  const handlePanEnd = (e, info) => {
     if (!isMobile) return;
-    isDragging.current = false;
     
-    const currentH = sheetH.get();
-    const velocity = info.velocity.y;
-    
-    // 스냅 로직 (Velocity 및 위치 기준)
-    const fastTransition = { type: 'spring', damping: 40, stiffness: 500 };
+    const currentH = sheetHeight.get();
+    const velocity = info.velocity.y; // Y축 속도 (양수면 아래쪽)
 
-    if (currentH > windowHeight * 0.65 || (currentH > windowHeight * 0.4 && velocity < -500)) {
-      // 90%로 스냅
-      animate(sheetH, windowHeight * 0.9, fastTransition);
-    } else if (currentH < windowHeight * 0.25 || velocity > 500) {
-      // 닫기
-      animate(sheetH, 0, fastTransition).then(() => onClose());
-    } else {
-      // 40%로 복귀
-      animate(sheetH, windowHeight * 0.4, fastTransition);
+    const snapTransition = { type: 'spring', damping: 35, stiffness: 450 };
+
+    // 1. 위로 빠르게 쓸어올리거나 임계값 넘으면 90%로
+    if (velocity < -500 || currentH > windowHeight * 0.65) {
+      animate(sheetHeight, windowHeight * 0.9, snapTransition);
+    } 
+    // 2. 아래로 빠르게 내리거나 너무 낮아지면 닫기
+    else if (velocity > 500 || currentH < windowHeight * 0.2) {
+      animate(sheetHeight, 0, snapTransition).then(() => onClose());
+    } 
+    // 3. 그 외에는 40%로 복귀
+    else {
+      animate(sheetHeight, windowHeight * 0.4, snapTransition);
     }
   };
 
@@ -123,23 +124,23 @@ const Sidebar = ({
     <AnimatePresence>
       {memo && (
         <>
-          {/* Background Overlay */}
+          {/* 모바일 배경 오버레이 */}
           <motion.div 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-transparent z-[9999] md:hidden"
+            className="fixed inset-0 bg-black/20 z-[9999] md:hidden"
             onClick={onClose}
           />
           
           <motion.div 
-            // 데스크탑은 기존 방식, 모바일은 리얼타임 높이 제어
-            style={isMobile ? { height: sheetH } : {}}
+            // 모바일에서는 실시간 높이 제어, 데스크탑은 좌측 슬라이드
+            style={isMobile ? { height: sheetHeight } : {}}
             variants={!isMobile ? {
               open: { x: 0, opacity: 1 },
               closed: { x: -400, opacity: 0 }
             } : {}}
-            initial={isMobile ? false : "closed"}
+            initial={isMobile ? { height: 0 } : "closed"}
             animate={!isMobile ? "open" : {}}
             exit={isMobile ? { height: 0 } : "closed"}
             transition={{ type: 'spring', damping: 30, stiffness: 400 }}
@@ -151,21 +152,21 @@ const Sidebar = ({
               overflow-hidden
             `}
           >
-            {/* Mobile Drag Area (Handle + Content Card) */}
-            <div 
-              className="flex-shrink-0 touch-none select-none"
-              onPan={onPan}
-              onPanEnd={onPanEnd}
+            {/* 드래그 가능 영역 (핸들 + 상단 카드) */}
+            <motion.div 
+              className="flex-shrink-0 touch-none select-none cursor-grab active:cursor-grabbing bg-white relative z-10"
+              onPan={handlePan}
+              onPanEnd={handlePanEnd}
             >
               {isMobile && (
-                <div className="w-full flex justify-center pt-5 pb-2 cursor-grab active:cursor-grabbing">
+                <div className="w-full flex justify-center pt-5 pb-2">
                   <div className="w-14 h-1.5 bg-gray-200 rounded-full" />
                 </div>
               )}
               
-              {/* Desktop Header or Mobile Top Card (Both Draggable in Mobile) */}
               {!isMobile ? (
-                <div className="sticky top-0 bg-white/90 backdrop-blur-md z-10 px-6 py-5 flex items-center justify-between border-b border-gray-100">
+                // 데스크탑 헤더
+                <div className="px-6 py-5 flex items-center justify-between border-b border-gray-100">
                   <div className="flex items-center">
                     <span className="logo-font text-[20px] tracking-[0] uppercase text-[#FF4D00] select-none">BABBLE</span>
                   </div>
@@ -174,7 +175,8 @@ const Sidebar = ({
                   </motion.button>
                 </div>
               ) : (
-                <div className="px-6 py-4 space-y-4 cursor-grab active:cursor-grabbing">
+                // 모바일 상단 조작 카드
+                <div className="px-6 py-4 space-y-4">
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-3">
                       <div className="w-11 h-11 bg-gradient-to-br from-[#FF4D00] to-[#FF8A00] rounded-2xl flex items-center justify-center text-white font-black shadow-lg shadow-[#FF4D00]/20">
@@ -190,7 +192,7 @@ const Sidebar = ({
                     {!memo.popped_at && (
                       <button 
                         onClick={(e) => { e.stopPropagation(); onPop(memo.id); }}
-                        className="p-2.5 bg-white border border-gray-100 shadow-sm hover:border-[#FF4D00]/30 rounded-xl transition-all"
+                        className="p-2.5 bg-white border border-gray-100 shadow-sm rounded-xl"
                       >
                         <motion.svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FF4D00" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                           <path d="M12 2v2M12 20v2M2 12h2M20 12h2M19.07 4.93l-1.41 1.41M6.34 17.66l-1.41 1.41M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41" />
@@ -201,7 +203,7 @@ const Sidebar = ({
                   <div className="relative p-5 bg-gray-50 rounded-[24px] border border-gray-100">
                     <p className="text-gray-800 text-sm leading-relaxed font-medium whitespace-pre-wrap">{memo.text}</p>
                   </div>
-                  <div className="flex items-center gap-4 text-[10px] font-bold px-1">
+                  <div className="flex items-center gap-4 text-[10px] font-bold px-1 pb-1">
                     <span className={`flex items-center gap-1.5 ${memo.popped_at ? 'text-[#FF4D00]' : 'text-blue-500'}`}>
                       <div className={`w-1.5 h-1.5 rounded-full animate-pulse ${memo.popped_at ? 'bg-[#FF4D00]' : 'bg-blue-500'}`} />
                       {memo.popped_at ? `${timeLeft} 후 소멸` : '활성화 상태'}
@@ -212,22 +214,13 @@ const Sidebar = ({
                   </div>
                 </div>
               )}
-            </div>
+            </motion.div>
 
-            {/* Scrollable Replies Section */}
+            {/* 댓글 스크롤 영역 */}
             <div 
               className="flex-1 overflow-y-auto custom-scrollbar px-6 pt-2 pb-6"
               onPointerDown={(e) => e.stopPropagation()} 
             >
-              {!isMobile && (
-                <div className="mb-8 space-y-6">
-                  {/* Desktop용 중복 카드 부분 생략 (Main.jsx 구조 유지) */}
-                  <div className="relative p-6 bg-gray-50 rounded-[24px] border border-gray-100">
-                    <p className="text-gray-800 text-[15px] leading-relaxed font-medium whitespace-pre-wrap">{memo.text}</p>
-                  </div>
-                </div>
-              )}
-
               <div className="space-y-5">
                 <div className="flex items-center justify-between">
                   <h3 className="font-black text-gray-900 text-sm">답글 <span className="text-[#FF4D00] ml-1">{replies.length}</span></h3>
@@ -235,7 +228,7 @@ const Sidebar = ({
                 </div>
                 
                 <div className="space-y-4">
-                  {sortedReplies.map((reply, idx) => (
+                  {sortedReplies.map((reply) => (
                     <div key={reply.id} className="flex gap-3">
                       <div className={`flex-shrink-0 w-8 h-8 rounded-xl flex items-center justify-center text-[10px] font-black ${reply.is_ai ? 'bg-indigo-50 text-indigo-600' : 'bg-gray-100 text-gray-700'}`}>
                         {reply.nickname?.charAt(0)}
@@ -262,8 +255,8 @@ const Sidebar = ({
               <div className="h-20" />
             </div>
 
-            {/* Fixed Reply Input Box */}
-            <div className="px-6 py-5 bg-white border-t border-gray-50 flex-shrink-0 safe-bottom">
+            {/* 하단 고정 답글 입력창 */}
+            <div className="px-6 py-5 bg-white border-t border-gray-100 flex-shrink-0 z-20">
               <div className="relative flex items-center">
                 <input 
                   type="text" value={replyText} onChange={(e) => setReplyText(e.target.value)}
