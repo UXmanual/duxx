@@ -19,10 +19,10 @@ const formatDateTime = (dateString) => {
 };
 /**
  * [Page] 메인 페이지 (지도 메모 기능 통합 버전)
- * @version 31.1
+ * @version 31.2
  * @author Antigravity
  * @description 
- * - 모바일 높이 가변형 바텀시트 및 인풋 고정 최적화 버전입니다.
+ * - 모바일 바텀시트 하단 붕 뜸 방지 및 인풋 바운스 제거 버전입니다.
  */
 
 // 닉네임 조합용 상수

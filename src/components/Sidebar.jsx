@@ -4,8 +4,8 @@ import { X, Clock, MessageSquare, Trash2, Send } from 'lucide-react';
 
 /**
  * [Component] LNB 사이드바 / 모바일 바텀시트
- * @version 31.1
- * @description 높이 기반 가변형 바텀시트 구현 (40%/90%) 및 하단 인풋 고정 최적화
+ * @version 31.2
+ * @description 높이 기반 가변형 바텀시트 고도화 (인풋 바운스 제거 및 하단 노출 이슈 해결)
  */
 const Sidebar = ({ 
   memo, 
@@ -79,7 +79,7 @@ const Sidebar = ({
   }, [memo?.popped_at]);
 
   // 상태 변화 시 스냅 효과를 위한 스프링 설정
-  const springTransition = { type: 'spring', damping: 30, stiffness: 400 };
+  const springTransition = { type: 'spring', damping: 35, stiffness: 450 };
 
   return (
     <AnimatePresence>
@@ -95,33 +95,32 @@ const Sidebar = ({
           />
           
           <motion.div 
-            // 모바일에서는 높이 변경, 데스크탑에서는 기존 방식 유지
+            // 모바일에서는 높이 변경, 하단 붕 뜸 방지를 위해 padding-bottom 활용
             variants={{
-              half: isMobile ? { height: '40dvh', y: 0 } : { x: 0, opacity: 1, y: 0 },
-              full: isMobile ? { height: '90dvh', y: 0 } : { x: 0, opacity: 1, y: 0 },
-              closed: isMobile ? { height: '0dvh', y: 0 } : { x: -400, opacity: 0 }
+              half: isMobile ? { height: '40dvh' } : { x: 0, opacity: 1, y: 0 },
+              full: isMobile ? { height: '90dvh' } : { x: 0, opacity: 1, y: 0 },
+              closed: isMobile ? { height: '0dvh' } : { x: -400, opacity: 0 }
             }}
             initial="closed"
             animate={isMobile ? sheetHeight : "half"}
             exit="closed"
             transition={springTransition}
             
-            // 모바일 전용 드래그 설정 (onDrag를 통해 높이 제어하는 대신 y축 이벤트를 감지하여 상태 변경)
             drag={isMobile ? "y" : false}
             dragConstraints={{ top: 0, bottom: 0 }}
-            dragElastic={0.1}
+            dragElastic={0} // 드래그 시 실제 위치가 딸려가지 않게 설정하여 지도가 스치지 않도록 함
             onDragEnd={(e, info) => {
               const velocity = info.velocity.y;
               const offset = info.offset.y;
 
               if (sheetHeight === 'half') {
-                if (offset < -50 || velocity < -500) {
+                if (offset < -30 || velocity < -500) {
                   setSheetHeight('full');
-                } else if (offset > 100 || velocity > 500) {
+                } else if (offset > 50 || velocity > 500) {
                   onClose();
                 }
               } else if (sheetHeight === 'full') {
-                if (offset > 100 || velocity > 500) {
+                if (offset > 50 || velocity > 500) {
                   setSheetHeight('half');
                 }
               }
@@ -133,6 +132,11 @@ const Sidebar = ({
               bottom-0 left-0 w-full rounded-t-[32px] md:rounded-none
               overflow-hidden
             `}
+            style={{ 
+              // 하단 붕 뜸 현상 원천 차단을 위해 충분한 여유분 추가
+              paddingBottom: isMobile ? '200px' : '0',
+              marginBottom: isMobile ? '-200px' : '0'
+            }}
           >
             {/* Mobile Drag Handle Area */}
             {isMobile && (
@@ -284,8 +288,8 @@ const Sidebar = ({
               </div>
             </div>
 
-            {/* Reply Input Box - Always at the bottom of the container */}
-            <div className="px-6 py-4 bg-white/95 backdrop-blur-md border-t border-gray-50 flex-shrink-0 safe-bottom">
+            {/* Reply Input Box - 바운스 제거를 위해 모션 제외한 일반 div로 노출 (v31.2) */}
+            <div className="px-6 py-4 bg-white border-t border-gray-50 flex-shrink-0 safe-bottom">
               <div className="relative flex items-center">
                 <input 
                   type="text" 
@@ -295,14 +299,12 @@ const Sidebar = ({
                   className="w-full pl-6 pr-16 py-4 bg-gray-50 border border-gray-100 rounded-[20px] text-[13px] font-bold focus:outline-none focus:ring-4 focus:ring-[#FF4D00]/10 focus:bg-white focus:border-[#FF4D00]/30 transition-all placeholder:text-gray-300"
                   onKeyPress={(e) => e.key === 'Enter' && onReplySubmit(memo.id)}
                 />
-                <motion.button 
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
+                <button 
                   onClick={() => onReplySubmit(memo.id)}
-                  className="absolute right-1.5 w-11 h-11 bg-[#FF4D00] text-white rounded-2xl flex items-center justify-center shadow-lg shadow-[#FF4D00]/30"
+                  className="absolute right-1.5 w-11 h-11 bg-[#FF4D00] text-white rounded-2xl flex items-center justify-center shadow-lg shadow-[#FF4D00]/30 active:scale-95 transition-transform"
                 >
                   <Send size={18} strokeWidth={2.5} />
-                </motion.button>
+                </button>
               </div>
             </div>
           </motion.div>
