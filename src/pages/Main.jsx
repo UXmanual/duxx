@@ -18,7 +18,7 @@ const formatDateTime = (dateString) => {
 };
 /**
  * [Page] 메인 페이지 (지도 메모 기능 통합 버전)
- * @version 28.0
+ * @version 28.1
  * @author Antigravity
  * @description 
  * - 바블 리스트 간격 복구 및 닉네임 하단 여백 최적화 버전입니다.
@@ -483,7 +483,7 @@ const Main = () => {
               position={{ lat: memo.lat, lng: memo.lng }}
               xAnchor={0}
               yAnchor={0}
-              zIndex={replyTargetId === memo.id ? 999 : 10}
+              zIndex={replyTargetId === memo.id ? 999 : (memo.popped_at ? 1 : 10)}
               clickable={true}
             >
               <div className={`relative w-0 h-0 group pointer-events-none ${memo.is_popping ? 'animate-bubble-pop' : 'animate-pop-in'}`}>
