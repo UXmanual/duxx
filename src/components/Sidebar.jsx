@@ -4,8 +4,8 @@ import { X, Clock, MessageSquare, Trash2, Send } from 'lucide-react';
 
 /**
  * [Component] LNB 사이드바 / 모바일 바텀시트
- * @version 3.0
- * @description 50vh 높이 고정 및 스와이프 닫기 기능 추가
+ * @version 30.5
+ * @description 50vh/100vh 확장형 바텀시트 및 스크롤 간섭 수정
  */
 const Sidebar = ({ 
   memo, 
@@ -20,13 +20,28 @@ const Sidebar = ({
 }) => {
   const [timeLeft, setTimeLeft] = useState('');
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const [sheetHeight, setSheetHeight] = useState('half'); // 'half', 'full'
 
-  // 화면 크기 변화 감지
+  // 화면 크기 변화 감지 및 바디 스크롤 잠금
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
     window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
+    
+    if (memo && isMobile) {
+      document.body.style.overflow = 'hidden';
+      document.body.style.position = 'fixed';
+      document.body.style.width = '100%';
+    } else {
+      document.body.style.overflow = 'auto';
+      document.body.style.position = 'static';
+    }
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      document.body.style.overflow = 'auto';
+      document.body.style.position = 'static';
+    };
+  }, [memo, isMobile]);
 
   // 최신 답글이 위로 오도록 정렬 (v1.5 추가)
   const sortedReplies = [...replies].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
@@ -72,34 +87,49 @@ const Sidebar = ({
             onClick={onClose}
           />
           
-          <motion.div 
-            initial={isMobile ? { y: '100%', opacity: 1 } : { x: -400, opacity: 0 }}
-            animate={isMobile ? { y: 0, opacity: 1 } : { x: 0, opacity: 1 }}
-            exit={isMobile ? { y: '100%', opacity: 1 } : { x: -400, opacity: 0 }}
+           <motion.div 
+            initial={isMobile ? { y: '100%' } : { x: -400, opacity: 0 }}
+            animate={isMobile 
+              ? { y: sheetHeight === 'half' ? '50%' : '0%' } 
+              : { x: 0, opacity: 1 }
+            }
+            exit={isMobile ? { y: '100%' } : { x: -400, opacity: 0 }}
             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
             drag={isMobile ? "y" : false}
-            dragConstraints={{ top: 0 }}
-            dragElastic={0.2}
+            dragConstraints={{ top: 0, bottom: 0 }}
+            dragElastic={0.1}
             onDragEnd={(e, info) => {
-              if (info.offset.y > 100 || info.velocity.y > 500) {
-                onClose();
+              const offset = info.offset.y;
+              const velocity = info.velocity.y;
+
+              if (sheetHeight === 'half') {
+                if (offset < -50 || velocity < -500) {
+                  setSheetHeight('full');
+                } else if (offset > 100 || velocity > 500) {
+                  onClose();
+                }
+              } else if (sheetHeight === 'full') {
+                if (offset > 100 || velocity > 500) {
+                  setSheetHeight('half');
+                }
               }
             }}
             className={`
               fixed z-[10000] bg-white shadow-2xl flex flex-col
               md:left-0 md:top-0 md:h-screen md:w-[380px]
               bottom-0 left-0 w-full rounded-t-[32px] md:rounded-none
-              h-[50vh] md:h-auto
+              ${isMobile ? 'h-screen' : 'h-auto'}
             `}
           >
-            {/* Mobile Drag Handle */}
+            {/* Mobile Drag Handle Area (항상 드래그 가능) */}
             {isMobile && (
-              <div className="w-full flex justify-center pt-3 pb-1 flex-shrink-0">
+              <div className="w-full flex justify-center pt-3 pb-3 flex-shrink-0 drag-handle cursor-grab active:cursor-grabbing">
                 <div className="w-12 h-1.5 bg-gray-200 rounded-full" />
               </div>
             )}
-            {/* Header - Logo 적용 (v1.2) */}
-            <div className="sticky top-0 bg-white/90 backdrop-blur-md z-10 px-6 py-5 flex items-center justify-between border-b border-gray-100 flex-shrink-0">
+            
+            {/* Header - Logo 적용 (v1.2) - 핸들 역할 병행 */}
+            <div className="sticky top-0 bg-white/90 backdrop-blur-md z-10 px-6 py-4 flex items-center justify-between border-b border-gray-100 flex-shrink-0 drag-handle">
               <div className="flex items-center">
                 <span className="logo-font text-[20px] tracking-[0] uppercase text-[#FF4D00] select-none">
                   BABBLE
@@ -115,7 +145,10 @@ const Sidebar = ({
               </motion.button>
             </div>
 
-            <div className="flex-1 overflow-y-auto custom-scrollbar">
+            <div 
+              className="flex-1 overflow-y-auto custom-scrollbar"
+              onPointerDown={(e) => e.stopPropagation()} // 내부 스크롤 시 시트 전체 드래그 방지
+            >
               <div className="p-6 space-y-8">
                 {/* Main Content Card */}
                 <div className="space-y-5">

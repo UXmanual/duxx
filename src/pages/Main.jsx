@@ -19,10 +19,10 @@ const formatDateTime = (dateString) => {
 };
 /**
  * [Page] 메인 페이지 (지도 메모 기능 통합 버전)
- * @version 30.4
+ * @version 30.5
  * @author Antigravity
  * @description 
- * - 모바일 바텀시트 50vh 고정 및 스와이프 닫기 기능 추가 버전입니다.
+ * - 모바일 바텀시트 2단계 확장(50vh/100vh) 및 스크롤 충돌 방지 버전입니다.
  */
 
 // 닉네임 조합용 상수
