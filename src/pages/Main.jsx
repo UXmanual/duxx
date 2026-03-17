@@ -19,10 +19,10 @@ const formatDateTime = (dateString) => {
 };
 /**
  * [Page] 메인 페이지 (지도 메모 기능 통합 버전)
- * @version 30.1
+ * @version 30.3
  * @author Antigravity
  * @description 
- * - 바블 리스트 간격 복구 및 닉네임 하단 여백 최적화 버전입니다.
+ * - 터진 바블 흐리게 유지 복구 및 클러스터러 제외 로직 정교화 버전입니다.
  */
 
 // 닉네임 조합용 상수
@@ -83,7 +83,7 @@ const Main = () => {
     return R * c;
   };
 
-  // 루트 메모 리스트 (분산 로직 제거 & 팝 기능 필터링 추가) (v28.0)
+  // 루트 메모 리스트 (터진 바블 30분 유지 & 애니메이션 대응) (v30.3)
   const rootMemos = useMemo(() => {
     const now = new Date();
     return memos.filter(m => {
@@ -93,8 +93,9 @@ const Main = () => {
       if (m.popped_at) {
         const poppedTime = new Date(m.popped_at);
         const diffMinutes = (now - poppedTime) / (1000 * 60);
-        return diffMinutes < 30; // 30분 이내면 유지, 넘으면 삭제
+        return diffMinutes < 30; // 30분 이내면 유지 (지도의 불투명도 로직으로 흐릿하게 표시됨)
       }
+      
       return true;
     });
   }, [memos]);
@@ -472,7 +473,7 @@ const Main = () => {
               fontSize: '14px'
             }]}
           >
-            {memos.map((memo) => (
+            {rootMemos.filter(m => !m.popped_at).map((memo) => (
               <MapMarker 
                 key={memo.id} 
                 position={{ lat: memo.lat, lng: memo.lng }} 
