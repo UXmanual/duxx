@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 /**
  * [Component] 상단 헤더 (실시간 날씨 API 연동 버전)
- * @version 24.1
+ * @version 24.2
  * @author Antigravity
  */
 const Header = () => {
@@ -112,14 +112,9 @@ const Header = () => {
                 >
                   {getWeatherIcon()}
                 </motion.div>
-                <div className="flex flex-col leading-none">
-                  <span className="text-[14px] font-bold text-zinc-800 tracking-tight">
-                    {temp}°C
-                  </span>
-                  <span className="text-[8px] text-[#FF4D00] font-bold opacity-60 uppercase tracking-tighter">
-                    {locationName}
-                  </span>
-                </div>
+                <span className="text-[14px] font-bold text-zinc-800 tracking-tight">
+                  {temp}°C
+                </span>
               </motion.div>
             </AnimatePresence>
           </div>
