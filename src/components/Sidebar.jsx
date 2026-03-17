@@ -4,8 +4,8 @@ import { X, Clock, MessageSquare, Trash2, Send } from 'lucide-react';
 
 /**
  * [Component] LNB 사이드바 / 모바일 바텀시트
- * @version 1.3
- * @description AI 답글 프로필 커스텀 및 전송 버튼 활성화 상태 최적화
+ * @version 1.4
+ * @description UI 한글화 및 버블 터트리기 호버 애니메이션(두근거림) 적용
  */
 const Sidebar = ({ 
   memo, 
@@ -106,7 +106,7 @@ const Sidebar = ({
                       <div>
                         <p className="font-bold text-gray-900 text-base">{memo.nickname}</p>
                         <div className="flex items-center gap-2 mt-0.5">
-                          <span className="text-[11px] px-2 py-0.5 bg-gray-100 text-gray-500 rounded-full font-medium italic">
+                          <span className="text-[11px] px-2 py-0.5 bg-gray-100 text-gray-500 rounded-full font-medium">
                             {formatDateTime(memo.created_at)}
                           </span>
                         </div>
@@ -115,15 +115,20 @@ const Sidebar = ({
                     
                     {!memo.popped_at && (
                       <motion.button 
-                        whileHover={{ scale: 1.1, rotate: 15 }}
-                        whileTap={{ scale: 0.9 }}
+                        whileHover={{ 
+                          scale: [1, 0.85, 1.15, 1],
+                          transition: { duration: 0.5, repeat: Infinity, ease: "easeInOut" }
+                        }}
+                        whileTap={{ scale: 0.8 }}
                         onClick={() => onPop(memo.id)}
-                        className="p-3 bg-white border border-gray-100 shadow-sm hover:border-[#FF4D00]/30 hover:bg-[#FF4D00]/5 rounded-2xl transition-all"
+                        className="p-3 bg-white border border-gray-100 shadow-sm hover:border-[#FF4D00]/30 hover:bg-[#FF4D00]/5 rounded-2xl transition-all overflow-hidden"
                         title="터트리기"
                       >
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FF4D00" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <motion.svg 
+                          width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FF4D00" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+                        >
                           <path d="M12 2v2M12 20v2M2 12h2M20 12h2M19.07 4.93l-1.41 1.41M6.34 17.66l-1.41 1.41M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41" />
-                        </svg>
+                        </motion.svg>
                       </motion.button>
                     )}
                   </div>
@@ -155,7 +160,7 @@ const Sidebar = ({
                 {/* Replies Section */}
                 <div className="space-y-5 pb-24">
                   <div className="flex items-center justify-between">
-                    <h3 className="font-black text-gray-900 text-sm">REPLIES <span className="text-[#FF4D00] ml-1">{replies.length}</span></h3>
+                    <h3 className="font-black text-gray-900 text-sm">답글 <span className="text-[#FF4D00] ml-1">{replies.length}</span></h3>
                     <div className="h-px bg-gray-100 flex-1 ml-4" />
                   </div>
                   
