@@ -18,7 +18,7 @@ const formatDateTime = (dateString) => {
 };
 /**
  * [Page] 메인 페이지 (지도 메모 기능 통합 버전)
- * @version 22.1
+ * @version 22.2
  * @author Antigravity
  * @description 
  * - 바블 리스트 간격 복구 및 닉네임 하단 여백 최적화 버전입니다.
@@ -553,10 +553,22 @@ const Main = () => {
                                     {isShowing && hasReplies && (
                                       <div className="flex flex-col gap-2 mt-1 pr-1">
                                         {memoReplies.map(reply => (
-                                          <div key={reply.id} className="flex flex-col border-b border-black/5 last:border-0 pb-1.5 break-all whitespace-pre-wrap">
-                                            <span className="text-[10px] font-bold text-[#FF4D00]">
-                                              {reply.nickname}
-                                            </span>
+                                          <div key={reply.id} className="flex flex-col border-b border-black/5 last:border-0 pb-1.5 break-all whitespace-pre-wrap group/reply-sub">
+                                            <div className="flex justify-between items-center mb-0.5">
+                                              <span className="text-[10px] font-bold text-[#FF4D00]">
+                                                {reply.nickname}
+                                              </span>
+                                              <button 
+                                                onClick={(e) => {
+                                                  e.stopPropagation();
+                                                  handleDeleteMemo(reply.id);
+                                                }}
+                                                className="opacity-0 group-hover/reply-sub:opacity-100 transition-opacity p-0.5 hover:scale-110 text-zinc-400 hover:text-red-500"
+                                                title="답글 삭제"
+                                              >
+                                                <X size={10} />
+                                              </button>
+                                            </div>
                                             <span className="text-[12px] text-zinc-700 leading-snug">
                                               {reply.text}
                                             </span>
@@ -688,10 +700,22 @@ const Main = () => {
                             {isShowing && hasReplies && (
                               <div className="flex flex-col gap-2 mt-1 pr-1">
                                 {memoReplies.map(reply => (
-                                  <div key={reply.id} className="flex flex-col border-b border-black/5 last:border-0 pb-1.5 break-all whitespace-pre-wrap">
-                                    <span className={`text-[10px] font-bold ${isGroupExpanded ? 'text-white/70' : 'text-[#FF4D00]'}`}>
-                                      {reply.nickname}
-                                    </span>
+                                  <div key={reply.id} className="flex flex-col border-b border-black/5 last:border-0 pb-1.5 break-all whitespace-pre-wrap group/reply">
+                                    <div className="flex justify-between items-center mb-0.5">
+                                      <span className={`text-[10px] font-bold ${isGroupExpanded ? 'text-white/70' : 'text-[#FF4D00]'}`}>
+                                        {reply.nickname}
+                                      </span>
+                                      <button 
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleDeleteMemo(reply.id);
+                                        }}
+                                        className={`opacity-0 group-hover/reply:opacity-100 transition-opacity p-0.5 hover:scale-110 ${isGroupExpanded ? 'text-white/50 hover:text-white' : 'text-zinc-400 hover:text-red-500'}`}
+                                        title="답글 삭제"
+                                      >
+                                        <X size={10} />
+                                      </button>
+                                    </div>
                                     <span className={`text-[12px] leading-snug ${isGroupExpanded ? 'text-white/90' : 'text-zinc-700'}`}>
                                       {reply.text}
                                     </span>
