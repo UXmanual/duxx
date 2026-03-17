@@ -4,8 +4,8 @@ import { X, Clock, MessageSquare, Trash2, Send } from 'lucide-react';
 
 /**
  * [Component] LNB 사이드바 / 모바일 바텀시트
- * @version 32.2
- * @description 입력창 디자인 정밀 조정(테두리 강화, 버튼 쉐도우 제거)
+ * @version 32.4
+ * @description AI 답글 'A' 뱃지 복구 및 닉네임 지역명 포함 최적화
  */
 const Sidebar = ({ 
   memo, 
@@ -249,7 +249,12 @@ const Sidebar = ({
                       </div>
                       <div className="flex-1 space-y-1">
                         <div className="flex items-center justify-between">
-                          <span className="text-[11px] font-black text-gray-800">{reply.nickname}</span>
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[11px] font-black text-gray-800">{reply.nickname}</span>
+                            {reply.is_ai && (
+                              <span className="text-[9px] bg-indigo-50 text-indigo-500 px-1 rounded-sm font-bold border border-indigo-100/50">A</span>
+                            )}
+                          </div>
                           <span className="text-[9px] text-gray-400">{formatDateTime(reply.created_at)}</span>
                         </div>
                         <p className="text-xs text-gray-600 leading-normal bg-white border border-gray-50 p-3 rounded-tr-xl rounded-b-xl shadow-sm">

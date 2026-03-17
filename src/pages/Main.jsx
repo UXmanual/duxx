@@ -19,10 +19,10 @@ const formatDateTime = (dateString) => {
 };
 /**
  * [Page] 메인 페이지 (지도 메모 기능 통합 버전)
- * @version 32.3
+ * @version 32.4
  * @author Antigravity
  * @description 
- * - 날씨 로딩 스켈레톤 UI 적용 및 데이터 초기화 최적화 버전입니다.
+ * - AI 답글 닉네임 지역명 포함 및 AI 뱃지 복구 버전입니다.
  */
 
 // 닉네임 조합용 상수
@@ -211,11 +211,14 @@ const Main = () => {
       const persona = AI_PERSONAS[Math.floor(Math.random() * AI_PERSONAS.length)];
       const aiText = persona.styles[Math.floor(Math.random() * persona.styles.length)];
       
+      // 부모 메모의 지역명 추출 (v32.4)
+      const neighborhood = parentMemo.nickname?.split(' ')[0] || "어딘가";
+      
       const newReply = {
         lat: parentMemo.lat,
         lng: parentMemo.lng,
         text: aiText,
-        nickname: `${persona.name} ${persona.emoji}`,
+        nickname: `${neighborhood} ${persona.name} ${persona.emoji}`,
         parent_id: parentMemo.id,
         is_ai: true,
         persona_id: persona.id
