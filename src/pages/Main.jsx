@@ -21,9 +21,9 @@ const formatDateTime = (dateString) => {
 
 /**
  * [Page] 메인 페이지 (지도 메모 기능 통합 버전)
- * @version 34.3
+ * @version 34.4
  * @description 
- * - 선택 바블의 쉐도우 효과 개선 및 가독성 최적화 버전입니다. (v34.3)
+ * - 선택 바블의 두꺼운 링 제거 및 소프트 글로우(Glow) 효과 적용 버전입니다. (v34.4)
  */
 
 // 닉네임 조합용 상수
@@ -398,7 +398,7 @@ const Main = () => {
                       <div className="absolute w-12 h-12 border-4 border-[#FF4D00] rounded-full animate-shockwave" />
                     </div>
                   )}
-                  <div className={`relative px-4 py-2 bg-white/90 backdrop-blur-md border-2 rounded-full shadow-lg flex items-center gap-2 min-w-[50px] max-w-[220px] cursor-pointer transition-all duration-300 ${memo.is_popping ? 'animate-bubble-pop' : ''} ${selectedMemoId === memo.id ? 'border-[#FF4D00] ring-4 ring-[#FF4D00]/30 z-[50] scale-105 shadow-[0_12px_32px_rgba(255,77,0,0.35)]' : 'border-[#FF4D00]'}`}
+                  <div className={`relative px-4 py-2 bg-white/90 backdrop-blur-md border-2 rounded-full flex items-center gap-2 min-w-[50px] max-w-[220px] cursor-pointer transition-all duration-300 ${memo.is_popping ? 'animate-bubble-pop' : ''} ${selectedMemoId === memo.id ? 'border-[#FF4D00] z-[50] scale-105 shadow-[0_15px_45px_rgba(255,77,0,0.25)]' : 'border-[#FF4D00] shadow-lg'}`}
                     onClick={(e) => { 
                     e.stopPropagation(); 
                     panToWithOffset(memo.lat, memo.lng);

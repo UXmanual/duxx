@@ -1,7 +1,7 @@
 {
   "name": "babble-project",
   "private": true,
-  "version": "34.3",
+  "version": "34.4",
   "type": "module",
   "scripts": {
     "dev": "vite",
