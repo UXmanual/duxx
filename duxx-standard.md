@@ -1,4 +1,4 @@
-# DUXX Project Standard Specification (v1.3.3)
+# DUXX Project Standard Specification (v1.4.0)
 
 이 문서는 DUXX 프로젝트의 핵심 아키텍처와 관리 규칙을 정의합니다. 새로운 에이전트나 개발자가 프로젝트에 참여할 때 이 가이드를 반드시 준수해야 합니다.
 
@@ -36,7 +36,22 @@
 
 ---
 
-## 🤖 3. Agent Instruction (에이전트 작업 지침)
+## 🎨 3. Design Standards (디자인 표준 가이드)
+
+프로젝트 고유의 감성과 사용성을 위해 다음 수치는 절대 변경하지 않고 유지합니다.
+
+### 3.1. 지도 인터페이스 (Map UI)
+- **스타벅스 리저브 오버레이**: `yAnchor: 1.85` (마커와의 고정 여백 공간)
+- **스타벅스 노출 규칙**: 별도의 버튼 없이 항상 노출됨 (Always Visible)
+- **모바일 시점 오프셋**: `160px` (바텀시트 오픈 시 마커가 시트에 가려지지 않도록 시점을 위로 조정한 값)
+
+### 3.2. 닉네임 생성 규칙
+- **형식**: `[지역명] [페르소나] [이모지]` (예: 역삼동 미식가 😋)
+- **AI 응답**: 일반 사용자와 동일한 닉네임 규칙을 따르며 지역명을 중복 노출하지 않음
+
+---
+
+## 🤖 4. Agent Instruction (에이전트 작업 지침)
 
 1. **격리 준수**: 특정 페이지 수정 요청 시, 해당 파일(`src/pages/`) 외의 레이아웃 파일은 절대 건드리지 마십시오.
 2. **테마 일관성**: 새로운 UI 추가 시 반드시 `src/styles/global.css` 및 `themes/`에 정의된 CSS 변수를 활용하십시오.
@@ -44,7 +59,7 @@
 
 ---
 
-## 🛠 4. Technology Stack
+## 🛠 5. Technology Stack
 - **Library**: React (Vite)
 - **Styling**: Tailwind CSS + Custom CSS Variables
 - **Icons**: Lucide-React
@@ -53,4 +68,4 @@
 ---
 
 **Confirmed by Admin: Hyeon**
-**Latest Standard Version: 1.3.3**
+**Latest Standard Version: 1.4.0**
