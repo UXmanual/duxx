@@ -20,9 +20,9 @@ const formatDateTime = (dateString) => {
 
 /**
  * [Page] 메인 페이지 (지도 메모 기능 통합 버전)
- * @version 33.6
+ * @version 33.7
  * @description 
- * - 더 사실적인 바블 터트리기 애니메이션 및 파편 효과 추가 버전입니다. (v33.6)
+ * - 고도화된 바블 터트리기 효과 (12개 파티클 + 쇼크웨이브 링) 적용 버전입니다. (v33.7)
  */
 
 // 닉네임 조합용 상수
@@ -349,12 +349,18 @@ const Main = () => {
             <CustomOverlayMap key={`memo-${memo.id}`} position={{ lat: memo.lat, lng: memo.lng }} xAnchor={0} yAnchor={0} zIndex={replyTargetId === memo.id ? 999 : (memo.popped_at ? 1 : 10)}>
               <div className={`relative w-0 h-0 group pointer-events-none ${memo.is_popping ? 'animate-bubble-pop' : ''}`}>
                 <div className="absolute bottom-0 left-1/2 -translate-x-1/2 pb-2 pointer-events-auto transition-opacity duration-500" style={{ opacity: memo.popped_at ? 0.4 : 1 }}>
-                  {/* 터지는 파편 효과 (v33.6 추가) */}
+                  {/* 터지는 파편 효과 및 쇼크웨이브 고도화 (v33.7) */}
                   {memo.is_popping && (
-                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                      {[1, 2, 3, 4, 5, 6].map(i => (
-                        <div key={i} className="absolute w-1.5 h-1.5 bg-[#FF4D00] rounded-full animate-burst-particle" 
-                          style={{ '--angle': `${i * 60}deg`, '--delay': `${Math.random() * 0.1}s` }} />
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-[1001]">
+                      <div className="absolute w-12 h-12 border-4 border-[#FF4D00] rounded-full animate-shockwave" />
+                      {[...Array(12)].map((_, i) => (
+                        <div key={i} className="absolute w-2 h-2 bg-[#FF4D00] rounded-full animate-burst-particle" 
+                          style={{ 
+                            '--angle': `${i * 30}deg`, 
+                            '--dist': `${60 + Math.random() * 40}px`,
+                            '--delay': `${Math.random() * 0.1}s`,
+                            '--scale': `${0.6 + Math.random() * 0.8}`
+                          }} />
                       ))}
                     </div>
                   )}
@@ -397,21 +403,27 @@ const Main = () => {
 
       <style>{`
         @keyframes pop-in { 0% { transform: scale(0.8) translateY(10px); opacity: 0; } 100% { transform: scale(1) translateY(0); opacity: 1; } }
-        /* v33.6: 더 사실적인 터트리기 애니메이션 */
+        /* v33.7: 고도화된 터트리기 애니메이션 */
         @keyframes bubble-pop { 
-          0% { transform: scale(1); filter: brightness(1.2); }
-          15% { transform: scale(0.9); }
-          40% { transform: scale(1.15); }
-          100% { transform: scale(1.8); opacity: 0; filter: blur(4px); }
+          0% { transform: scale(1); filter: brightness(1.5); }
+          10% { transform: scale(0.85); }
+          30% { transform: scale(1.2); }
+          100% { transform: scale(2.2); opacity: 0; filter: blur(8px); }
         }
-        /* v33.6: 파편 효과 */
+        /* v33.7: 파편 효과 - 회전하며 사방으로 비산 */
         @keyframes burst-particle {
-          0% { transform: rotate(var(--angle)) translateY(0) scale(1); opacity: 1; }
-          100% { transform: rotate(var(--angle)) translateY(-40px) scale(0); opacity: 0; }
+          0% { transform: rotate(var(--angle)) translateY(0) scale(var(--scale)); opacity: 1; }
+          100% { transform: rotate(var(--angle)) translateY(calc(-1 * var(--dist))) scale(0); opacity: 0; }
+        }
+        /* v33.7: 쇼크웨이브 링 */
+        @keyframes shockwave {
+          0% { transform: scale(0.5); opacity: 1; border-width: 4px; }
+          100% { transform: scale(3.5); opacity: 0; border-width: 0px; }
         }
         .animate-pop-in { animation: pop-in 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
         .animate-bubble-pop { animation: bubble-pop 0.6s cubic-bezier(0.19, 1, 0.22, 1) forwards; }
-        .animate-burst-particle { animation: burst-particle 0.6s ease-out var(--delay) forwards; }
+        .animate-burst-particle { animation: burst-particle 0.7s cubic-bezier(0.1, 0.8, 0.3, 1) var(--delay) forwards; }
+        .animate-shockwave { animation: shockwave 0.5s ease-out forwards; }
       `}</style>
     </div>
   );
