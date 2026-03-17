@@ -18,7 +18,7 @@ const formatDateTime = (dateString) => {
 };
 /**
  * [Page] 메인 페이지 (지도 메모 기능 통합 버전)
- * @version 28.1
+ * @version 28.2
  * @author Antigravity
  * @description 
  * - 바블 리스트 간격 복구 및 닉네임 하단 여백 최적화 버전입니다.
@@ -501,6 +501,12 @@ const Main = () => {
                       setReplyTargetId(memo.id);
                     }}
                   >
+                    {/* 답글 개수 배지 (v28.2 추가) */}
+                    {memos.filter(m => m.parent_id === memo.id).length > 0 && (
+                      <div className="absolute -top-2 -right-2 bg-[#FF4D00] text-white text-[10px] font-black px-1.5 py-0.5 rounded-full shadow-sm z-20 border border-white flex items-center justify-center min-w-[20px]">
+                        {memos.filter(m => m.parent_id === memo.id).length}
+                      </div>
+                    )}
                     {/* 텍스트 영역 - 무조건 1줄 제한 */}
                     <div className="flex-1 overflow-hidden">
                       <span className="text-[13px] font-bold leading-none tracking-tight whitespace-nowrap truncate text-[#1A1A1A] block">
