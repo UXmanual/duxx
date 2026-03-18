@@ -46,6 +46,8 @@ const Main = () => {
   const [replyTargetId, setReplyTargetId] = useState(null); // 답글 작성 중인 메모 ID
   const [replyText, setReplyText] = useState(''); // 답글 입력 텍스트
   const [selectedMemoId, setSelectedMemoId] = useState(null); // LNB에 표시할 메모 ID
+  const [writingMemoCoords, setWritingMemoCoords] = useState(null); // 메모 작성 중인 좌표
+  const [newMemoText, setNewMemoText] = useState(''); // 새 메모 입력 텍스트
 
   const [starbucksPlaces, setStarbucksPlaces] = useState(starbucksReserveStores);
   const [isStarbucksVisible, setIsStarbucksVisible] = useState(true);
@@ -224,30 +226,38 @@ const Main = () => {
 
   const handleMapClick = async (_t, mouseEvent) => {
     if (!isMemoMode) return;
-    const latlng = mouseEvent.latLng;
-    const text = prompt('여기에 남길 메모를 입력해주세요:');
-    if (text && text.trim()) {      
-      const geocoder = new window.kakao.maps.services.Geocoder();
-      geocoder.coord2RegionCode(latlng.getLng(), latlng.getLat(), async (result, status) => {
-        let neighborhood = "어딘가";
-        if (status === window.kakao.maps.services.Status.OK) {
-          const region = result.find(r => r.region_type === 'H') || result[0];
-          neighborhood = region ? region.region_3depth_name : "어딘가";
+    setWritingMemoCoords({
+      lat: mouseEvent.latLng.getLat(),
+      lng: mouseEvent.latLng.getLng()
+    });
+  };
+
+  const submitNewMemo = async () => {
+    if (!newMemoText.trim() || !writingMemoCoords) return;
+    
+    const geocoder = new window.kakao.maps.services.Geocoder();
+    geocoder.coord2RegionCode(writingMemoCoords.lng, writingMemoCoords.lat, async (result, status) => {
+      let neighborhood = "어딘가";
+      if (status === window.kakao.maps.services.Status.OK) {
+        const region = result.find(r => r.region_type === 'H') || result[0];
+        neighborhood = region ? region.region_3depth_name : "어딘가";
+      }
+      const p = PERSONALITIES[Math.floor(Math.random() * PERSONALITIES.length)];
+      const s = SUFFIXES[Math.floor(Math.random() * SUFFIXES.length)];
+      const nickname = `${neighborhood} ${p} ${s}`;
+      const newMemo = { lat: writingMemoCoords.lat, lng: writingMemoCoords.lng, text: newMemoText.trim(), nickname };
+      
+      try {
+        const { data, error } = await supabase.from('memos').insert([newMemo]).select();
+        if (!error && data) {
+          setMemos(prev => [...prev, data[0]]);
+          setWritingMemoCoords(null);
+          setNewMemoText('');
+          setIsMemoMode(false);
+          triggerAIResponse(data[0]);
         }
-        const p = PERSONALITIES[Math.floor(Math.random() * PERSONALITIES.length)];
-        const s = SUFFIXES[Math.floor(Math.random() * SUFFIXES.length)];
-        const nickname = `${neighborhood} ${p} ${s}`;
-        const newMemo = { lat: latlng.getLat(), lng: latlng.getLng(), text: text.trim(), nickname };
-        try {
-          const { data, error } = await supabase.from('memos').insert([newMemo]).select();
-          if (!error && data) {
-            setMemos(prev => [...prev, data[0]]);
-            setIsMemoMode(false);
-            triggerAIResponse(data[0]);
-          }
-        } catch (err) { console.error('Insert error:', err); }
-      });
-    }
+      } catch (err) { console.error('Insert error:', err); }
+    });
   };
 
   const handleDeleteMemo = async (id) => {
@@ -428,7 +438,53 @@ const Main = () => {
         )}
       </Map>
 
-      <Sidebar memo={memos.find(m => m.id === selectedMemoId)} replies={memos.filter(m => m.parent_id === selectedMemoId)} onClose={() => setSelectedMemoId(null)} onDelete={handleDeleteMemo} onReplySubmit={handleReplySubmit} onPop={handlePopBubble} replyText={replyText} setReplyText={setReplyText} formatDateTime={formatDateTime} />
+      {/* 통합 메모 작성 폼 (딤 처리 제거 및 투명 블러 스타일) */}
+      <AnimatePresence>
+        {writingMemoCoords && (
+          <div className="fixed inset-0 z-[10001] flex items-center justify-center p-6 pointer-events-none">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="w-full max-w-[400px] bg-white/80 backdrop-blur-xl rounded-[32px] p-8 shadow-[0_30px_60px_rgba(255,77,0,0.15)] pointer-events-auto border border-white"
+            >
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-[18px] font-black text-gray-900 tracking-tight">지도의 여기에 바블하기</h3>
+                <button 
+                  onClick={() => { setWritingMemoCoords(null); setNewMemoText(''); }}
+                  className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 hover:bg-gray-200"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+              
+              <textarea
+                autoFocus
+                value={newMemoText}
+                onChange={(e) => setNewMemoText(e.target.value)}
+                placeholder="어떤 이야기를 남길까요?"
+                className="w-full h-32 bg-gray-50/50 rounded-2xl p-4 text-[15px] font-medium border-none focus:ring-2 focus:ring-[#FF4D00]/20 resize-none mb-6 placeholder:text-gray-400"
+              />
+
+              <div className="flex gap-3">
+                <button 
+                  onClick={() => { setWritingMemoCoords(null); setNewMemoText(''); }}
+                  className="flex-1 py-4 rounded-2xl bg-gray-100 text-gray-600 font-bold text-[15px]"
+                >
+                  취소
+                </button>
+                <button 
+                  onClick={submitNewMemo}
+                  disabled={!newMemoText.trim()}
+                  className="flex-[2] py-4 rounded-2xl bg-[#FF4D00] text-white font-bold text-[15px] shadow-[0_10px_20px_rgba(255,77,0,0.2)] disabled:opacity-50"
+                >
+                  바블 남기기
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       <div className="fixed bottom-10 right-8 z-[9999] pointer-events-none">
         <div className="flex flex-col items-end gap-2 pointer-events-auto">

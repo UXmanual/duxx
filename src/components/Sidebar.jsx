@@ -177,12 +177,12 @@ const Sidebar = ({
     <AnimatePresence>
       {memo && (
         <>
-          {/* 모바일 배경 오버레이 */}
+          {/* 모바일 배경 오버레이 (딤 처리 제거: 투명하게) */}
           <motion.div 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/10 z-[9999] md:hidden"
+            className="fixed inset-0 z-[9999] md:hidden cursor-pointer"
             onClick={onClose}
           />
           
