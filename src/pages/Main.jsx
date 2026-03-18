@@ -453,10 +453,9 @@ const Main = () => {
           </AnimatePresence>
 
           <div className="flex flex-col gap-3">
-            {/* 글쓰기 버튼 (아이콘 컬러 삭제, 테두리 삭제, 블러 효과 추가) */}
+            {/* 글쓰기 버튼 (호버 모션 삭제 - 모바일과 통일) */}
             <motion.button 
               onClick={() => setIsMemoMode(!isMemoMode)}
-              whileHover={{ scale: 1.05, rotate: isMemoMode ? 180 : 0 }}
               whileTap={{ scale: 0.95 }}
               initial={{ scale: 0, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
@@ -481,10 +480,9 @@ const Main = () => {
               )}
             </motion.button>
             
-            {/* 내 위치 버튼 (아이콘 컬러 삭제, 테두리 삭제, 블러 효과 추가) */}
+            {/* 내 위치 버튼 (호버 모션 삭제 - 모바일과 통일) */}
             <motion.button 
               onClick={handleMyLocationBtn}
-              whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               initial={{ scale: 0, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
