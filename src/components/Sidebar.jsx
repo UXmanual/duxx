@@ -289,7 +289,7 @@ const Sidebar = ({
                           </div>
                           <span className="text-[9px] text-gray-400">{formatDateTime(reply.created_at)}</span>
                         </div>
-                        <p className="text-xs text-gray-600 leading-normal bg-white border border-gray-50 p-3 rounded-tr-xl rounded-b-xl shadow-sm">
+                        <p className="text-xs text-gray-600 leading-normal bg-white border border-gray-100 p-3 rounded-tr-xl rounded-b-xl">
                           {renderTextWithLinks(reply.text)}
                         </p>
                       </div>
