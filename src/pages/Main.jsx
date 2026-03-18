@@ -266,7 +266,7 @@ const Main = () => {
     });
   };
   const fetchSubwayArrivals = async () => {
-    setSelectedSubwayArrivals([{ direction: "최근접 열차 정보를 가져오고 있습니다...", status: "조회 중", time: "⏳", isLoading: true }]);
+    setSelectedSubwayArrivals({ loading: true });
     panToWithOffset(seoulStationCoords.lat, seoulStationCoords.lng);
 
     const now = new Date();
@@ -468,10 +468,33 @@ const Main = () => {
                 <div className="w-1.5 h-1.5 bg-[#3D53B3] rounded-full animate-pulse" />
               </div>
               
-              {selectedSubwayArrivals.error ? (
-                <p className="text-xs font-bold text-gray-500 py-2">{selectedSubwayArrivals.error}</p>
+              {selectedSubwayArrivals.loading ? (
+                /* 지하철 스켈레톤 로더 (v40.1) */
+                <div className="flex flex-col gap-4 py-1 h-[218px]">
+                  {[1, 2].map(group => (
+                    <div key={group} className="flex flex-col gap-2">
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-8 h-4 bg-gray-100 rounded animate-pulse" />
+                        <div className="flex-1 h-[1px] bg-gray-50" />
+                      </div>
+                      <div className="flex flex-col gap-2.5">
+                        {[1, 2].map(item => (
+                          <div key={item} className="flex flex-col pl-1 border-l-2 border-gray-50">
+                            <div className="flex items-center gap-2">
+                              <div className="w-16 h-3 bg-gray-100 rounded animate-pulse" />
+                              <div className="w-12 h-2.5 bg-gray-50 rounded animate-pulse" />
+                            </div>
+                            <div className="w-24 h-3 bg-gray-100/60 rounded animate-pulse mt-1" />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : selectedSubwayArrivals.error ? (
+                <p className="text-xs font-bold text-gray-500 py-2 h-[218px] flex items-center justify-center italic">{selectedSubwayArrivals.error}</p>
               ) : (
-                <div className="flex flex-col gap-4 py-1">
+                <div className="flex flex-col gap-4 py-1 min-h-[218px]">
                   {/* 상행 그룹 (v39.9) */}
                   {selectedSubwayArrivals.up?.length > 0 && (
                     <div className="flex flex-col gap-2">
