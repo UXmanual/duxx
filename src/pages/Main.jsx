@@ -53,6 +53,7 @@ const Main = () => {
   const [isStarbucksVisible, setIsStarbucksVisible] = useState(true);
   const [selectedStarbucksId, setSelectedStarbucksId] = useState(null);
   const [selectedSubwayArrivals, setSelectedSubwayArrivals] = useState(null);
+  const [subwayFetchTime, setSubwayFetchTime] = useState(null);
   const seoulStationCoords = { lat: 37.554648, lng: 126.972559 };
 
   // 초기 위치 로딩 최적화 상태
@@ -268,39 +269,39 @@ const Main = () => {
     setSelectedSubwayArrivals([{ direction: "최근접 열차 정보를 가져오고 있습니다...", status: "조회 중", time: "⏳", isLoading: true }]);
     panToWithOffset(seoulStationCoords.lat, seoulStationCoords.lng);
 
+    const now = new Date();
+    const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+    setSubwayFetchTime(timeStr);
+
     try {
       const res = await fetch(`/api/subway`);
       const data = await res.json();
       
       if (data.realtimeArrivalList && data.realtimeArrivalList.length > 0) {
-        // 1호선(1001) 데이터만 먼저 분리
         const line1All = data.realtimeArrivalList.filter(item => item.subwayId === "1001");
-        
-        // 상행(Up: 0)과 하행(Down: 1) 중 가장 가까운 것 1개씩만 추출 (v39.6)
         const upTrain = line1All.filter(item => item.updnLine === "상행").sort((a, b) => parseInt(a.barvlDt) - parseInt(b.barvlDt))[0];
         const downTrain = line1All.filter(item => item.updnLine === "하행").sort((a, b) => parseInt(a.barvlDt) - parseInt(b.barvlDt))[0];
         
-        const finalArrivals = [];
-        if (upTrain) finalArrivals.push({
-          line: '1호선',
-          direction: upTrain.trainLineNm,
-          status: upTrain.arvlMsg2,
-          time: (upTrain.barvlDt && upTrain.barvlDt !== "0") ? `${Math.floor(upTrain.barvlDt / 60)}분 ${upTrain.barvlDt % 60}초 후` : "곧 도착"
-        });
-        if (downTrain) finalArrivals.push({
-          line: '1호선',
-          direction: downTrain.trainLineNm,
-          status: downTrain.arvlMsg2,
-          time: (downTrain.barvlDt && downTrain.barvlDt !== "0") ? `${Math.floor(downTrain.barvlDt / 60)}분 ${downTrain.barvlDt % 60}초 후` : "곧 도착"
-        });
+        const parseSubwayInfo = (train) => {
+          if (!train) return null;
+          // 광운대행 (시청방면) 분리 로직 (v39.7)
+          const [dest, dir] = train.trainLineNm.split(" - ");
+          return {
+            dest: dest,
+            direction: dir ? `(${dir})` : "",
+            status: train.arvlMsg2,
+            time: (train.barvlDt && train.barvlDt !== "0") ? `${Math.floor(train.barvlDt / 60)}분 ${train.barvlDt % 60}초 후` : ""
+          };
+        };
 
-        setSelectedSubwayArrivals(finalArrivals.length > 0 ? finalArrivals : [{ direction: "현재 운행 중인 1호선 열차가 없습니다.", status: "-", time: "-" }]);
+        const finalArrivals = [parseSubwayInfo(upTrain), parseSubwayInfo(downTrain)].filter(Boolean);
+        setSelectedSubwayArrivals(finalArrivals.length > 0 ? finalArrivals : [{ dest: "현재 운행 중인 1호선 열차가 없습니다.", status: "-", time: "" }]);
       } else {
-        setSelectedSubwayArrivals([{ direction: "현재 운행 정보가 없습니다.", status: "데이터 없음", time: "N/A" }]);
+        setSelectedSubwayArrivals([{ dest: "현재 운행 정보가 없습니다.", status: "데이터 없음", time: "" }]);
       }
     } catch (e) {
       console.error('Subway API Error:', e);
-      setSelectedSubwayArrivals([{ direction: "데이터를 불러올 수 없습니다.", status: "네트워크 오류", time: "재시도 필요" }]);
+      setSelectedSubwayArrivals([{ dest: "데이터 오류", status: "네트워크 오류", time: "" }]);
     }
   };
 
@@ -457,14 +458,19 @@ const Main = () => {
               className="bg-white/95 backdrop-blur-md p-4 rounded-[24px] border-2 border-[#3D53B3] shadow-[0_15px_45px_rgba(61,83,179,0.3)] flex flex-col gap-2 relative min-w-[180px] animate-bubble-spawn cursor-pointer"
               onClick={() => setSelectedSubwayArrivals(null)}
             >
-              <div className="flex items-center justify-between border-b border-gray-100 pb-2 mb-1">
-                <span className="text-[11px] font-black text-[#3D53B3]">1호선 서울역 실시간</span>
+              <div className="flex items-center justify-between border-b border-gray-100 pb-2 mb-1 gap-4">
+                <span className="text-[11px] font-black text-[#3D53B3] whitespace-nowrap">1호선 서울역 실시간 {subwayFetchTime && `(${subwayFetchTime})`}</span>
                 <div className="w-1.5 h-1.5 bg-[#3D53B3] rounded-full animate-pulse" />
               </div>
               {selectedSubwayArrivals.map((arrival, idx) => (
                 <div key={idx} className="flex justify-between items-center gap-4">
-                  <span className="text-xs font-black text-gray-800">{arrival.direction}</span>
-                  <span className="text-[11px] font-bold px-2 py-0.5 bg-[#3D53B3]/10 text-[#3D53B3] rounded-full">{arrival.status} ({arrival.time})</span>
+                  <div className="flex flex-col">
+                    <div className="flex items-center gap-1">
+                      <span className="text-xs font-black text-gray-800">{arrival.dest}</span>
+                      <span className="text-[10px] font-bold text-gray-400">{arrival.direction}</span>
+                    </div>
+                    <span className="text-[11px] font-bold text-[#3D53B3] leading-tight">{arrival.status} {arrival.time && <span className="text-gray-400 ml-1 font-normal text-[10px]">{arrival.time}</span>}</span>
+                  </div>
                 </div>
               ))}
               <p className="text-[9px] text-gray-400 mt-1 text-center font-bold">터치하여 닫기</p>
