@@ -16,7 +16,8 @@ const Sidebar = ({
   onPop,
   replyText, 
   setReplyText,
-  formatDateTime 
+  formatDateTime,
+  subwayData = null // v41.0 추가
 }) => {
   const [timeLeft, setTimeLeft] = useState('');
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
@@ -198,11 +199,73 @@ const Sidebar = ({
     </div>
   );
 
+  // [v41.0] 지하철 정보 전용 카드 컴포넌트
+  const SubwayContentCard = () => (
+    <div className="flex flex-col gap-6 mb-2">
+      <div className="flex flex-col gap-1">
+        <h2 className="text-xl font-black text-gray-900">1호선 서울역</h2>
+        <p className="text-[11px] font-bold text-[#3D53B3] flex items-center gap-1.5 py-1 px-3 bg-[#3D53B3]/10 rounded-full w-max">
+          <div className="w-1.5 h-1.5 bg-[#3D53B3] rounded-full animate-pulse" />
+          실시간 도착 정보 {subwayData.fetchTime && `(${subwayData.fetchTime})`}
+        </p>
+      </div>
+
+      <div className="flex flex-col gap-6 py-2">
+        {/* 상행 그룹 */}
+        {subwayData.up?.length > 0 && (
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center gap-2">
+              <span className="px-2 py-0.5 bg-gray-100 text-[10px] font-black text-gray-500 rounded uppercase">Upbound / 상행</span>
+              <div className="flex-1 h-[1px] bg-gray-100" />
+            </div>
+            <div className="grid gap-3">
+              {subwayData.up.map((arrival, idx) => (
+                <div key={`side-up-${idx}`} className="p-4 bg-gray-50/50 rounded-2xl border border-gray-100 flex flex-col gap-1 hover:border-[#3D53B3]/30 transition-colors">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-black text-gray-900">{arrival.dest}</span>
+                    <span className="text-xs font-bold text-gray-400">{arrival.direction}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-[13px] font-bold text-[#3D53B3]">{arrival.status}</span>
+                    <span className="text-[11px] font-medium text-gray-500">{arrival.time}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* 하행 그룹 */}
+        {subwayData.down?.length > 0 && (
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center gap-2">
+              <span className="px-2 py-0.5 bg-gray-100 text-[10px] font-black text-gray-500 rounded uppercase">Downbound / 하행</span>
+              <div className="flex-1 h-[1px] bg-gray-100" />
+            </div>
+            <div className="grid gap-3">
+              {subwayData.down.map((arrival, idx) => (
+                <div key={`side-down-${idx}`} className="p-4 bg-gray-50/50 rounded-2xl border border-gray-100 flex flex-col gap-1 hover:border-[#3D53B3]/30 transition-colors">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-black text-gray-900">{arrival.dest}</span>
+                    <span className="text-xs font-bold text-gray-400">{arrival.direction}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-[13px] font-bold text-[#3D53B3]">{arrival.status}</span>
+                    <span className="text-[11px] font-medium text-gray-500">{arrival.time}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
   return (
     <AnimatePresence>
-      {memo && (
+      {(memo || subwayData) && (
         <>
-          {/* 모바일 배경 오버레이 (딤 처리 제거: 투명하게) */}
           <motion.div 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -228,22 +291,25 @@ const Sidebar = ({
               overflow-hidden
             `}
           >
-            {/* [Header Area] PC 헤더 / 모바일 드래그 카드 */}
+            {/* [Header Area] */}
             <motion.div 
               className={`flex-shrink-0 touch-none select-none relative z-30 bg-white ${isMobile ? 'cursor-grab active:cursor-grabbing' : ''}`}
               onPan={isMobile ? handlePan : undefined}
               onPanEnd={isMobile ? handlePanEnd : undefined}
             >
               {isMobile ? (
-                // 모바일 상단 드래그 영역
                 <div className="px-6 pt-5 pb-4 space-y-4">
                   <div className="w-full flex justify-center pb-2">
                     <div className="w-14 h-1.5 bg-gray-200 rounded-full" />
                   </div>
-                  <MemoContentCard isCompact={true} />
+                  {memo && <MemoContentCard isCompact={true} />}
+                  {subwayData && (subwayData.loading ? (
+                    <div className="h-40 flex items-center justify-center bg-gray-50 rounded-2xl animate-pulse">
+                      <span className="text-xs font-bold text-gray-400">지하철 실시간 정보를 가져오고 있습니다...</span>
+                    </div>
+                  ) : <SubwayContentCard />)}
                 </div>
               ) : (
-                // PC 상단 헤더
                 <div className="px-6 py-5 flex items-center justify-between border-b border-gray-100">
                   <div className="flex items-center">
                     <span className="logo-font text-[20px] tracking-[0] uppercase text-[#FF4D00] select-none">BABBLE</span>
@@ -255,78 +321,89 @@ const Sidebar = ({
               )}
             </motion.div>
 
-            {/* [Scrollable Area] 댓글 및 본문(PC전용) 영역 */}
+            {/* [Scrollable Area] */}
             <div 
               className="flex-1 overflow-y-auto custom-scrollbar px-6 pt-4 pb-6"
               onPointerDown={(e) => e.stopPropagation()} 
             >
               {!isMobile && (
-                // PC에서는 스크롤 영역 상단에 본문 정보 노출
                 <div className="pt-2">
-                  <MemoContentCard />
+                  {memo && <MemoContentCard />}
+                  {subwayData && (subwayData.loading ? (
+                    <div className="space-y-6">
+                       <div className="w-48 h-8 bg-gray-100 rounded-lg animate-pulse" />
+                       <div className="space-y-4">
+                         {[1,2,3,4].map(i => <div key={i} className="h-20 bg-gray-50 rounded-2xl animate-pulse" />)}
+                       </div>
+                    </div>
+                  ) : <SubwayContentCard />)}
                 </div>
               )}
 
-              <div className="space-y-5">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-black text-gray-900 text-sm">답글 <span className="text-[#FF4D00] ml-1">{replies.length}</span></h3>
-                  <div className="h-px bg-gray-100 flex-1 ml-4" />
-                </div>
-                
-                <div className="space-y-4">
-                  {sortedReplies.map((reply) => (
-                    <div key={reply.id} className="flex gap-3">
-                      <div className={`flex-shrink-0 w-8 h-8 rounded-xl flex items-center justify-center text-[10px] font-black ${reply.is_ai ? 'bg-indigo-50 text-indigo-600' : 'bg-gray-100 text-gray-700'}`}>
-                        {reply.nickname?.charAt(0)}
-                      </div>
-                      <div className="flex-1 space-y-1">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-1.5">
-                            <span className="text-[11px] font-black text-gray-800">{reply.nickname}</span>
-                            {reply.is_ai && (
-                              <span className="text-[9px] bg-indigo-50 text-indigo-500 px-1 rounded-sm font-bold border border-indigo-100/50">A</span>
-                            )}
-                          </div>
-                          <span className="text-[9px] text-gray-400">{formatDateTime(reply.created_at)}</span>
+              {memo && (
+                <div className="space-y-5">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-black text-gray-900 text-sm">답글 <span className="text-[#FF4D00] ml-1">{replies.length}</span></h3>
+                    <div className="h-px bg-gray-100 flex-1 ml-4" />
+                  </div>
+                  
+                  <div className="space-y-4">
+                    {sortedReplies.map((reply) => (
+                      <div key={reply.id} className="flex gap-3">
+                        <div className={`flex-shrink-0 w-8 h-8 rounded-xl flex items-center justify-center text-[10px] font-black ${reply.is_ai ? 'bg-indigo-50 text-indigo-600' : 'bg-gray-100 text-gray-700'}`}>
+                          {reply.nickname?.charAt(0)}
                         </div>
-                        <p className="text-xs text-gray-600 leading-normal bg-white border border-gray-100 p-3 rounded-tr-xl rounded-b-xl">
-                          {renderTextWithLinks(reply.text)}
-                        </p>
+                        <div className="flex-1 space-y-1">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-[11px] font-black text-gray-800">{reply.nickname}</span>
+                              {reply.is_ai && (
+                                <span className="text-[9px] bg-indigo-50 text-indigo-500 px-1 rounded-sm font-bold border border-indigo-100/50">A</span>
+                              )}
+                            </div>
+                            <span className="text-[9px] text-gray-400">{formatDateTime(reply.created_at)}</span>
+                          </div>
+                          <p className="text-xs text-gray-600 leading-normal bg-white border border-gray-100 p-3 rounded-tr-xl rounded-b-xl">
+                            {renderTextWithLinks(reply.text)}
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                  {sortedReplies.length === 0 && (
-                    <div className="text-center py-10 opacity-40">
-                      <MessageSquare size={24} className="mx-auto mb-2 text-gray-300" />
-                      <p className="text-[10px] font-bold">첫 번째 답글을 남겨보세요!</p>
-                    </div>
-                  )}
+                    ))}
+                    {sortedReplies.length === 0 && (
+                      <div className="text-center py-10 opacity-40">
+                        <MessageSquare size={24} className="mx-auto mb-2 text-gray-300" />
+                        <p className="text-[10px] font-bold">첫 번째 답글을 남겨보세요!</p>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
+              )}
               <div className="h-32" />
             </div>
 
-            {/* [Bottom Fixed Area] 답글 입력창 */}
-            <div className={`
-              ${isMobile ? 'absolute bottom-0 left-0 w-full' : 'relative'}
-              px-6 py-5 bg-white border-t border-gray-100 flex-shrink-0 z-40
-            `}>
-              <div className="relative flex items-center">
-                <input 
-                  type="text" value={replyText} onChange={(e) => setReplyText(e.target.value)}
-                  placeholder="말하고싶은 바블을 남겨주세요"
-                  className="w-full pl-6 pr-16 py-4 bg-gray-50 border border-gray-200 rounded-[22px] text-[13px] font-bold focus:outline-none focus:ring-4 focus:ring-[#FF4D00]/10 focus:bg-white transition-all"
-                  onKeyPress={(e) => e.key === 'Enter' && onReplySubmit(memo.id)}
-                />
-                <button 
-                  onClick={() => onReplySubmit(memo.id)}
-                  className="absolute right-1.5 w-11 h-11 bg-[#FF4D00] text-white rounded-2xl flex items-center justify-center active:scale-95 transition-transform"
-                >
-                  <Send size={18} strokeWidth={2.5} />
-                </button>
+            {/* [Bottom Fixed Area] - 지하철 모드에서는 숨김 */}
+            {memo && (
+              <div className={`
+                ${isMobile ? 'absolute bottom-0 left-0 w-full' : 'relative'}
+                px-6 py-5 bg-white border-t border-gray-100 flex-shrink-0 z-40
+              `}>
+                <div className="relative flex items-center">
+                  <input 
+                    type="text" value={replyText} onChange={(e) => setReplyText(e.target.value)}
+                    placeholder="말하고싶은 바블을 남겨주세요"
+                    className="w-full pl-6 pr-16 py-4 bg-gray-50 border border-gray-200 rounded-[22px] text-[13px] font-bold focus:outline-none focus:ring-4 focus:ring-[#FF4D00]/10 focus:bg-white transition-all"
+                    onKeyPress={(e) => e.key === 'Enter' && onReplySubmit(memo.id)}
+                  />
+                  <button 
+                    onClick={() => onReplySubmit(memo.id)}
+                    className="absolute right-1.5 w-11 h-11 bg-[#FF4D00] text-white rounded-2xl flex items-center justify-center active:scale-95 transition-transform"
+                  >
+                    <Send size={18} strokeWidth={2.5} />
+                  </button>
+                </div>
+                {isMobile && <div style={{ height: 'env(safe-area-inset-bottom, 16px)' }} />}
               </div>
-              {isMobile && <div style={{ height: 'env(safe-area-inset-bottom, 16px)' }} />}
-            </div>
+            )}
           </motion.div>
         </>
       )}

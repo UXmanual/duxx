@@ -273,6 +273,9 @@ const Main = () => {
     });
   };
   const fetchSubwayArrivals = async () => {
+    // 이미 로딩 중이거나 데이터가 있으면 중복 호출 방지 (v40.3)
+    if (selectedSubwayArrivals) return;
+    
     setSelectedSubwayArrivals({ loading: true });
     panToWithOffset(seoulStationCoords.lat, seoulStationCoords.lng);
 
@@ -453,7 +456,7 @@ const Main = () => {
           </CustomOverlayMap>
         )}
 
-        {/* 1호선 서울역 특별 마커 및 도착정보 바블 (v39.3) - 중복 제거 및 여백 보정 */}
+        {/* 1호선 서울역 특별 마커 (v41.0 - LNB 통합) */}
         <MapMarker 
           position={seoulStationCoords}
           image={{ 
@@ -464,94 +467,6 @@ const Main = () => {
           onClick={fetchSubwayArrivals}
           zIndex={100}
         />
-        {selectedSubwayArrivals && (
-          <CustomOverlayMap position={seoulStationCoords} yAnchor={2.15} zIndex={1000} clickable={true}>
-            <div 
-              className="bg-white/95 backdrop-blur-md p-4 rounded-[24px] border-2 border-[#3D53B3] shadow-[0_15px_45px_rgba(61,83,179,0.3)] flex flex-col gap-2 relative min-w-[180px] animate-bubble-spawn cursor-pointer"
-              onClick={() => setSelectedSubwayArrivals(null)}
-            >
-              <div className="flex items-center justify-between border-b border-gray-100 pb-2 mb-1 gap-4">
-                <span className="text-[11px] font-black text-[#3D53B3] whitespace-nowrap">1호선 서울역 실시간 {subwayFetchTime && `(${subwayFetchTime})`}</span>
-                <div className="w-1.5 h-1.5 bg-[#3D53B3] rounded-full animate-pulse" />
-              </div>
-              
-              {selectedSubwayArrivals.loading ? (
-                /* 지하철 스켈레톤 로더 (v40.1) */
-                <div className="flex flex-col gap-4 py-1 h-[218px]">
-                  {[1, 2].map(group => (
-                    <div key={group} className="flex flex-col gap-2">
-                      <div className="flex items-center gap-1.5">
-                        <div className="w-8 h-4 bg-gray-100 rounded animate-pulse" />
-                        <div className="flex-1 h-[1px] bg-gray-50" />
-                      </div>
-                      <div className="flex flex-col gap-2.5">
-                        {[1, 2].map(item => (
-                          <div key={item} className="flex flex-col pl-1 border-l-2 border-gray-50">
-                            <div className="flex items-center gap-2">
-                              <div className="w-16 h-3 bg-gray-100 rounded animate-pulse" />
-                              <div className="w-12 h-2.5 bg-gray-50 rounded animate-pulse" />
-                            </div>
-                            <div className="w-24 h-3 bg-gray-100/60 rounded animate-pulse mt-1" />
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : selectedSubwayArrivals.error ? (
-                <p className="text-xs font-bold text-gray-500 py-2 h-[218px] flex items-center justify-center italic">{selectedSubwayArrivals.error}</p>
-              ) : (
-                <div className="flex flex-col gap-4 py-1 min-h-[218px]">
-                  {/* 상행 그룹 (v39.9) */}
-                  {selectedSubwayArrivals.up?.length > 0 && (
-                    <div className="flex flex-col gap-2">
-                      <div className="flex items-center gap-1.5">
-                        <span className="px-1.5 py-0.5 bg-gray-100 text-[9px] font-black text-gray-400 rounded">상행</span>
-                        <div className="flex-1 h-[1px] bg-gray-50" />
-                      </div>
-                      <div className="flex flex-col gap-2.5">
-                        {selectedSubwayArrivals.up.map((arrival, idx) => (
-                          <div key={`up-${idx}`} className="flex flex-col pl-1 border-l-2 border-[#3D53B3]/20">
-                            <div className="flex items-center gap-1">
-                              <span className="text-xs font-black text-gray-800">{arrival.dest}</span>
-                              <span className="text-[10px] font-bold text-gray-400">{arrival.direction}</span>
-                            </div>
-                            <span className="text-[11px] font-bold text-[#3D53B3] leading-tight mt-0.5">
-                              {arrival.status} {arrival.time && <span className="text-gray-400 ml-1 font-normal text-[10px]">{arrival.time}</span>}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* 하행 그룹 (v39.9) */}
-                  {selectedSubwayArrivals.down?.length > 0 && (
-                    <div className="flex flex-col gap-2">
-                      <div className="flex items-center gap-1.5">
-                        <span className="px-1.5 py-0.5 bg-gray-100 text-[9px] font-black text-gray-400 rounded">하행</span>
-                        <div className="flex-1 h-[1px] bg-gray-50" />
-                      </div>
-                      <div className="flex flex-col gap-2.5">
-                        {selectedSubwayArrivals.down.map((arrival, idx) => (
-                          <div key={`down-${idx}`} className="flex flex-col pl-1 border-l-2 border-[#E7E7E7]">
-                            <div className="flex items-center gap-1">
-                              <span className="text-xs font-black text-gray-800">{arrival.dest}</span>
-                              <span className="text-[10px] font-bold text-gray-400">{arrival.direction}</span>
-                            </div>
-                            <span className="text-[11px] font-bold text-[#3D53B3] leading-tight mt-0.5">
-                              {arrival.status} {arrival.time && <span className="text-gray-400 ml-1 font-normal text-[10px]">{arrival.time}</span>}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          </CustomOverlayMap>
-        )}
 
         {isStarbucksVisible && starbucksPlaces.map(place => (
           <React.Fragment key={`sb-${place.id}`}>
@@ -681,13 +596,14 @@ const Main = () => {
       <Sidebar 
         memo={memos.find(m => m.id === selectedMemoId)} 
         replies={memos.filter(m => m.parent_id === selectedMemoId)} 
-        onClose={() => setSelectedMemoId(null)} 
+        onClose={() => { setSelectedMemoId(null); setSelectedSubwayArrivals(null); }} 
         onDelete={handleDeleteMemo} 
         onReplySubmit={handleReplySubmit} 
         onPop={handlePopBubble} 
         replyText={replyText} 
         setReplyText={setReplyText} 
         formatDateTime={formatDateTime} 
+        subwayData={selectedSubwayArrivals}
       />
 
       <div className="fixed bottom-10 right-8 z-[9999] pointer-events-none">
