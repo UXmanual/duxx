@@ -432,8 +432,8 @@ const Main = () => {
           </React.Fragment>
         ))}
 
-        {mapLevel >= 8 ? (
-          <MarkerClusterer averageCenter={true} minLevel={8} minClusterSize={1} styles={[{ width: '32px', height: '32px', background: '#FF4D00', color: '#fff', textAlign: 'center', fontWeight: 'bold', lineHeight: '28px', borderRadius: '50%', border: '2px solid white', boxShadow: '0 2px 8px rgba(0,0,0,0.3)', fontSize: '14px' }]}>
+        {mapLevel >= 6 ? (
+          <MarkerClusterer averageCenter={true} minLevel={6} minClusterSize={1} styles={[{ width: '32px', height: '32px', background: '#FF4D00', color: '#fff', textAlign: 'center', fontWeight: 'bold', lineHeight: '28px', borderRadius: '50%', border: '2px solid white', boxShadow: '0 2px 8px rgba(0,0,0,0.3)', fontSize: '14px' }]}>
             {rootMemos.filter(m => !m.popped_at).map(memo => <MapMarker key={memo.id} position={{ lat: memo.lat, lng: memo.lng }} />)}
           </MarkerClusterer>
         ) : (
