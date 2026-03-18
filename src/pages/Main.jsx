@@ -449,14 +449,14 @@ const Main = () => {
           </AnimatePresence>
 
           <div className="flex flex-col gap-3">
-            {/* 글쓰기 버튼 (쉐도우 삭제, 플랫 스타일) */}
+            {/* 글쓰기 버튼 (아이콘 컬러 삭제, 테두리 삭제, 블러 효과 추가) */}
             <motion.button 
               onClick={() => setIsMemoMode(!isMemoMode)}
-              whileHover={{ scale: 1.05, rotate: isMemoMode ? 90 : 0 }}
+              whileHover={{ scale: 1.05, rotate: isMemoMode ? 180 : 0 }}
               whileTap={{ scale: 0.95 }}
               initial={{ scale: 0, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              className={`w-16 h-16 rounded-[22px] flex items-center justify-center border-2 transition-colors ${isMemoMode ? 'bg-[#FF4D00] text-white border-[#FF4D00]' : 'bg-white text-[#FF4D00] border-gray-100'}`}
+              className={`w-16 h-16 rounded-[22px] flex items-center justify-center transition-all backdrop-blur-md ${isMemoMode ? 'bg-[#FF4D00] text-white shadow-lg' : 'bg-white/80 text-[#FF4D00]'}`}
             >
               {isMemoMode ? (
                 <X size={28} strokeWidth={3} />
@@ -472,12 +472,12 @@ const Main = () => {
                     ease: "easeInOut"
                   }}
                 >
-                  <MessageSquare size={28} strokeWidth={3} fill="currentColor" fillOpacity={0.1} />
+                  <MessageSquare size={28} strokeWidth={3} fill="none" />
                 </motion.div>
               )}
             </motion.button>
             
-            {/* 내 위치 버튼 (쉐도우 삭제, 플랫 스타일) */}
+            {/* 내 위치 버튼 (아이콘 컬러 삭제, 테두리 삭제, 블러 효과 추가) */}
             <motion.button 
               onClick={handleMyLocationBtn}
               whileHover={{ scale: 1.05 }}
@@ -485,7 +485,7 @@ const Main = () => {
               initial={{ scale: 0, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ delay: 0.1 }}
-              className="w-16 h-16 rounded-[22px] flex items-center justify-center bg-white text-gray-800 border-2 border-gray-100 active:bg-gray-50 h-16"
+              className="w-16 h-16 rounded-[22px] flex items-center justify-center bg-white/80 text-gray-800 backdrop-blur-md active:bg-white transition-all h-16"
             >
               <Crosshair size={26} strokeWidth={2.5} className="text-[#FF4D00]" />
             </motion.button>
