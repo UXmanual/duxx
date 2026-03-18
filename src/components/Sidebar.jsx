@@ -128,6 +128,29 @@ const Sidebar = ({
     }
   };
 
+  // URL 링크 감지 및 변환 함수 (v38.2)
+  const renderTextWithLinks = (text) => {
+    if (!text) return null;
+    const urlRegex = /(https?:\/\/[^\s]+)/g;
+    return text.split(urlRegex).map((chunk, i) => {
+      if (chunk.match(urlRegex)) {
+        return (
+          <a 
+            key={i} 
+            href={chunk} 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="text-[#FF4D00] hover:underline underline-offset-4 break-all decoration-2 font-bold"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {chunk}
+          </a>
+        );
+      }
+      return chunk;
+    });
+  };
+
   // 공통 바블 본문 카드 컴포넌트
   const MemoContentCard = ({ isCompact = false }) => (
     <div className={`space-y-4 ${isCompact ? '' : 'mb-8'}`}>
@@ -159,7 +182,9 @@ const Sidebar = ({
         )}
       </div>
       <div className={`relative p-5 bg-gray-50 rounded-[24px] border border-gray-100 ${isMobile ? 'max-h-[160px]' : ''} overflow-hidden`}>
-        <p className="text-gray-800 text-sm leading-relaxed font-medium whitespace-pre-wrap">{memo.text}</p>
+        <p className="text-gray-800 text-sm leading-relaxed font-medium whitespace-pre-wrap">
+          {renderTextWithLinks(memo.text)}
+        </p>
       </div>
       <div className="flex items-center gap-4 text-[10px] font-bold px-1">
         <span className={`flex items-center gap-1.5 ${memo.popped_at ? 'text-[#FF4D00]' : 'text-blue-500'}`}>
@@ -265,7 +290,7 @@ const Sidebar = ({
                           <span className="text-[9px] text-gray-400">{formatDateTime(reply.created_at)}</span>
                         </div>
                         <p className="text-xs text-gray-600 leading-normal bg-white border border-gray-50 p-3 rounded-tr-xl rounded-b-xl shadow-sm">
-                          {reply.text}
+                          {renderTextWithLinks(reply.text)}
                         </p>
                       </div>
                     </div>
