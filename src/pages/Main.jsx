@@ -551,13 +551,13 @@ const Main = () => {
               className={`w-16 h-16 rounded-[22px] flex items-center justify-center transition-all backdrop-blur-md ${isMemoMode ? 'bg-[#FF4D00] text-white shadow-lg' : 'bg-white/80 text-[#FF4D00]'}`}
             >
               {isMemoMode ? (
-                <X size={28} strokeWidth={3} />
+                <X size={28} strokeWidth={2.5} />
               ) : (
                 <motion.div
                   animate={{ y: [0, -3, 0], rotate: [0, -10, 10, 0] }}
                   transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
                 >
-                  <MessageSquare size={28} strokeWidth={3} fill="none" />
+                  <MessageSquare size={28} strokeWidth={2.5} fill="none" />
                 </motion.div>
               )}
             </motion.button>
