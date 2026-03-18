@@ -167,6 +167,13 @@ const Main = () => {
     if (map) fetchMemos();
   }, [map]);
 
+  // 지능형 줌 대응: 6레벨 이상일 때 지하철 바블 자동 닫기 (v40.2)
+  useEffect(() => {
+    if (mapLevel >= 6 && selectedSubwayArrivals) {
+      setSelectedSubwayArrivals(null);
+    }
+  }, [mapLevel, selectedSubwayArrivals]);
+
   const handleMyLocationBtn = (e) => {
     if (e) { e.preventDefault(); e.stopPropagation(); }
     requestLocation(true);
