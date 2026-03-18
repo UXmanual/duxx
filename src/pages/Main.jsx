@@ -283,6 +283,10 @@ const Main = () => {
         if (!error && data) {
           const createdMemo = { ...data[0], is_new: true };
           setMemos(prev => [...prev, createdMemo]);
+          
+          // 새 바블 위치로 지도 중심 이동 (v38.6)
+          panToWithOffset(data[0].lat, data[0].lng);
+          
           setWritingMemoCoords(null);
           setNewMemoText('');
           setIsMemoMode(false);
