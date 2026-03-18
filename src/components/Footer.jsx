@@ -19,6 +19,11 @@ const Footer = () => {
             <p className="text-[14px] font-bold tracking-[0]">
               Build v{pkg.version}
             </p>
+            <p className="text-[14px] font-bold tracking-[0]">
+              <span>v34.5 (Architecture Upgrade)</span>
+              <span className="mx-2">•</span>
+              <span>Last Updated: 2026-03-18 09:12</span>
+            </p>
           </div>
           {/* 저작권: 블랙 0.3 */}
           <p className="font-black text-[14px] tracking-[0] select-none">
