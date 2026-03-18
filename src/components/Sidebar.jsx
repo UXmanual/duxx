@@ -29,13 +29,23 @@ const Sidebar = ({
   useEffect(() => {
     const handleResize = () => {
       const mobile = window.innerWidth < 768;
-      setIsMobile(mobile);
-      setWindowHeight(window.innerHeight);
       
-      // 모바일에서 PC로 전환될 때 바텀시트 높이값 리셋
-      if (!mobile) {
+      // PC에서 모바일로 전환될 때 바텀시트 높이 초기화 (45%)
+      if (mobile && !isMobile && memo) {
+        animate(sheetHeight, window.innerHeight * 0.45, { 
+          type: 'spring', 
+          damping: 30, 
+          stiffness: 400 
+        });
+      }
+      
+      // 모바일에서 PC로 전환될 때 바텀시트 높이값 리셋 (100%)
+      if (!mobile && isMobile) {
         sheetHeight.set('100%');
       }
+
+      setIsMobile(mobile);
+      setWindowHeight(window.innerHeight);
     };
     window.addEventListener('resize', handleResize);
     
