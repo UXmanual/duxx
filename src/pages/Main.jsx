@@ -286,11 +286,13 @@ const Main = () => {
         const parseSubwayInfo = (train) => {
           if (!train) return null;
           const [dest, dir] = train.trainLineNm.split(" - ");
+          // '서울' 문구를 '당역'으로 치환 (v40.0)
+          const statusMsg = train.arvlMsg2.replace(/서울/g, "당역");
           return {
             dest: dest,
             direction: dir ? `(${dir})` : "",
-            status: train.arvlMsg2,
-            time: (train.barvlDt && train.barvlDt !== "0") ? `${Math.floor(train.barvlDt / 60)}분 ${train.barvlDt % 60}초 후 도착` : "곧 도착"
+            status: statusMsg,
+            time: (train.barvlDt && train.barvlDt !== "0") ? `${Math.floor(train.barvlDt / 60)}분 ${train.barvlDt % 60}초 후 도착` : ""
           };
         };
 
@@ -517,7 +519,6 @@ const Main = () => {
                   )}
                 </div>
               )}
-              <p className="text-[9px] text-gray-400 mt-1 text-center font-bold">터치하여 닫기</p>
             </div>
           </CustomOverlayMap>
         )}
