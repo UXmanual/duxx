@@ -190,20 +190,60 @@ const Main = () => {
 
   const triggerAIResponse = async (parentMemo) => {
     const delay = Math.floor(Math.random() * 3000) + 2000;
+    
     setTimeout(async () => {
+      // 1. 컨텍스트 분석 (시간대)
+      const hour = new Date().getHours();
+      let timeKey = 'night';
+      if (hour >= 6 && hour < 11) timeKey = 'morning';
+      else if (hour >= 11 && hour < 17) timeKey = 'afternoon';
+      else if (hour >= 17 && hour < 22) timeKey = 'evening';
+
+      // 2. 컨텍스트 분석 (날씨) - Open-Meteo API 재요청 (v37.7)
+      let weatherKey = 'sunny';
+      try {
+        const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${parentMemo.lat}&longitude=${parentMemo.lng}&current_weather=true`);
+        const data = await res.json();
+        const code = data.current_weather.weathercode;
+        if ([51, 53, 55, 61, 63, 65, 80, 81, 82, 95, 96, 99].includes(code)) weatherKey = 'rainy';
+        else if ([71, 73, 75, 77, 85, 86].includes(code)) weatherKey = 'snowy';
+        else if ([1, 2, 3, 45, 48].includes(code)) weatherKey = 'cloudy';
+      } catch (e) { console.warn('Weather fetch for AI failed:', e); }
+
+      // 3. 적절한 페르소나 선택
       const persona = AI_PERSONAS[Math.floor(Math.random() * AI_PERSONAS.length)];
+      
+      // 4. 스마트 답글 로직 (우선순위: 키워드 > 날씨 > 시간대 > 기본 스타일)
+      let replyContent = "";
+      const userText = parentMemo.text || "";
+      const matchedKeyword = Object.keys(persona.keywordMapper).find(key => userText.includes(key));
+      
+      if (matchedKeyword) {
+        replyContent = persona.keywordMapper[matchedKeyword];
+      } else if (Math.random() > 0.5) {
+        // 50% 확률로 날씨 기반 멘트
+        replyContent = persona.weatherContext[weatherKey];
+      } else if (Math.random() > 0.3) {
+        // 그 다음 확률로 시간대반 멘트
+        replyContent = persona.timeContext[timeKey];
+      } else {
+        replyContent = persona.styles[Math.floor(Math.random() * persona.styles.length)];
+      }
+
+      // 5. 닉네임 생성 (지역명 + 페르소나 이름 + 이모지)
       const neighborhood = parentMemo.nickname?.split(' ')[0] || "어딘가";
       const nickname = `${neighborhood} ${persona.name} ${persona.emoji}`.trim();
       
       const newReply = { 
         lat: parentMemo.lat, 
         lng: parentMemo.lng, 
-        text: persona.styles[Math.floor(Math.random() * persona.styles.length)], 
+        text: replyContent, 
         nickname: nickname, 
         parent_id: parentMemo.id, 
         is_ai: true, 
         persona_id: persona.id 
       };
+      
       try {
         const { data, error } = await supabase.from('memos').insert([newReply]).select();
         if (!error && data) setMemos(prev => [...prev, data[0]]);
