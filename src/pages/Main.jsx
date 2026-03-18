@@ -435,7 +435,7 @@ const Main = () => {
               <div className="flex justify-between items-center mb-6">
                 <h3 className="text-[18px] font-black text-gray-900 tracking-tight">여기에 바블하기</h3>
                 <button 
-                  onClick={() => { setWritingMemoCoords(null); setNewMemoText(''); }}
+                  onClick={() => { setWritingMemoCoords(null); setNewMemoText(''); setIsMemoMode(false); }}
                   className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 hover:bg-gray-200"
                 >
                   <X size={18} />
@@ -452,7 +452,7 @@ const Main = () => {
 
               <div className="flex gap-3">
                 <button 
-                  onClick={() => { setWritingMemoCoords(null); setNewMemoText(''); }}
+                  onClick={() => { setWritingMemoCoords(null); setNewMemoText(''); setIsMemoMode(false); }}
                   className="flex-1 py-4 rounded-2xl bg-gray-100 text-gray-600 font-bold text-[15px]"
                 >
                   취소
