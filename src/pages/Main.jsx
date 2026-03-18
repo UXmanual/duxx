@@ -449,7 +449,7 @@ const Main = () => {
               className="w-full max-w-[400px] bg-white/80 backdrop-blur-xl rounded-[32px] p-8 shadow-[0_30px_60px_rgba(255,77,0,0.15)] pointer-events-auto border border-white"
             >
               <div className="flex justify-between items-center mb-6">
-                <h3 className="text-[18px] font-black text-gray-900 tracking-tight">지도의 여기에 바블하기</h3>
+                <h3 className="text-[18px] font-black text-gray-900 tracking-tight">여기에 바블하기</h3>
                 <button 
                   onClick={() => { setWritingMemoCoords(null); setNewMemoText(''); }}
                   className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 hover:bg-gray-200"
@@ -463,7 +463,7 @@ const Main = () => {
                 value={newMemoText}
                 onChange={(e) => setNewMemoText(e.target.value)}
                 placeholder="어떤 이야기를 남길까요?"
-                className="w-full h-32 bg-gray-50/50 rounded-2xl p-4 text-[15px] font-medium border-none focus:ring-2 focus:ring-[#FF4D00]/20 resize-none mb-6 placeholder:text-gray-400"
+                className="w-full h-24 bg-white/50 rounded-2xl p-4 text-[15px] font-medium border border-gray-100 focus:border-[#FF4D00] focus:ring-4 focus:ring-[#FF4D00]/10 focus:outline-none transition-all resize-none mb-6 placeholder:text-gray-400"
               />
 
               <div className="flex gap-3">
