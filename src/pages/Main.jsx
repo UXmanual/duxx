@@ -22,9 +22,9 @@ const formatDateTime = (dateString) => {
 
 /**
  * [Page] 메인 페이지 (지도 메모 기능 통합 버전)
- * @version 34.4
+ * @version 36.7
  * @description 
- * - 선택 바블의 두꺼운 링 제거 및 소프트 글로우(Glow) 효과 적용 버전입니다. (v34.4)
+ * - 커스텀 메모 폼 복구 및 사이드바 노출 정상화 (긴급 패치)
  */
 
 // 닉네임 조합용 상수
@@ -76,7 +76,7 @@ const Main = () => {
     });
   }, [memos]);
 
-  // 부드러운 오프셋 센터링을 위한 헬퍼 함수 (v32.8)
+  // 부드러운 오프셋 센터링을 위한 헬퍼 함수
   const panToWithOffset = (lat, lng) => {
     if (!map) return;
     const latlng = new window.kakao.maps.LatLng(lat, lng);
@@ -84,7 +84,6 @@ const Main = () => {
     
     if (isMobile) {
       const projection = map.getProjection();
-      // 바텀시트 높이(약 45%)를 고려하여 마커를 화면 중상단(약 30~35% 지점)에 배치
       const offsetPixels = 160; 
       const markerPoint = projection.pointFromCoords(latlng);
       const newCenterPoint = new window.kakao.maps.Point(markerPoint.x, markerPoint.y + offsetPixels);
@@ -137,8 +136,6 @@ const Main = () => {
     fetchMemos();
   }, []);
 
-  // [중요] 만료된 바블 자동 삭제 로직 안정화 (v32.7)
-  // 부작용을 방지하기 위해 렌더링 외부(setInterval)에서 ID를 식별한 후 상태 업데이트
   useEffect(() => {
     const reaper = setInterval(async () => {
       const now = new Date();
@@ -150,16 +147,8 @@ const Main = () => {
 
       if (expiredItems.length > 0) {
         const expiredIds = expiredItems.map(m => m.id);
-        
-        // 1. 선택된 메모가 만료된 경우 LNB 먼저 닫기
-        if (expiredIds.includes(selectedMemoId)) {
-          setSelectedMemoId(null);
-        }
-
-        // 2. 메모 상태 업데이트
+        if (expiredIds.includes(selectedMemoId)) setSelectedMemoId(null);
         setMemos(prev => prev.filter(m => !expiredIds.includes(m.id)));
-
-        // 3. DB 실제 삭제 (비동기)
         if (supabase) {
           try {
             await supabase.from('memos').delete().in('id', expiredIds);
@@ -203,8 +192,6 @@ const Main = () => {
     const delay = Math.floor(Math.random() * 3000) + 2000;
     setTimeout(async () => {
       const persona = AI_PERSONAS[Math.floor(Math.random() * AI_PERSONAS.length)];
-      
-      // 부모 메모의 지역명 추출 (v33.0: aiPersonas.js 데이터 정리로 로직 단순화)
       const neighborhood = parentMemo.nickname?.split(' ')[0] || "어딘가";
       const nickname = `${neighborhood} ${persona.name} ${persona.emoji}`.trim();
       
@@ -269,8 +256,6 @@ const Main = () => {
 
   const handlePopBubble = async (id, e) => {
     if (e) e.stopPropagation();
-    
-    // v34.2: DOM 요소를 직접 찾아 아이콘 위치를 100% 정확하게 타격
     const popElement = document.querySelector(`[data-pop-id="${id}"]`);
     let origin;
 
@@ -281,7 +266,6 @@ const Main = () => {
         y: (rect.top + rect.height / 2) / window.innerHeight
       };
     } else {
-      // 폴백: 요소를 찾지 못한 경우 (시야 밖 등) 계산식 활용
       const targetMemo = memos.find(m => m.id === id);
       if (targetMemo && map) {
         const projection = map.getProjection();
@@ -438,7 +422,7 @@ const Main = () => {
         )}
       </Map>
 
-      {/* 통합 메모 작성 폼 (딤 처리 제거 및 투명 블러 스타일) */}
+      {/* 통합 메모 작성 폼 (v36.7 복구 버전) */}
       <AnimatePresence>
         {writingMemoCoords && (
           <div className="fixed inset-0 z-[10001] flex items-center justify-center p-6 pointer-events-none">
@@ -485,21 +469,28 @@ const Main = () => {
           </div>
         )}
       </AnimatePresence>
+      
+      <Sidebar 
+        memo={memos.find(m => m.id === selectedMemoId)} 
+        replies={memos.filter(m => m.parent_id === selectedMemoId)} 
+        onClose={() => setSelectedMemoId(null)} 
+        onDelete={handleDeleteMemo} 
+        onReplySubmit={handleReplySubmit} 
+        onPop={handlePopBubble} 
+        replyText={replyText} 
+        setReplyText={setReplyText} 
+        formatDateTime={formatDateTime} 
+      />
 
       <div className="fixed bottom-10 right-8 z-[9999] pointer-events-none">
         <div className="flex flex-col items-end gap-2 pointer-events-auto">
-          {/* 플로팅 안내 문구: 여백 절반으로 축소 (gap-4 -> gap-2), 이모지 삭제, 쉐도우 제거(border 유지) */}
           <AnimatePresence>
             {isMemoMode && (
               <motion.div 
                 initial={{ opacity: 0, y: 10, scale: 0.9 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: 10, scale: 0.9 }}
-                transition={{ 
-                  type: 'spring',
-                  damping: 25,
-                  stiffness: 400
-                }}
+                transition={{ type: 'spring', damping: 25, stiffness: 400 }}
                 className="bg-[#FF4D00] text-white text-[13px] font-black px-4 py-2.5 rounded-2xl mb-1 mr-0 border border-[#FF4D00]"
               >
                 메모 위치를 눌러주세요
@@ -508,7 +499,6 @@ const Main = () => {
           </AnimatePresence>
 
           <div className="flex flex-col gap-3">
-            {/* 글쓰기 버튼 (호버 모션 삭제 - 모바일과 통일) */}
             <motion.button 
               onClick={() => setIsMemoMode(!isMemoMode)}
               whileTap={{ scale: 0.95 }}
@@ -520,22 +510,13 @@ const Main = () => {
                 <X size={28} strokeWidth={3} />
               ) : (
                 <motion.div
-                  animate={{ 
-                    y: [0, -3, 0],
-                    rotate: [0, -10, 10, 0]
-                  }}
-                  transition={{ 
-                    duration: 3, 
-                    repeat: Infinity,
-                    ease: "easeInOut"
-                  }}
+                  animate={{ y: [0, -3, 0], rotate: [0, -10, 10, 0] }}
+                  transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
                 >
                   <MessageSquare size={28} strokeWidth={3} fill="none" />
                 </motion.div>
               )}
             </motion.button>
-            
-            {/* 내 위치 버튼 (호버 모션 삭제 - 모바일과 통일) */}
             <motion.button 
               onClick={handleMyLocationBtn}
               whileTap={{ scale: 0.95 }}
@@ -552,26 +533,10 @@ const Main = () => {
 
       <style>{`
         @keyframes pop-in { 0% { transform: scale(0.8) translateY(10px); opacity: 0; } 100% { transform: scale(1) translateY(0); opacity: 1; } }
-        /* v33.7: 고도화된 터트리기 애니메이션 */
-        @keyframes bubble-pop { 
-          0% { transform: scale(1); filter: brightness(1.5); }
-          10% { transform: scale(0.85); }
-          30% { transform: scale(1.2); }
-          100% { transform: scale(2.2); opacity: 0; filter: blur(8px); }
-        }
-        /* v33.7: 파편 효과 - 회전하며 사방으로 비산 */
-        @keyframes burst-particle {
-          0% { transform: rotate(var(--angle)) translateY(0) scale(var(--scale)); opacity: 1; }
-          100% { transform: rotate(var(--angle)) translateY(calc(-1 * var(--dist))) scale(0); opacity: 0; }
-        }
-        /* v33.7: 쇼크웨이브 링 */
-        @keyframes shockwave {
-          0% { transform: scale(0.5); opacity: 1; border-width: 4px; }
-          100% { transform: scale(3.5); opacity: 0; border-width: 0px; }
-        }
+        @keyframes bubble-pop { 0% { transform: scale(1); filter: brightness(1.5); } 10% { transform: scale(0.85); } 30% { transform: scale(1.2); } 100% { transform: scale(2.2); opacity: 0; filter: blur(8px); } }
+        @keyframes shockwave { 0% { transform: scale(0.5); opacity: 1; border-width: 4px; } 100% { transform: scale(3.5); opacity: 0; border-width: 0px; } }
         .animate-pop-in { animation: pop-in 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
         .animate-bubble-pop { animation: bubble-pop 0.6s cubic-bezier(0.19, 1, 0.22, 1) forwards; }
-        .animate-burst-particle { animation: burst-particle 0.7s cubic-bezier(0.1, 0.8, 0.3, 1) var(--delay) forwards; }
         .animate-shockwave { animation: shockwave 0.5s ease-out forwards; }
       `}</style>
     </div>
