@@ -31,20 +31,21 @@ const SubwaySidebar = ({
       return;
     }
 
-    // 데이터가 새로 로드될 때만 (loading -> data 전환 시 등) 초기 높이 설정
-    const isInitialLoad = !prevDataIdRef.current && !subwayData.loading;
-    
     if (isMobile) {
-      if (isInitialLoad || sheetHeight.get() === 0) {
-        animate(sheetHeight, window.innerHeight * 0.45, { 
-          type: 'spring', damping: 30, stiffness: 400 
-        });
-      }
+      // PC -> 모바일 전환 시 또는 초기 로드 시 45%로 강제 동기화
+      animate(sheetHeight, window.innerHeight * 0.45, { 
+        type: 'spring', 
+        damping: 30, 
+        stiffness: 400 
+      });
+      
       document.body.style.overflow = 'hidden';
       document.body.style.position = 'fixed';
       document.body.style.width = '100%';
     } else {
+      // 모바일 -> PC 전환 시 100% 높이로 복구
       sheetHeight.set(window.innerHeight);
+      
       document.body.style.overflow = 'auto';
       document.body.style.position = 'static';
     }
@@ -52,7 +53,7 @@ const SubwaySidebar = ({
     if (!subwayData.loading) {
       prevDataIdRef.current = 'loaded';
     }
-  }, [isMobile, !!subwayData, subwayData?.loading]);
+  }, [isMobile, !!subwayData]);
 
   const handlePan = (e, info) => {
     if (!isMobile) return;
