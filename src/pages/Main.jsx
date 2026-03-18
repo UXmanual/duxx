@@ -280,7 +280,6 @@ const Main = () => {
       if (data.realtimeArrivalList && data.realtimeArrivalList.length > 0) {
         const line1All = data.realtimeArrivalList.filter(item => item.subwayId === "1001");
         
-        // 상행(Up)과 하행(Down) 각각 최근접 2개씩 추출 (v39.8)
         const upTrains = line1All.filter(item => item.updnLine === "상행").sort((a, b) => parseInt(a.barvlDt) - parseInt(b.barvlDt)).slice(0, 2);
         const downTrains = line1All.filter(item => item.updnLine === "하행").sort((a, b) => parseInt(a.barvlDt) - parseInt(b.barvlDt)).slice(0, 2);
         
@@ -295,14 +294,17 @@ const Main = () => {
           };
         };
 
-        const finalArrivals = [...upTrains.map(parseSubwayInfo), ...downTrains.map(parseSubwayInfo)].filter(Boolean);
-        setSelectedSubwayArrivals(finalArrivals.length > 0 ? finalArrivals : [{ dest: "현재 운행 중인 1호선 열차가 없습니다.", status: "-", time: "" }]);
+        // 그룹화된 데이터로 저장 (v39.9)
+        setSelectedSubwayArrivals({
+          up: upTrains.map(parseSubwayInfo),
+          down: downTrains.map(parseSubwayInfo)
+        });
       } else {
-        setSelectedSubwayArrivals([{ dest: "현재 운행 정보가 없습니다.", status: "데이터 없음", time: "" }]);
+        setSelectedSubwayArrivals({ up: [], down: [], error: "현재 운행 정보가 없습니다." });
       }
     } catch (e) {
       console.error('Subway API Error:', e);
-      setSelectedSubwayArrivals([{ dest: "데이터 오류", status: "네트워크 오류", time: "" }]);
+      setSelectedSubwayArrivals({ up: [], down: [], error: "데이터 오류" });
     }
   };
 
@@ -463,17 +465,58 @@ const Main = () => {
                 <span className="text-[11px] font-black text-[#3D53B3] whitespace-nowrap">1호선 서울역 실시간 {subwayFetchTime && `(${subwayFetchTime})`}</span>
                 <div className="w-1.5 h-1.5 bg-[#3D53B3] rounded-full animate-pulse" />
               </div>
-              {selectedSubwayArrivals.map((arrival, idx) => (
-                <div key={idx} className="flex justify-between items-center gap-4">
-                  <div className="flex flex-col">
-                    <div className="flex items-center gap-1">
-                      <span className="text-xs font-black text-gray-800">{arrival.dest}</span>
-                      <span className="text-[10px] font-bold text-gray-400">{arrival.direction}</span>
+              
+              {selectedSubwayArrivals.error ? (
+                <p className="text-xs font-bold text-gray-500 py-2">{selectedSubwayArrivals.error}</p>
+              ) : (
+                <div className="flex flex-col gap-4 py-1">
+                  {/* 상행 그룹 (v39.9) */}
+                  {selectedSubwayArrivals.up?.length > 0 && (
+                    <div className="flex flex-col gap-2">
+                      <div className="flex items-center gap-1.5">
+                        <span className="px-1.5 py-0.5 bg-gray-100 text-[9px] font-black text-gray-400 rounded">상행</span>
+                        <div className="flex-1 h-[1px] bg-gray-50" />
+                      </div>
+                      <div className="flex flex-col gap-2.5">
+                        {selectedSubwayArrivals.up.map((arrival, idx) => (
+                          <div key={`up-${idx}`} className="flex flex-col pl-1 border-l-2 border-[#3D53B3]/20">
+                            <div className="flex items-center gap-1">
+                              <span className="text-xs font-black text-gray-800">{arrival.dest}</span>
+                              <span className="text-[10px] font-bold text-gray-400">{arrival.direction}</span>
+                            </div>
+                            <span className="text-[11px] font-bold text-[#3D53B3] leading-tight mt-0.5">
+                              {arrival.status} {arrival.time && <span className="text-gray-400 ml-1 font-normal text-[10px]">{arrival.time}</span>}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                    <span className="text-[11px] font-bold text-[#3D53B3] leading-tight">{arrival.status} {arrival.time && <span className="text-gray-400 ml-1 font-normal text-[10px]">{arrival.time}</span>}</span>
-                  </div>
+                  )}
+
+                  {/* 하행 그룹 (v39.9) */}
+                  {selectedSubwayArrivals.down?.length > 0 && (
+                    <div className="flex flex-col gap-2">
+                      <div className="flex items-center gap-1.5">
+                        <span className="px-1.5 py-0.5 bg-gray-100 text-[9px] font-black text-gray-400 rounded">하행</span>
+                        <div className="flex-1 h-[1px] bg-gray-50" />
+                      </div>
+                      <div className="flex flex-col gap-2.5">
+                        {selectedSubwayArrivals.down.map((arrival, idx) => (
+                          <div key={`down-${idx}`} className="flex flex-col pl-1 border-l-2 border-[#E7E7E7]">
+                            <div className="flex items-center gap-1">
+                              <span className="text-xs font-black text-gray-800">{arrival.dest}</span>
+                              <span className="text-[10px] font-bold text-gray-400">{arrival.direction}</span>
+                            </div>
+                            <span className="text-[11px] font-bold text-[#3D53B3] leading-tight mt-0.5">
+                              {arrival.status} {arrival.time && <span className="text-gray-400 ml-1 font-normal text-[10px]">{arrival.time}</span>}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
-              ))}
+              )}
               <p className="text-[9px] text-gray-400 mt-1 text-center font-bold">터치하여 닫기</p>
             </div>
           </CustomOverlayMap>
