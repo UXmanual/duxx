@@ -281,11 +281,17 @@ const Main = () => {
       try {
         const { data, error } = await supabase.from('memos').insert([newMemo]).select();
         if (!error && data) {
-          setMemos(prev => [...prev, data[0]]);
+          const createdMemo = { ...data[0], is_new: true };
+          setMemos(prev => [...prev, createdMemo]);
           setWritingMemoCoords(null);
           setNewMemoText('');
           setIsMemoMode(false);
           triggerAIResponse(data[0]);
+          
+          // 2초 후 is_new 플래그 제거하여 애니메이션 종료
+          setTimeout(() => {
+            setMemos(prev => prev.map(m => m.id === data[0].id ? { ...m, is_new: false } : m));
+          }, 2000);
         }
       } catch (err) { console.error('Insert error:', err); }
     });
@@ -436,7 +442,7 @@ const Main = () => {
                       <div className="absolute w-12 h-12 border-4 border-[#FF4D00] rounded-full animate-shockwave" />
                     </div>
                   )}
-                  <div className={`relative px-4 py-2 bg-white/90 backdrop-blur-md border-2 rounded-full flex items-center gap-2 min-w-[50px] max-w-[220px] cursor-pointer transition-all duration-300 ${memo.is_popping ? 'animate-bubble-pop' : ''} ${selectedMemoId === memo.id ? 'border-[#FF4D00] z-[50] scale-105 shadow-[0_15px_45px_rgba(255,77,0,0.25)]' : 'border-[#FF4D00] shadow-lg'}`}
+                  <div className={`relative px-4 py-2 bg-white/90 backdrop-blur-md border-2 rounded-full flex items-center gap-2 min-w-[50px] max-w-[220px] cursor-pointer transition-all duration-300 ${memo.is_new ? 'animate-bubble-spawn shadow-[0_0_20px_rgba(255,77,0,0.5)]' : ''} ${memo.is_popping ? 'animate-bubble-pop' : ''} ${selectedMemoId === memo.id ? 'border-[#FF4D00] z-[50] scale-105 shadow-[0_15px_45px_rgba(255,77,0,0.25)]' : 'border-[#FF4D00] shadow-lg'}`}
                     onClick={(e) => { 
                       e.stopPropagation(); 
                       panToWithOffset(memo.lat, memo.lng);
@@ -576,9 +582,15 @@ const Main = () => {
       </div>
 
       <style>{`
+        @keyframes bubble-spawn { 
+          0% { transform: scale(0); opacity: 0; filter: brightness(2); }
+          60% { transform: scale(1.1); opacity: 1; filter: brightness(1.2); }
+          100% { transform: scale(1); opacity: 1; filter: brightness(1); }
+        }
         @keyframes pop-in { 0% { transform: scale(0.8) translateY(10px); opacity: 0; } 100% { transform: scale(1) translateY(0); opacity: 1; } }
         @keyframes bubble-pop { 0% { transform: scale(1); filter: brightness(1.5); } 10% { transform: scale(0.85); } 30% { transform: scale(1.2); } 100% { transform: scale(2.2); opacity: 0; filter: blur(8px); } }
         @keyframes shockwave { 0% { transform: scale(0.5); opacity: 1; border-width: 4px; } 100% { transform: scale(3.5); opacity: 0; border-width: 0px; } }
+        .animate-bubble-spawn { animation: bubble-spawn 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
         .animate-pop-in { animation: pop-in 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
         .animate-bubble-pop { animation: bubble-pop 0.6s cubic-bezier(0.19, 1, 0.22, 1) forwards; }
         .animate-shockwave { animation: shockwave 0.5s ease-out forwards; }
