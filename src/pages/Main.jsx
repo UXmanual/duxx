@@ -265,27 +265,38 @@ const Main = () => {
     });
   };
   const fetchSubwayArrivals = async () => {
-    setSelectedSubwayArrivals([{ direction: "1호선 정보를 가져오고 있습니다...", status: "조회 중", time: "⏳", isLoading: true }]);
+    setSelectedSubwayArrivals([{ direction: "최근접 열차 정보를 가져오고 있습니다...", status: "조회 중", time: "⏳", isLoading: true }]);
     panToWithOffset(seoulStationCoords.lat, seoulStationCoords.lng);
 
     try {
       const res = await fetch(`/api/subway`);
       const data = await res.json();
       
-      // 오직 1호선(subwayId: 1001) 데이터만 엄격하게 필터링 (v39.5)
       if (data.realtimeArrivalList && data.realtimeArrivalList.length > 0) {
-        const line1Arrivals = data.realtimeArrivalList
-          .filter(item => item.subwayId === "1001") 
-          .map(item => ({
-            line: '1호선',
-            direction: item.trainLineNm,
-            status: item.arvlMsg2,
-            time: (item.barvlDt && item.barvlDt !== "0") ? `${Math.floor(item.barvlDt / 60)}분 ${item.barvlDt % 60}초` : (item.arvlMsg2 || "곧 도착")
-          }));
+        // 1호선(1001) 데이터만 먼저 분리
+        const line1All = data.realtimeArrivalList.filter(item => item.subwayId === "1001");
         
-        setSelectedSubwayArrivals(line1Arrivals.length > 0 ? line1Arrivals : [{ direction: "현재 1호선 운행 정보가 없습니다.", status: "-", time: "-" }]);
+        // 상행(Up: 0)과 하행(Down: 1) 중 가장 가까운 것 1개씩만 추출 (v39.6)
+        const upTrain = line1All.filter(item => item.updnLine === "상행").sort((a, b) => parseInt(a.barvlDt) - parseInt(b.barvlDt))[0];
+        const downTrain = line1All.filter(item => item.updnLine === "하행").sort((a, b) => parseInt(a.barvlDt) - parseInt(b.barvlDt))[0];
+        
+        const finalArrivals = [];
+        if (upTrain) finalArrivals.push({
+          line: '1호선',
+          direction: upTrain.trainLineNm,
+          status: upTrain.arvlMsg2,
+          time: (upTrain.barvlDt && upTrain.barvlDt !== "0") ? `${Math.floor(upTrain.barvlDt / 60)}분 ${upTrain.barvlDt % 60}초 후` : "곧 도착"
+        });
+        if (downTrain) finalArrivals.push({
+          line: '1호선',
+          direction: downTrain.trainLineNm,
+          status: downTrain.arvlMsg2,
+          time: (downTrain.barvlDt && downTrain.barvlDt !== "0") ? `${Math.floor(downTrain.barvlDt / 60)}분 ${downTrain.barvlDt % 60}초 후` : "곧 도착"
+        });
+
+        setSelectedSubwayArrivals(finalArrivals.length > 0 ? finalArrivals : [{ direction: "현재 운행 중인 1호선 열차가 없습니다.", status: "-", time: "-" }]);
       } else {
-        setSelectedSubwayArrivals([{ direction: "현재 1호선 운행 정보가 없습니다.", status: "데이터 없음", time: "N/A" }]);
+        setSelectedSubwayArrivals([{ direction: "현재 운행 정보가 없습니다.", status: "데이터 없음", time: "N/A" }]);
       }
     } catch (e) {
       console.error('Subway API Error:', e);
