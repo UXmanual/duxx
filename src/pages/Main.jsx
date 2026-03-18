@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Map, CustomOverlayMap, MapMarker, MarkerClusterer, useKakaoLoader } from 'react-kakao-maps-sdk';
 import { useTheme } from '../context/ThemeContext';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Crosshair, MessageSquare, X, Coffee, ChevronDown, ChevronUp } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import { starbucksReserveStores } from '../data/starbucksReserve';
@@ -430,12 +431,64 @@ const Main = () => {
 
       <Sidebar memo={memos.find(m => m.id === selectedMemoId)} replies={memos.filter(m => m.parent_id === selectedMemoId)} onClose={() => setSelectedMemoId(null)} onDelete={handleDeleteMemo} onReplySubmit={handleReplySubmit} onPop={handlePopBubble} replyText={replyText} setReplyText={setReplyText} formatDateTime={formatDateTime} />
 
-      <div className="fixed bottom-6 right-6 z-[9999] pointer-events-none">
-        <div className="flex flex-col items-center gap-3 pointer-events-auto">
-          {isMemoMode && <div className="bg-[#FF4D00] text-white text-[12px] font-bold px-3 py-2 rounded-full mb-3">메모 위치를 눌러주세요</div>}
-          <button onClick={() => setIsMemoMode(!isMemoMode)} className={`w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-all ${isMemoMode ? 'bg-[#FF4D00] text-white' : 'bg-white text-[#FF4D00]'}`}><MessageSquare size={22} /></button>
-          
-          <button onClick={handleMyLocationBtn} className="w-12 h-12 rounded-full flex items-center justify-center bg-white shadow-lg"><Crosshair size={22} /></button>
+      <div className="fixed bottom-10 right-8 z-[9999] pointer-events-none">
+        <div className="flex flex-col items-end gap-4 pointer-events-auto">
+          {/* 플로팅 안내 문구: 버튼 위치 이동 방지를 위해 절대 위치 혹은 상단 배치 최적화 */}
+          <AnimatePresence>
+            {isMemoMode && (
+              <motion.div 
+                initial={{ opacity: 0, x: 20, scale: 0.8 }}
+                animate={{ opacity: 1, x: 0, scale: 1 }}
+                exit={{ opacity: 0, x: 20, scale: 0.8 }}
+                className="bg-[#FF4D00] text-white text-[13px] font-black px-5 py-3 rounded-2xl shadow-xl mb-2 mr-2"
+              >
+                📍 메모 위치를 눌러주세요
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          <div className="flex flex-col gap-4">
+            {/* 글쓰기 버튼 (모션 복구) */}
+            <motion.button 
+              onClick={() => setIsMemoMode(!isMemoMode)}
+              whileHover={{ scale: 1.1, rotate: isMemoMode ? 90 : 0 }}
+              whileTap={{ scale: 0.9 }}
+              initial={{ scale: 0, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              className={`w-16 h-16 rounded-[22px] flex items-center justify-center shadow-[0_15px_35px_rgba(255,77,0,0.3)] transition-colors ${isMemoMode ? 'bg-[#FF4D00] text-white' : 'bg-white text-[#FF4D00]'}`}
+            >
+              {isMemoMode ? (
+                <X size={28} strokeWidth={3} />
+              ) : (
+                <motion.div
+                  animate={{ 
+                    y: [0, -3, 0],
+                    rotate: [0, -10, 10, 0]
+                  }}
+                  transition={{ 
+                    duration: 3, 
+                    repeat: Infinity,
+                    ease: "easeInOut"
+                  }}
+                >
+                  <MessageSquare size={28} strokeWidth={3} fill="currentColor" fillOpacity={0.1} />
+                </motion.div>
+              )}
+            </motion.button>
+            
+            {/* 내 위치 버튼 (모션 복구) */}
+            <motion.button 
+              onClick={handleMyLocationBtn}
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+              initial={{ scale: 0, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ delay: 0.1 }}
+              className="w-16 h-16 rounded-[22px] flex items-center justify-center bg-white text-gray-800 shadow-[0_10px_25px_rgba(0,0,0,0.1)] active:bg-gray-50 h-16"
+            >
+              <Crosshair size={26} strokeWidth={2.5} className="text-[#FF4D00]" />
+            </motion.button>
+          </div>
         </div>
       </div>
 
