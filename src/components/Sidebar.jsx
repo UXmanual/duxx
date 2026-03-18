@@ -215,19 +215,29 @@ const Sidebar = ({
         {subwayData.up?.length > 0 && (
           <div className="flex flex-col gap-3">
             <div className="flex items-center gap-2">
-              <span className="px-2 py-0.5 bg-gray-100 text-[10px] font-black text-gray-500 rounded uppercase">Upbound / 상행</span>
+              <span className="px-2 py-0.5 bg-gray-100 text-[10px] font-black text-gray-500 rounded">상행</span>
               <div className="flex-1 h-[1px] bg-gray-100" />
             </div>
             <div className="grid gap-3">
               {subwayData.up.map((arrival, idx) => (
-                <div key={`side-up-${idx}`} className="p-4 bg-gray-50/50 rounded-2xl border border-gray-100 flex flex-col gap-1 hover:border-[#3D53B3]/30 transition-colors">
-                  <div className="flex items-center gap-2">
+                <div key={`side-up-${idx}`} className="p-4 bg-gray-50/50 rounded-2xl border border-gray-100 flex flex-col gap-1.5 hover:border-[#3D53B3]/30 transition-colors relative overflow-hidden group">
+                  {/* 도착 순위 라벨 (이번열차/다음열차) */}
+                  <div className={`absolute top-0 left-0 w-1 h-full ${arrival.arrivalType === '이번열차' ? 'bg-[#3D53B3]' : 'bg-gray-300'}`} />
+                  
+                  <div className="flex items-center justify-between">
+                    <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-sm ${arrival.arrivalType === '이번열차' ? 'bg-[#3D53B3] text-white' : 'bg-gray-200 text-gray-600'}`}>
+                      {arrival.arrivalType}
+                    </span>
+                    <span className="text-[11px] font-medium text-gray-400">{arrival.time}</span>
+                  </div>
+                  
+                  <div className="flex items-center gap-2 pt-0.5">
                     <span className="text-sm font-black text-gray-900">{arrival.dest}</span>
                     <span className="text-xs font-bold text-gray-400">{arrival.direction}</span>
                   </div>
+                  
                   <div className="flex items-center justify-between">
                     <span className="text-[13px] font-bold text-[#3D53B3]">{arrival.status}</span>
-                    <span className="text-[11px] font-medium text-gray-500">{arrival.time}</span>
                   </div>
                 </div>
               ))}
@@ -239,19 +249,29 @@ const Sidebar = ({
         {subwayData.down?.length > 0 && (
           <div className="flex flex-col gap-3">
             <div className="flex items-center gap-2">
-              <span className="px-2 py-0.5 bg-gray-100 text-[10px] font-black text-gray-500 rounded uppercase">Downbound / 하행</span>
+              <span className="px-2 py-0.5 bg-gray-100 text-[10px] font-black text-gray-500 rounded">하행</span>
               <div className="flex-1 h-[1px] bg-gray-100" />
             </div>
             <div className="grid gap-3">
               {subwayData.down.map((arrival, idx) => (
-                <div key={`side-down-${idx}`} className="p-4 bg-gray-50/50 rounded-2xl border border-gray-100 flex flex-col gap-1 hover:border-[#3D53B3]/30 transition-colors">
-                  <div className="flex items-center gap-2">
+                <div key={`side-down-${idx}`} className="p-4 bg-gray-50/50 rounded-2xl border border-gray-100 flex flex-col gap-1.5 hover:border-[#3D53B3]/30 transition-colors relative overflow-hidden group">
+                  {/* 도착 순위 라벨 (이번열차/다음열차) */}
+                  <div className={`absolute top-0 left-0 w-1 h-full ${arrival.arrivalType === '이번열차' ? 'bg-[#3D53B3]' : 'bg-gray-300'}`} />
+                  
+                  <div className="flex items-center justify-between">
+                    <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-sm ${arrival.arrivalType === '이번열차' ? 'bg-[#3D53B3] text-white' : 'bg-gray-200 text-gray-600'}`}>
+                      {arrival.arrivalType}
+                    </span>
+                    <span className="text-[11px] font-medium text-gray-400">{arrival.time}</span>
+                  </div>
+                  
+                  <div className="flex items-center gap-2 pt-0.5">
                     <span className="text-sm font-black text-gray-900">{arrival.dest}</span>
                     <span className="text-xs font-bold text-gray-400">{arrival.direction}</span>
                   </div>
+                  
                   <div className="flex items-center justify-between">
                     <span className="text-[13px] font-bold text-[#3D53B3]">{arrival.status}</span>
-                    <span className="text-[11px] font-medium text-gray-500">{arrival.time}</span>
                   </div>
                 </div>
               ))}

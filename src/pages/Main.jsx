@@ -22,9 +22,10 @@ const formatDateTime = (dateString) => {
 
 /**
  * [Page] 메인 페이지 (지도 메모 기능 통합 버전)
- * @version 36.7
+ * @version 41.1
  * @description 
- * - 커스텀 메모 폼 복구 및 사이드바 노출 정상화 (긴급 패치)
+ * - 지하철 도착 정보 정렬 로직 강화 및 이번열차/다음열차 구분 (v41.1)
+ * - 커스텀 메모 폼 복구 및 사이드바 노출 정상화 (v36.7)
  */
 
 // 닉네임 조합용 상수
@@ -288,28 +289,42 @@ const Main = () => {
       const data = await res.json();
       
       if (data.realtimeArrivalList && data.realtimeArrivalList.length > 0) {
+        // 1호선 서울역 데이터만 필터링 (subwayId "1001")
         const line1All = data.realtimeArrivalList.filter(item => item.subwayId === "1001");
         
-        const upTrains = line1All.filter(item => item.updnLine === "상행").sort((a, b) => parseInt(a.barvlDt) - parseInt(b.barvlDt)).slice(0, 2);
-        const downTrains = line1All.filter(item => item.updnLine === "하행").sort((a, b) => parseInt(a.barvlDt) - parseInt(b.barvlDt)).slice(0, 2);
+        // 정렬 기준: barvlDt(도착예측시간) 기준 오름차순
+        // 만약 barvlDt가 0이거나 데이터가 불확실하면 arvlCd(도착코드) 등을 참고할 수 있으나, 
+        // 일반적으로 barvlDt가 가장 정확한 우선순위를 제공함
+        const upTrains = line1All
+          .filter(item => item.updnLine === "상행")
+          .sort((a, b) => parseInt(a.barvlDt) - parseInt(b.barvlDt))
+          .slice(0, 2);
+          
+        const downTrains = line1All
+          .filter(item => item.updnLine === "하행")
+          .sort((a, b) => parseInt(a.barvlDt) - parseInt(b.barvlDt))
+          .slice(0, 2);
         
-        const parseSubwayInfo = (train) => {
+        const parseSubwayInfo = (train, idx) => {
           if (!train) return null;
           const [dest, dir] = train.trainLineNm.split(" - ");
           // '서울' 문구를 '당역'으로 치환 (v40.0)
           const statusMsg = train.arvlMsg2.replace(/서울/g, "당역");
+          
           return {
             dest: dest,
             direction: dir ? `(${dir})` : "",
             status: statusMsg,
+            // 0번째는 이번열차, 1번째는 다음열차로 표기 (v41.1)
+            arrivalType: idx === 0 ? "이번열차" : "다음열차",
             time: (train.barvlDt && train.barvlDt !== "0") ? `${Math.floor(train.barvlDt / 60)}분 ${train.barvlDt % 60}초 후 도착` : ""
           };
         };
 
-        // 그룹화된 데이터로 저장 (v39.9)
+        // 그룹화된 데이터로 저장 (v41.1)
         setSelectedSubwayArrivals({
-          up: upTrains.map(parseSubwayInfo),
-          down: downTrains.map(parseSubwayInfo)
+          up: upTrains.map((t, i) => parseSubwayInfo(t, i)),
+          down: downTrains.map((t, i) => parseSubwayInfo(t, i))
         });
       } else {
         setSelectedSubwayArrivals({ up: [], down: [], error: "현재 운행 정보가 없습니다." });
