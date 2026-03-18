@@ -28,8 +28,14 @@ const Sidebar = ({
   // 화면 크기 변화 감지
   useEffect(() => {
     const handleResize = () => {
-      setIsMobile(window.innerWidth < 768);
+      const mobile = window.innerWidth < 768;
+      setIsMobile(mobile);
       setWindowHeight(window.innerHeight);
+      
+      // 모바일에서 PC로 전환될 때 바텀시트 높이값 리셋
+      if (!mobile) {
+        sheetHeight.set('100%');
+      }
     };
     window.addEventListener('resize', handleResize);
     
@@ -184,7 +190,7 @@ const Sidebar = ({
           />
           
           <motion.div 
-            style={isMobile ? { height: sheetHeight } : {}}
+            style={{ height: isMobile ? sheetHeight : '100vh' }}
             variants={!isMobile ? {
               open: { x: 0, opacity: 1 },
               closed: { x: -400, opacity: 0 }
