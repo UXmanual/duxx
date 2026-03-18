@@ -52,6 +52,8 @@ const Main = () => {
   const [starbucksPlaces, setStarbucksPlaces] = useState(starbucksReserveStores);
   const [isStarbucksVisible, setIsStarbucksVisible] = useState(true);
   const [selectedStarbucksId, setSelectedStarbucksId] = useState(null);
+  const [selectedSubwayArrivals, setSelectedSubwayArrivals] = useState(null);
+  const seoulStationCoords = { lat: 37.554648, lng: 126.972559 };
 
   // 초기 위치 로딩 최적화 상태
   const [isLocationLoaded, setIsLocationLoaded] = useState(false);
@@ -262,6 +264,33 @@ const Main = () => {
       lng: mouseEvent.latLng.getLng()
     });
   };
+  const fetchSubwayArrivals = async () => {
+    try {
+      const apiKey = "4e674d624275786d39316f50706744";
+      const res = await fetch(`http://swopenapi.seoul.go.kr/api/subway/${apiKey}/json/realtimeStationArrival/0/5/서울`);
+      const data = await res.json();
+      
+      if (data.realtimeArrivalList) {
+        // 1호선 데이터만 필터링 (subwayId 1001)
+        const line1Arrivals = data.realtimeArrivalList
+          .filter(item => item.subwayId === "1001")
+          .map(item => ({
+            line: '1호선',
+            direction: item.trainLineNm,
+            status: item.arvlMsg2,
+            time: item.barvlDt !== "0" ? `${Math.floor(item.barvlDt / 60)}분 ${item.barvlDt % 60}초` : "정보 없음"
+          }));
+        
+        setSelectedSubwayArrivals(line1Arrivals.length > 0 ? line1Arrivals : [{ direction: "도착 정보가 없습니다.", status: "-", time: "-" }]);
+      } else {
+        setSelectedSubwayArrivals([{ direction: "현재 운행 정보가 없습니다.", status: "-", time: "-" }]);
+      }
+    } catch (e) {
+      console.error('Subway API Error:', e);
+      setSelectedSubwayArrivals([{ direction: "데이터를 불러올 수 없습니다.", status: "오류", time: "재시도 필요" }]);
+    }
+    panToWithOffset(seoulStationCoords.lat, seoulStationCoords.lng);
+  };
 
   const submitNewMemo = async () => {
     if (!newMemoText.trim() || !writingMemoCoords) return;
@@ -395,6 +424,70 @@ const Main = () => {
               <div className="relative w-[24px] h-[24px] bg-[#FF4D00] border-2 border-white rounded-full flex items-center justify-center shadow-lg">
                 <div className="w-[6px] h-[6px] bg-white rounded-full" />
               </div>
+            </div>
+          </CustomOverlayMap>
+        )}
+
+        {/* 1호선 서울역 특별 마커 및 도착정보 바블 (v38.9) */}
+        <MapMarker 
+          position={seoulStationCoords}
+          image={{ 
+            src: 'data:image/svg+xml;base64,' + btoa(`<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="16" cy="16" r="14" fill="#3D53B3" stroke="white" stroke-width="2.5"/><path d="M10 12C10 10.8954 10.8954 10 12 10H20C21.1046 10 22 10.8954 22 12V20C22 21.1046 21.1046 22 20 22H12C10.8954 22 10 21.1046 10 20V12Z" fill="white"/><path d="M13 13H19V17H13V13Z" fill="#3D53B3"/><circle cx="13" cy="20" r="1.2" fill="#3D53B3"/><circle cx="19" cy="20" r="1.2" fill="#3D53B3"/></svg>`), 
+            size: { width: 32, height: 32 },
+            offset: { x: 16, y: 16 }
+          }}
+          onClick={fetchSubwayArrivals}
+          zIndex={100}
+        />
+        {selectedSubwayArrivals && (
+          <CustomOverlayMap position={seoulStationCoords} yAnchor={1.85} zIndex={1000} clickable={true}>
+            <div 
+              className="bg-white/95 backdrop-blur-md p-4 rounded-[24px] border-2 border-[#3D53B3] shadow-[0_15px_45px_rgba(61,83,179,0.3)] flex flex-col gap-2 relative min-w-[180px] animate-bubble-spawn cursor-pointer"
+              onClick={() => setSelectedSubwayArrivals(null)}
+            >
+              <div className="flex items-center justify-between border-b border-gray-100 pb-2 mb-1">
+                <span className="text-[11px] font-black text-[#3D53B3]">1호선 서울역 실시간</span>
+                <div className="w-1.5 h-1.5 bg-[#3D53B3] rounded-full animate-pulse" />
+              </div>
+              {selectedSubwayArrivals.map((arrival, idx) => (
+                <div key={idx} className="flex justify-between items-center gap-4">
+                  <span className="text-xs font-black text-gray-800">{arrival.direction}</span>
+                  <span className="text-[11px] font-bold px-2 py-0.5 bg-[#3D53B3]/10 text-[#3D53B3] rounded-full">{arrival.status} ({arrival.time})</span>
+                </div>
+              ))}
+              <p className="text-[9px] text-gray-400 mt-1 text-center font-bold">터치하여 닫기</p>
+            </div>
+          </CustomOverlayMap>
+        )}
+
+        {/* 1호선 서울역 특별 마커 및 도착정보 바블 (v38.9) - 디자인: 1호선 컬러 #3D53B3 */}
+        <MapMarker 
+          position={seoulStationCoords}
+          image={{ 
+            src: 'data:image/svg+xml;base64,' + btoa(`<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="16" cy="16" r="14" fill="#3D53B3" stroke="white" stroke-width="2.5"/><path d="M10 12C10 10.8954 10.8954 10 12 10H20C21.1046 10 22 10.8954 22 12V20C22 21.1046 21.1046 22 20 22H12C10.8954 22 10 21.1046 10 20V12Z" fill="white"/><path d="M13 13H19V17H13V13Z" fill="#3D53B3"/><circle cx="13" cy="20" r="1.2" fill="#3D53B3"/><circle cx="19" cy="20" r="1.2" fill="#3D53B3"/></svg>`), 
+            size: { width: 32, height: 32 },
+            offset: { x: 16, y: 16 }
+          }}
+          onClick={fetchSubwayArrivals}
+          zIndex={100}
+        />
+        {selectedSubwayArrivals && (
+          <CustomOverlayMap position={seoulStationCoords} yAnchor={1.85} zIndex={1000} clickable={true}>
+            <div 
+              className="bg-white/95 backdrop-blur-md p-4 rounded-[24px] border-2 border-[#3D53B3] shadow-[0_15px_45px_rgba(61,83,179,0.3)] flex flex-col gap-2 relative min-w-[180px] animate-bubble-spawn cursor-pointer"
+              onClick={() => setSelectedSubwayArrivals(null)}
+            >
+              <div className="flex items-center justify-between border-b border-gray-100 pb-2 mb-1">
+                <span className="text-[11px] font-black text-[#3D53B3]">1호선 서울역 실시간</span>
+                <div className="w-1.5 h-1.5 bg-[#3D53B3] rounded-full animate-pulse" />
+              </div>
+              {selectedSubwayArrivals.map((arrival, idx) => (
+                <div key={idx} className="flex justify-between items-center gap-4">
+                  <span className="text-xs font-black text-gray-800">{arrival.direction}</span>
+                  <span className="text-[11px] font-bold px-2 py-0.5 bg-[#3D53B3]/10 text-[#3D53B3] rounded-full">{arrival.status} ({arrival.time})</span>
+                </div>
+              ))}
+              <p className="text-[9px] text-gray-400 mt-1 text-center font-bold">터치하여 닫기</p>
             </div>
           </CustomOverlayMap>
         )}
