@@ -272,24 +272,32 @@ const Main = () => {
       const res = await fetch(`/api/subway`);
       const data = await res.json();
       
-      // 1호선 관련 데이터 필터링 로직 대폭 강화 (v39.3)
+      // 1호선 관련 데이터 필터링 조건 대폭 완화 (v39.4)
       if (data.realtimeArrivalList && data.realtimeArrivalList.length > 0) {
         const line1Arrivals = data.realtimeArrivalList
-          .filter(item => item.subwayId === "1001" || item.subwayId === "1063" || item.trainLineNm.includes("1호선")) 
+          .filter(item => 
+            item.subwayId === "1001" || 
+            item.trainLineNm.includes("1호선") || 
+            item.trainLineNm.includes("서울역") ||
+            item.statnNm === "서울" || 
+            item.statnNm === "서울역"
+          ) 
           .map(item => ({
             line: '1호선',
             direction: item.trainLineNm,
             status: item.arvlMsg2,
-            time: item.barvlDt !== "0" && item.barvlDt ? `${Math.floor(item.barvlDt / 60)}분 ${item.barvlDt % 60}초` : "곧 도착"
+            time: (item.barvlDt && item.barvlDt !== "0") ? `${Math.floor(item.barvlDt / 60)}분 ${item.barvlDt % 60}초` : (item.arvlMsg2 || "곧 도착")
           }));
         
         setSelectedSubwayArrivals(line1Arrivals.length > 0 ? line1Arrivals : [{ direction: "현재 운행 정보가 없습니다.", status: "-", time: "-" }]);
       } else {
-        setSelectedSubwayArrivals([{ direction: "현재 운행 정보가 없습니다.", status: "-", time: "-" }]);
+        // 데이터는 왔으나 리스트가 비어있는 경우 (v39.4 로그)
+        console.warn('Empty subway arrival list received.');
+        setSelectedSubwayArrivals([{ direction: "데이터 응답 성공했으나 운행 정보가 없습니다.", status: "데이터 비어있음", time: "N/A" }]);
       }
     } catch (e) {
       console.error('Subway API Error:', e);
-      setSelectedSubwayArrivals([{ direction: "데이터를 불러올 수 없습니다.", status: "오류", time: "재시도 필요" }]);
+      setSelectedSubwayArrivals([{ direction: "데이터를 불러올 수 없습니다.", status: "네트워크 오류", time: "재시도 필요" }]);
     }
   };
 
