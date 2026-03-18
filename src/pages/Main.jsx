@@ -384,8 +384,8 @@ const Main = () => {
           </React.Fragment>
         ))}
 
-        {mapLevel >= 6 ? (
-          <MarkerClusterer averageCenter={true} minLevel={6} minClusterSize={1} styles={[{ width: '32px', height: '32px', background: '#FF4D00', color: '#fff', textAlign: 'center', fontWeight: 'bold', lineHeight: '28px', borderRadius: '50%', border: '2px solid white', boxShadow: '0 2px 8px rgba(0,0,0,0.3)', fontSize: '14px' }]}>
+        {mapLevel >= 8 ? (
+          <MarkerClusterer averageCenter={true} minLevel={8} minClusterSize={1} styles={[{ width: '32px', height: '32px', background: '#FF4D00', color: '#fff', textAlign: 'center', fontWeight: 'bold', lineHeight: '28px', borderRadius: '50%', border: '2px solid white', boxShadow: '0 2px 8px rgba(0,0,0,0.3)', fontSize: '14px' }]}>
             {rootMemos.filter(m => !m.popped_at).map(memo => <MapMarker key={memo.id} position={{ lat: memo.lat, lng: memo.lng }} />)}
           </MarkerClusterer>
         ) : (
@@ -393,7 +393,6 @@ const Main = () => {
             <CustomOverlayMap key={`memo-${memo.id}`} position={{ lat: memo.lat, lng: memo.lng }} xAnchor={0} yAnchor={0} zIndex={replyTargetId === memo.id ? 999 : (memo.popped_at ? 1 : 10)}>
               <div className={`relative w-0 h-0 group pointer-events-none ${memo.is_popping ? 'animate-bubble-pop' : ''}`}>
                 <div className="absolute bottom-0 left-1/2 -translate-x-1/2 pb-2 pointer-events-auto transition-opacity duration-500" style={{ opacity: memo.popped_at ? 0.4 : 1 }}>
-                  {/* 터지는 쇼크웨이브 효과만 유지 (v34.1: 파편은 컨페티로 대체함) */}
                   {memo.is_popping && (
                     <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-[1001]">
                       <div className="absolute w-12 h-12 border-4 border-[#FF4D00] rounded-full animate-shockwave" />
@@ -401,15 +400,15 @@ const Main = () => {
                   )}
                   <div className={`relative px-4 py-2 bg-white/90 backdrop-blur-md border-2 rounded-full flex items-center gap-2 min-w-[50px] max-w-[220px] cursor-pointer transition-all duration-300 ${memo.is_popping ? 'animate-bubble-pop' : ''} ${selectedMemoId === memo.id ? 'border-[#FF4D00] z-[50] scale-105 shadow-[0_15px_45px_rgba(255,77,0,0.25)]' : 'border-[#FF4D00] shadow-lg'}`}
                     onClick={(e) => { 
-                    e.stopPropagation(); 
-                    panToWithOffset(memo.lat, memo.lng);
-                    setSelectedStarbucksId(null); 
-                    setSelectedMemoId(memo.id); 
-                    setExpandedGroupIds([memo.id]); 
-                    setShowReplyIds([memo.id]); 
-                    setReplyTargetId(memo.id); 
-                  }}
-                >
+                      e.stopPropagation(); 
+                      panToWithOffset(memo.lat, memo.lng);
+                      setSelectedStarbucksId(null); 
+                      setSelectedMemoId(memo.id); 
+                      setExpandedGroupIds([memo.id]); 
+                      setShowReplyIds([memo.id]); 
+                      setReplyTargetId(memo.id); 
+                    }}
+                  >
                     {memos.filter(m => m.parent_id === memo.id).length > 0 && <div className="absolute -top-2 -right-2 bg-[#FF4D00] text-white text-[10px] font-black px-1.5 py-0.5 rounded-full border border-white min-w-[20px] flex justify-center">{memos.filter(m => m.parent_id === memo.id).length}</div>}
                     <div className="flex-1 overflow-hidden font-bold text-[13px] truncate whitespace-nowrap">{memo.text}</div>
                     {!memo.popped_at && (
