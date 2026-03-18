@@ -17,7 +17,7 @@ const Footer = () => {
           {/* 시스템 정보: 블랙 0.3 */}
           <div className="flex items-center gap-3">
             <p className="text-[14px] font-bold tracking-[0]">
-              Build v{pkg.version}
+              Build v34.9
             </p>
           </div>
           <p className="font-black text-[14px] tracking-[0] select-none">
