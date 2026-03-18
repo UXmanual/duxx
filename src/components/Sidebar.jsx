@@ -38,7 +38,7 @@ const Sidebar = ({
 
   // [반응형 대응] 모바일/PC 전환 시 높이값 강제 동기화
   useEffect(() => {
-    if (!memo) return;
+    if (!memo && !subwayData) return;
 
     if (isMobile) {
       // PC -> 모바일 전환 시 (항상 초기 높이 45%로)
@@ -58,7 +58,7 @@ const Sidebar = ({
       document.body.style.overflow = 'auto';
       document.body.style.position = 'static';
     }
-  }, [isMobile, memo]);
+  }, [isMobile, memo, subwayData]);
 
   // 최신 답글 정렬
   const sortedReplies = [...replies].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
