@@ -265,13 +265,17 @@ const Main = () => {
     });
   };
   const fetchSubwayArrivals = async () => {
+    // 1. 클릭 즉시 로딩 상태 표시 (v39.2)
+    setSelectedSubwayArrivals([{ direction: "실시간 정보를 가져오고 있습니다...", status: "조회 중", time: "⏳", isLoading: true }]);
+    panToWithOffset(seoulStationCoords.lat, seoulStationCoords.lng);
+
     try {
-      // Vercel Serverless Function(Proxy)을 호출하여 CORS 해결 (v39.1)
+      // Vercel Serverless Function(Proxy)을 호출하여 데이터 가져오기 (v39.2)
       const res = await fetch(`/api/subway`);
       const data = await res.json();
       
       if (data.realtimeArrivalList) {
-        // 1호선 데이터만 필터링 (subwayId 1001)
+        // 1호선 데이터 필터링 시 subwayId 1001 또는 statnNm 서울역 체크
         const line1Arrivals = data.realtimeArrivalList
           .filter(item => item.subwayId === "1001")
           .map(item => ({
@@ -281,7 +285,7 @@ const Main = () => {
             time: item.barvlDt !== "0" ? `${Math.floor(item.barvlDt / 60)}분 ${item.barvlDt % 60}초` : "정보 없음"
           }));
         
-        setSelectedSubwayArrivals(line1Arrivals.length > 0 ? line1Arrivals : [{ direction: "도착 정보가 없습니다.", status: "-", time: "-" }]);
+        setSelectedSubwayArrivals(line1Arrivals.length > 0 ? line1Arrivals : [{ direction: "현재 운행 정보가 없습니다.", status: "-", time: "-" }]);
       } else {
         setSelectedSubwayArrivals([{ direction: "현재 운행 정보가 없습니다.", status: "-", time: "-" }]);
       }
@@ -289,7 +293,6 @@ const Main = () => {
       console.error('Subway API Error:', e);
       setSelectedSubwayArrivals([{ direction: "데이터를 불러올 수 없습니다.", status: "오류", time: "재시도 필요" }]);
     }
-    panToWithOffset(seoulStationCoords.lat, seoulStationCoords.lng);
   };
 
   const submitNewMemo = async () => {
