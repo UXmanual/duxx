@@ -67,23 +67,97 @@ const Header = () => {
 
   const getWeatherIcon = () => {
     switch (weather) {
-      case 'sunny': return <Sun className="w-6 h-6 text-yellow-400" fill="currentColor" />;
-      case 'cloudy': return <Cloud className="w-6 h-6 text-gray-400" fill="currentColor" />;
-      case 'rainy': return <CloudRain className="w-6 h-6 text-blue-400" />;
-      case 'snowy': return <CloudSnow className="w-6 h-6 text-blue-200" />;
-      case 'windy': return <Wind className="w-6 h-6 text-teal-400" />;
-      default: return <Sun className="w-6 h-6 text-yellow-400" />;
-    }
-  };
-
-  const getWeatherMotion = () => {
-    switch (weather) {
-      case 'sunny': return { rotate: 360, scale: [1, 1.1, 1] };
-      case 'cloudy': return { x: [-2, 2, -2], y: [-1, 1, -1] };
-      case 'rainy': return { y: [0, 3, 0] };
-      case 'snowy': return { opacity: [0.7, 1, 0.7], scale: [0.9, 1, 0.9] };
-      case 'windy': return { x: [-5, 5, -5], skewX: [-5, 5, -5] };
-      default: return {};
+      case 'sunny':
+        return (
+          <motion.div
+            animate={{ rotate: 360 }}
+            transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
+            className="relative flex items-center justify-center"
+          >
+            <Sun className="w-6 h-6 text-yellow-400" fill="currentColor" fillOpacity={0.4} />
+            <motion.div
+              animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.6, 0.3] }}
+              transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+              className="absolute w-8 h-8 bg-yellow-400/20 rounded-full blur-md"
+            />
+          </motion.div>
+        );
+      case 'cloudy':
+        return (
+          <motion.div
+            animate={{ x: [-2, 2, -2], y: [-1, 1, -1] }}
+            transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+          >
+            <Cloud className="w-6 h-6 text-gray-400" fill="currentColor" fillOpacity={0.8} />
+          </motion.div>
+        );
+      case 'rainy':
+        return (
+          <div className="relative">
+            <motion.div
+              animate={{ y: [-1, 1, -1] }}
+              transition={{ duration: 2, repeat: Infinity }}
+            >
+              <CloudRain className="w-6 h-6 text-blue-400" />
+            </motion.div>
+            {/* 빗방울 디테일 모션 */}
+            {[0, 1, 2].map((i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 0, x: i * 4 - 4 }}
+                animate={{ opacity: [0, 1, 0], y: [4, 12], x: i * 4 - 4 - 2 }}
+                transition={{ 
+                  duration: 0.8, 
+                  repeat: Infinity, 
+                  delay: i * 0.2,
+                  ease: "linear" 
+                }}
+                className="absolute top-4 left-1/2 w-[2px] h-[4px] bg-blue-300 rounded-full"
+              />
+            ))}
+          </div>
+        );
+      case 'snowy':
+        return (
+          <div className="relative">
+            <motion.div
+              animate={{ scale: [0.95, 1.05, 0.95] }}
+              transition={{ duration: 3, repeat: Infinity }}
+            >
+              <CloudSnow className="w-6 h-6 text-blue-200" />
+            </motion.div>
+            {/* 눈송이 디테일 모션 */}
+            {[0, 1].map((i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 0, x: i * 10 - 5 }}
+                animate={{ 
+                  opacity: [0, 1, 0], 
+                  y: [4, 14], 
+                  x: [i * 10 - 5, i * 10 - 8, i * 10 - 3] 
+                }}
+                transition={{ 
+                  duration: 2.5, 
+                  repeat: Infinity, 
+                  delay: i * 1,
+                  ease: "easeInOut" 
+                }}
+                className="absolute top-4 left-1/2 w-[3px] h-[3px] bg-white rounded-full shadow-[0_0_5px_#fff]"
+              />
+            ))}
+          </div>
+        );
+      case 'windy':
+        return (
+          <motion.div
+            animate={{ x: [-3, 3, -3], skewX: [-10, 10, -10] }}
+            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+          >
+            <Wind className="w-6 h-6 text-teal-400" />
+          </motion.div>
+        );
+      default:
+        return <Sun className="w-6 h-6 text-yellow-400" />;
     }
   };
 
@@ -121,12 +195,9 @@ const Header = () => {
                   transition={{ duration: 0.5 }}
                   className="flex items-center gap-2"
                 >
-                  <motion.div
-                    animate={getWeatherMotion()}
-                    transition={{ duration: weather === 'sunny' ? 15 : 3, repeat: Infinity, ease: "linear" }}
-                  >
+                  <div className="relative flex items-center justify-center w-8 h-8">
                     {getWeatherIcon()}
-                  </motion.div>
+                  </div>
                   <span className="text-[14px] font-bold text-zinc-800 tracking-tight">
                     {temp}°C
                   </span>
