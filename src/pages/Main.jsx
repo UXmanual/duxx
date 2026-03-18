@@ -439,7 +439,8 @@ const Main = () => {
               <motion.div 
                 initial={{ opacity: 0, y: 10, scale: 0.95 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                exit={{ opacity: 0, scale: 0.8 }}
+                transition={{ duration: 0.2 }}
                 className="bg-[#FF4D00] text-white text-[13px] font-black px-4 py-2.5 rounded-2xl mb-1 mr-0 border border-[#FF4D00]"
               >
                 메모 위치를 눌러주세요
