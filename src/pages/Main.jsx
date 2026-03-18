@@ -425,7 +425,7 @@ const Main = () => {
       {/* 통합 메모 작성 폼 (v36.7 복구 버전) */}
       <AnimatePresence>
         {writingMemoCoords && (
-          <div className="fixed inset-0 z-[10001] flex items-center justify-center p-6 pointer-events-none">
+          <div className="fixed inset-0 z-[10001] flex items-start justify-center p-6 pt-[12vh] pointer-events-none">
             <motion.div 
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
