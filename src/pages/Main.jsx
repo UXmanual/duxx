@@ -265,23 +265,17 @@ const Main = () => {
     });
   };
   const fetchSubwayArrivals = async () => {
-    setSelectedSubwayArrivals([{ direction: "실시간 정보를 가져오고 있습니다...", status: "조회 중", time: "⏳", isLoading: true }]);
+    setSelectedSubwayArrivals([{ direction: "1호선 정보를 가져오고 있습니다...", status: "조회 중", time: "⏳", isLoading: true }]);
     panToWithOffset(seoulStationCoords.lat, seoulStationCoords.lng);
 
     try {
       const res = await fetch(`/api/subway`);
       const data = await res.json();
       
-      // 1호선 관련 데이터 필터링 조건 대폭 완화 (v39.4)
+      // 오직 1호선(subwayId: 1001) 데이터만 엄격하게 필터링 (v39.5)
       if (data.realtimeArrivalList && data.realtimeArrivalList.length > 0) {
         const line1Arrivals = data.realtimeArrivalList
-          .filter(item => 
-            item.subwayId === "1001" || 
-            item.trainLineNm.includes("1호선") || 
-            item.trainLineNm.includes("서울역") ||
-            item.statnNm === "서울" || 
-            item.statnNm === "서울역"
-          ) 
+          .filter(item => item.subwayId === "1001") 
           .map(item => ({
             line: '1호선',
             direction: item.trainLineNm,
@@ -289,11 +283,9 @@ const Main = () => {
             time: (item.barvlDt && item.barvlDt !== "0") ? `${Math.floor(item.barvlDt / 60)}분 ${item.barvlDt % 60}초` : (item.arvlMsg2 || "곧 도착")
           }));
         
-        setSelectedSubwayArrivals(line1Arrivals.length > 0 ? line1Arrivals : [{ direction: "현재 운행 정보가 없습니다.", status: "-", time: "-" }]);
+        setSelectedSubwayArrivals(line1Arrivals.length > 0 ? line1Arrivals : [{ direction: "현재 1호선 운행 정보가 없습니다.", status: "-", time: "-" }]);
       } else {
-        // 데이터는 왔으나 리스트가 비어있는 경우 (v39.4 로그)
-        console.warn('Empty subway arrival list received.');
-        setSelectedSubwayArrivals([{ direction: "데이터 응답 성공했으나 운행 정보가 없습니다.", status: "데이터 비어있음", time: "N/A" }]);
+        setSelectedSubwayArrivals([{ direction: "현재 1호선 운행 정보가 없습니다.", status: "데이터 없음", time: "N/A" }]);
       }
     } catch (e) {
       console.error('Subway API Error:', e);
