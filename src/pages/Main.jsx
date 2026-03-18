@@ -266,8 +266,8 @@ const Main = () => {
   };
   const fetchSubwayArrivals = async () => {
     try {
-      const apiKey = "4e674d624275786d39316f50706744";
-      const res = await fetch(`http://swopenapi.seoul.go.kr/api/subway/${apiKey}/json/realtimeStationArrival/0/5/서울`);
+      // Vercel Serverless Function(Proxy)을 호출하여 CORS 해결 (v39.1)
+      const res = await fetch(`/api/subway`);
       const data = await res.json();
       
       if (data.realtimeArrivalList) {
