@@ -16,8 +16,7 @@ const Sidebar = ({
   onPop,
   replyText, 
   setReplyText,
-  formatDateTime,
-  subwayData = null // v41.0 추가
+  formatDateTime
 }) => {
   const [timeLeft, setTimeLeft] = useState('');
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
@@ -38,7 +37,7 @@ const Sidebar = ({
 
   // [반응형 대응] 모바일/PC 전환 시 높이값 강제 동기화
   useEffect(() => {
-    if (!memo && !subwayData) return;
+    if (!memo) return;
 
     if (isMobile) {
       // PC -> 모바일 전환 시 (항상 초기 높이 45%로)
@@ -58,7 +57,7 @@ const Sidebar = ({
       document.body.style.overflow = 'auto';
       document.body.style.position = 'static';
     }
-  }, [isMobile, memo, subwayData]);
+  }, [isMobile, memo]);
 
   // 최신 답글 정렬
   const sortedReplies = [...replies].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
@@ -199,92 +198,9 @@ const Sidebar = ({
     </div>
   );
 
-  // [v41.0] 지하철 정보 전용 카드 컴포넌트
-  const SubwayContentCard = () => (
-    <div className="flex flex-col gap-6 mb-2">
-      <div className="flex flex-col gap-1">
-        <h2 className="text-xl font-black text-gray-900">1호선 서울역</h2>
-        <p className="text-[11px] font-bold text-[#3D53B3] flex items-center gap-1.5 py-1 px-3 bg-[#3D53B3]/10 rounded-full w-max">
-          <div className="w-1.5 h-1.5 bg-[#3D53B3] rounded-full animate-pulse" />
-          실시간 도착 정보 {subwayData.fetchTime && `(${subwayData.fetchTime})`}
-        </p>
-      </div>
-
-      <div className="flex flex-col gap-6 py-2">
-        {/* 상행 그룹 */}
-        {subwayData.up?.length > 0 && (
-          <div className="flex flex-col gap-3">
-            <div className="flex items-center gap-2">
-              <span className="px-2 py-0.5 bg-gray-100 text-[10px] font-black text-gray-500 rounded">상행</span>
-              <div className="flex-1 h-[1px] bg-gray-100" />
-            </div>
-            <div className="grid gap-3">
-              {subwayData.up.map((arrival, idx) => (
-                <div key={`side-up-${idx}`} className="p-4 bg-gray-50/50 rounded-2xl border border-gray-100 flex flex-col gap-1.5 hover:border-[#3D53B3]/30 transition-colors relative overflow-hidden group">
-                  {/* 도착 순위 라벨 (이번열차/다음열차) */}
-                  <div className={`absolute top-0 left-0 w-1 h-full ${arrival.arrivalType === '이번열차' ? 'bg-[#3D53B3]' : 'bg-gray-300'}`} />
-                  
-                  <div className="flex items-center justify-between">
-                    <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-sm ${arrival.arrivalType === '이번열차' ? 'bg-[#3D53B3] text-white' : 'bg-gray-200 text-gray-600'}`}>
-                      {arrival.arrivalType}
-                    </span>
-                    <span className="text-[11px] font-medium text-gray-400">{arrival.time}</span>
-                  </div>
-                  
-                  <div className="flex items-center gap-2 pt-0.5">
-                    <span className="text-sm font-black text-gray-900">{arrival.dest}</span>
-                    <span className="text-xs font-bold text-gray-400">{arrival.direction}</span>
-                  </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <span className="text-[13px] font-bold text-[#3D53B3]">{arrival.status}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* 하행 그룹 */}
-        {subwayData.down?.length > 0 && (
-          <div className="flex flex-col gap-3">
-            <div className="flex items-center gap-2">
-              <span className="px-2 py-0.5 bg-gray-100 text-[10px] font-black text-gray-500 rounded">하행</span>
-              <div className="flex-1 h-[1px] bg-gray-100" />
-            </div>
-            <div className="grid gap-3">
-              {subwayData.down.map((arrival, idx) => (
-                <div key={`side-down-${idx}`} className="p-4 bg-gray-50/50 rounded-2xl border border-gray-100 flex flex-col gap-1.5 hover:border-[#3D53B3]/30 transition-colors relative overflow-hidden group">
-                  {/* 도착 순위 라벨 (이번열차/다음열차) */}
-                  <div className={`absolute top-0 left-0 w-1 h-full ${arrival.arrivalType === '이번열차' ? 'bg-[#3D53B3]' : 'bg-gray-300'}`} />
-                  
-                  <div className="flex items-center justify-between">
-                    <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-sm ${arrival.arrivalType === '이번열차' ? 'bg-[#3D53B3] text-white' : 'bg-gray-200 text-gray-600'}`}>
-                      {arrival.arrivalType}
-                    </span>
-                    <span className="text-[11px] font-medium text-gray-400">{arrival.time}</span>
-                  </div>
-                  
-                  <div className="flex items-center gap-2 pt-0.5">
-                    <span className="text-sm font-black text-gray-900">{arrival.dest}</span>
-                    <span className="text-xs font-bold text-gray-400">{arrival.direction}</span>
-                  </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <span className="text-[13px] font-bold text-[#3D53B3]">{arrival.status}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-
   return (
     <AnimatePresence>
-      {(memo || subwayData) && (
+      {memo && (
         <>
           <motion.div 
             initial={{ opacity: 0 }}
@@ -323,11 +239,6 @@ const Sidebar = ({
                     <div className="w-14 h-1.5 bg-gray-200 rounded-full" />
                   </div>
                   {memo && <MemoContentCard isCompact={true} />}
-                  {subwayData && (subwayData.loading ? (
-                    <div className="h-40 flex items-center justify-center bg-gray-50 rounded-2xl animate-pulse">
-                      <span className="text-xs font-bold text-gray-400">지하철 실시간 정보를 가져오고 있습니다...</span>
-                    </div>
-                  ) : <SubwayContentCard />)}
                 </div>
               ) : (
                 <div className="px-6 py-5 flex items-center justify-between border-b border-gray-100">
@@ -349,14 +260,6 @@ const Sidebar = ({
               {!isMobile && (
                 <div className="pt-2">
                   {memo && <MemoContentCard />}
-                  {subwayData && (subwayData.loading ? (
-                    <div className="space-y-6">
-                       <div className="w-48 h-8 bg-gray-100 rounded-lg animate-pulse" />
-                       <div className="space-y-4">
-                         {[1,2,3,4].map(i => <div key={i} className="h-20 bg-gray-50 rounded-2xl animate-pulse" />)}
-                       </div>
-                    </div>
-                  ) : <SubwayContentCard />)}
                 </div>
               )}
 
@@ -401,7 +304,7 @@ const Sidebar = ({
               <div className="h-32" />
             </div>
 
-            {/* [Bottom Fixed Area] - 지하철 모드에서는 숨김 */}
+            {/* [Bottom Fixed Area] */}
             {memo && (
               <div className={`
                 ${isMobile ? 'absolute bottom-0 left-0 w-full' : 'relative'}

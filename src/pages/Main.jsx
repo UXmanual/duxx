@@ -7,6 +7,7 @@ import { supabase } from '../lib/supabaseClient';
 import { starbucksReserveStores } from '../data/starbucksReserve';
 import { AI_PERSONAS } from '../data/aiPersonas';
 import Sidebar from '../components/Sidebar';
+import SubwaySidebar from '../components/SubwaySidebar';
 import confetti from 'canvas-confetti';
 
 const formatDateTime = (dateString) => {
@@ -278,6 +279,7 @@ const Main = () => {
     if (selectedSubwayArrivals) return;
     
     setSelectedSubwayArrivals({ loading: true });
+    setSelectedMemoId(null); // 메모 LNB 닫기
     panToWithOffset(seoulStationCoords.lat, seoulStationCoords.lng);
 
     const now = new Date();
@@ -535,6 +537,7 @@ const Main = () => {
                       e.stopPropagation(); 
                       panToWithOffset(memo.lat, memo.lng);
                       setSelectedStarbucksId(null); 
+                      setSelectedSubwayArrivals(null); // 지하철 LNB 닫기
                       setSelectedMemoId(memo.id); 
                       setExpandedGroupIds([memo.id]); 
                       setShowReplyIds([memo.id]); 
@@ -611,14 +614,18 @@ const Main = () => {
       <Sidebar 
         memo={memos.find(m => m.id === selectedMemoId)} 
         replies={memos.filter(m => m.parent_id === selectedMemoId)} 
-        onClose={() => { setSelectedMemoId(null); setSelectedSubwayArrivals(null); }} 
+        onClose={() => setSelectedMemoId(null)} 
         onDelete={handleDeleteMemo} 
         onReplySubmit={handleReplySubmit} 
         onPop={handlePopBubble} 
         replyText={replyText} 
         setReplyText={setReplyText} 
         formatDateTime={formatDateTime} 
+      />
+
+      <SubwaySidebar 
         subwayData={selectedSubwayArrivals}
+        onClose={() => setSelectedSubwayArrivals(null)}
       />
 
       <div className="fixed bottom-10 right-8 z-[9999] pointer-events-none">
