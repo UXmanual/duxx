@@ -28,29 +28,19 @@ const Sidebar = ({
   // 화면 크기 변화 감지
   useEffect(() => {
     const handleResize = () => {
-      const mobile = window.innerWidth < 768;
-      
-      // PC에서 모바일로 전환될 때 바텀시트 높이 초기화 (45%)
-      if (mobile && !isMobile && memo) {
-        animate(sheetHeight, window.innerHeight * 0.45, { 
-          type: 'spring', 
-          damping: 30, 
-          stiffness: 400 
-        });
-      }
-      
-      // 모바일에서 PC로 전환될 때 바텀시트 높이값 리셋 (100%)
-      if (!mobile && isMobile) {
-        sheetHeight.set('100%');
-      }
-
-      setIsMobile(mobile);
+      setIsMobile(window.innerWidth < 768);
       setWindowHeight(window.innerHeight);
     };
     window.addEventListener('resize', handleResize);
-    
-    // 바텀시트 열릴 때 초기 높이(45%)로 애니메이션
-    if (memo && isMobile) {
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // [반응형 대응] 모바일/PC 전환 시 높이값 강제 동기화
+  useEffect(() => {
+    if (!memo) return;
+
+    if (isMobile) {
+      // PC -> 모바일 전환 시 (항상 초기 높이 45%로)
       animate(sheetHeight, window.innerHeight * 0.45, { 
         type: 'spring', 
         damping: 30, 
@@ -61,16 +51,13 @@ const Sidebar = ({
       document.body.style.position = 'fixed';
       document.body.style.width = '100%';
     } else {
+      // 모바일 -> PC 전환 시 (100% 높이)
+      sheetHeight.set(window.innerHeight);
+      
       document.body.style.overflow = 'auto';
       document.body.style.position = 'static';
     }
-
-    return () => {
-      window.removeEventListener('resize', handleResize);
-      document.body.style.overflow = 'auto';
-      document.body.style.position = 'static';
-    };
-  }, [memo, isMobile]);
+  }, [isMobile, memo]);
 
   // 최신 답글 정렬
   const sortedReplies = [...replies].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
