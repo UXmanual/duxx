@@ -279,22 +279,23 @@ const Main = () => {
       
       if (data.realtimeArrivalList && data.realtimeArrivalList.length > 0) {
         const line1All = data.realtimeArrivalList.filter(item => item.subwayId === "1001");
-        const upTrain = line1All.filter(item => item.updnLine === "상행").sort((a, b) => parseInt(a.barvlDt) - parseInt(b.barvlDt))[0];
-        const downTrain = line1All.filter(item => item.updnLine === "하행").sort((a, b) => parseInt(a.barvlDt) - parseInt(b.barvlDt))[0];
+        
+        // 상행(Up)과 하행(Down) 각각 최근접 2개씩 추출 (v39.8)
+        const upTrains = line1All.filter(item => item.updnLine === "상행").sort((a, b) => parseInt(a.barvlDt) - parseInt(b.barvlDt)).slice(0, 2);
+        const downTrains = line1All.filter(item => item.updnLine === "하행").sort((a, b) => parseInt(a.barvlDt) - parseInt(b.barvlDt)).slice(0, 2);
         
         const parseSubwayInfo = (train) => {
           if (!train) return null;
-          // 광운대행 (시청방면) 분리 로직 (v39.7)
           const [dest, dir] = train.trainLineNm.split(" - ");
           return {
             dest: dest,
             direction: dir ? `(${dir})` : "",
             status: train.arvlMsg2,
-            time: (train.barvlDt && train.barvlDt !== "0") ? `${Math.floor(train.barvlDt / 60)}분 ${train.barvlDt % 60}초 후` : ""
+            time: (train.barvlDt && train.barvlDt !== "0") ? `${Math.floor(train.barvlDt / 60)}분 ${train.barvlDt % 60}초 후 도착` : "곧 도착"
           };
         };
 
-        const finalArrivals = [parseSubwayInfo(upTrain), parseSubwayInfo(downTrain)].filter(Boolean);
+        const finalArrivals = [...upTrains.map(parseSubwayInfo), ...downTrains.map(parseSubwayInfo)].filter(Boolean);
         setSelectedSubwayArrivals(finalArrivals.length > 0 ? finalArrivals : [{ dest: "현재 운행 중인 1호선 열차가 없습니다.", status: "-", time: "" }]);
       } else {
         setSelectedSubwayArrivals([{ dest: "현재 운행 정보가 없습니다.", status: "데이터 없음", time: "" }]);
