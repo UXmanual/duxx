@@ -23,7 +23,7 @@ const formatDateTime = (dateString) => {
 
 /**
  * [Page] 메인 페이지 (지도 메모 기능 통합 버전)
- * @version 41.6
+ * @version 41.7
  * @description 
  * - 지하철 도착 정보 정렬 로직 강화 및 이번열차/다음열차 구분 (v41.1)
  * - 커스텀 메모 폼 복구 및 사이드바 노출 정상화 (v36.7)
@@ -435,7 +435,7 @@ const Main = () => {
 
   if (loading || !isLocationLoaded) {
     return (
-      <div className="w-full h-screen bg-white flex flex-col items-center justify-center pb-[20vh]">
+      <div className="w-full h-[100dvh] bg-white flex flex-col items-center justify-center pb-[20vh]">
         <div className="flex flex-col items-center gap-4">
           <div className="relative">
             <div className="absolute inset-0 bg-gray-200 rounded-full animate-ping opacity-40" />
@@ -453,7 +453,7 @@ const Main = () => {
   }
 
   return (
-    <div className="w-full h-screen relative bg-white overflow-hidden">
+    <div className="w-full h-[100dvh] relative bg-white overflow-hidden">
       <Map
         center={initialCenter}
         level={4}
@@ -674,6 +674,14 @@ const Main = () => {
               <Crosshair size={26} strokeWidth={2.5} className="text-[#FF4D00]" />
             </motion.button>
           </div>
+        </div>
+      </div>
+
+      {/* [Footer] Version Info Area (v41.7) */}
+      <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[9999] pointer-events-none select-none opacity-40">
+        <div className="flex flex-col items-center gap-0.5">
+          <span className="text-[10px] font-black tracking-widest text-[#FF4D00]">V41.7</span>
+          <span className="text-[9px] font-bold text-gray-400 uppercase tracking-tighter">iOS Layout Optimized</span>
         </div>
       </div>
 
