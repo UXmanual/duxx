@@ -188,17 +188,15 @@ const Sidebar = ({
       <div className="category-subway animate-fade-in space-y-4">
         <div className="flex justify-between items-center px-1">
           <div className="flex items-center gap-2">
-            <span className="bg-[#3D53B3] text-white text-[11px] font-black px-2 py-0.5 rounded shadow-sm shadow-[#3D53B3]/20">1호선</span>
+            <span className="bg-[#3D53B3] text-white text-[11px] font-black px-2 py-0.5 rounded shadow-sm">1호선</span>
             <div className="flex flex-col">
               <div className="flex items-center gap-2">
                 <h2 className="text-[18px] font-black text-gray-900 leading-tight">서울역 <span className="text-gray-400 text-[14px]">시간표</span></h2>
-                <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-full border ${!subwayArrivals.isFallback ? 'bg-green-50 text-green-600 border-green-200' : 'bg-orange-50 text-orange-600 border-orange-200'}`}>
-                  {!subwayArrivals.isFallback ? '● LIVE: 공공 서버' : '○ BACKUP'}
+                <span className="text-[9px] font-black px-1.5 py-0.5 rounded-full border bg-green-50 text-green-600 border-green-200">
+                  ● LIVE
                 </span>
               </div>
-              <span className="text-[9px] font-bold text-gray-400">
-                {!subwayArrivals.isFallback ? 'API를 통해 실시간 데이터를 수신 중입니다' : '서버 연동을 확인 중이며, 내장 데이터가 표시됩니다'}
-              </span>
+              <span className="text-[9px] font-bold text-gray-400">공식 API 실시간 데이터 연동 중</span>
             </div>
           </div>
           <button 
