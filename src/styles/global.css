@@ -31,21 +31,34 @@ html, body, #root {
   margin: 0;
   padding: 0;
   overflow: hidden;
-  background-color: #f3ede1 !important; /* 사용자 지정 배경색으로 조화롭게 변경 */
+  background-color: #f3ede1 !important;
   overscroll-behavior: none;
   -webkit-overflow-scrolling: touch;
-  cursor: default;
-  position: fixed; /* iOS 주소창 밀림 방지를 위한 고정 */
+  
+  /* 전역 텍스트 선택 및 커서 차단 */
+  user-select: none !important;
+  -webkit-user-select: none !important;
+  -moz-user-select: none !important;
+  -ms-user-select: none !important;
+  cursor: default !important;
+  position: fixed;
 }
 
-/* 입력창은 예외적으로 텍스트 선택 및 커서 허용 */
-input, textarea {
-  user-select: auto !important;
-  -webkit-user-select: auto !important;
-  -moz-user-select: auto !important;
-  -ms-user-select: auto !important;
-  cursor: text;
+/* 입력창에서만 텍스트 선택 및 커서 허용 */
+input, textarea, [contenteditable="true"] {
+  user-select: text !important;
+  -webkit-user-select: text !important;
+  -moz-user-select: text !important;
+  -ms-user-select: text !important;
+  cursor: text !important;
 }
+
+/* 버튼 등 인터랙티브 요소는 포인터 유지 (필요 시 default로 변경) */
+button, a, [role="button"] {
+  cursor: pointer;
+}
+
+
 
 /* Custom Scrollbar Structure */
 ::-webkit-scrollbar { width: 8px; }
