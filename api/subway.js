@@ -1,58 +1,84 @@
-export default async function handler(req, res) {
-  const apiKey = process.env.VITE_SUBWAY_API_KEY || process.env.SUBWAY_API_KEY;
-  const { type, dayType, bound } = req.query; 
+const SEOUL_STATION_CODES = {
+  frCode: '133',
+  stationCd: '0150'
+};
 
-  if (type === 'timetable') {
-    const dType = dayType || "1";
-    const bType = bound || "1";
-    
-    // [v46.6] ERROR-500 서버 장애 대응을 위한 코드 및 슬래시 유연화
-    const tryCodes = ["0150", "133", "150", "0101"];
-    const tryServices = ["SearchSTNTimeTableByIDService", "SearchSubwayTimeTableByIDService"];
-    
-    let finalData = null;
-    let lastError = null;
+async function fetchTimetable(apiKey, dayType, bound) {
+  const attempts = [
+    {
+      serviceName: 'SearchSTNTimeTableByIDService',
+      stationCode: SEOUL_STATION_CODES.stationCd
+    },
+    {
+      serviceName: 'SearchSTNTimeTableByFRCodeService',
+      stationCode: SEOUL_STATION_CODES.frCode
+    }
+  ];
 
-    for (const serviceName of tryServices) {
-      if (finalData) break;
-      for (const stationCode of tryCodes) {
-        // 슬래시가 없는 표준 URL 먼저 시도 (v46.6)
-        const urls = [
-          `http://openapi.seoul.go.kr:8088/${apiKey}/json/${serviceName}/1/500/${stationCode}/${dType}/${bType}`,
-          `http://openapi.seoul.go.kr:8088/${apiKey}/json/${serviceName}/1/500/${stationCode}/${dType}/${bType}/`
-        ];
+  let lastError = 'UNKNOWN';
 
-        for (const targetUrl of urls) {
-          try {
-            const response = await fetch(targetUrl);
-            const data = await response.json();
-            
-            const resCode = data[serviceName]?.RESULT?.CODE || data.RESULT?.CODE || "";
-            if (resCode === 'INFO-000' && data[serviceName]?.row?.length > 0) {
-              finalData = { SearchSTNTimeTableByIDService: { row: data[serviceName].row } };
-              break;
-            } else {
-              lastError = resCode || "EMPTY";
-            }
-          } catch (e) { lastError = e.message; }
-        }
-        if (finalData) break;
+  for (const { serviceName, stationCode } of attempts) {
+    const targetUrl = `http://openapi.seoul.go.kr:8088/${apiKey}/json/${serviceName}/1/500/${stationCode}/${dayType}/${bound}/`;
+
+    try {
+      const response = await fetch(targetUrl);
+      if (!response.ok) {
+        lastError = `HTTP_${response.status}`;
+        continue;
       }
-    }
 
-    if (finalData) {
-      res.status(200).json(finalData);
-    } else {
-      res.status(200).json({ 
-        error: lastError, 
-        message: `서울역 데이터(0150/150/133) 검색 실패: ${lastError}. (인증키 권한 또는 요일 타입 확인 필요)` 
-      });
+      const data = await response.json();
+      const resultCode = data[serviceName]?.RESULT?.CODE || data.RESULT?.CODE || 'UNKNOWN';
+      const rows = data[serviceName]?.row || [];
+
+      if (resultCode === 'INFO-000' && rows.length > 0) {
+        return {
+          SearchSTNTimeTableByIDService: {
+            row: rows
+          },
+          source: {
+            serviceName,
+            stationCode,
+            stationName: '서울역',
+            line: '01호선'
+          }
+        };
+      }
+
+      lastError = resultCode;
+    } catch (error) {
+      lastError = error.message;
     }
+  }
+
+  return {
+    error: lastError,
+    message: `서울역 1호선 시간표 API 응답 없음: ${lastError}`,
+    source: {
+      stationCd: SEOUL_STATION_CODES.stationCd,
+      frCode: SEOUL_STATION_CODES.frCode,
+      stationName: '서울역',
+      line: '01호선'
+    }
+  };
+}
+
+export default async function handler(req, res) {
+  const apiKey = process.env.SUBWAY_API_KEY || process.env.VITE_SUBWAY_API_KEY;
+  const { type, dayType = '1', bound = '1' } = req.query;
+
+  if (!apiKey) {
+    res.status(500).json({ error: 'MISSING_API_KEY' });
     return;
   }
 
-  // [기존 실시간 정보 조회]
-  const stationName = encodeURIComponent("서울");
+  if (type === 'timetable') {
+    const data = await fetchTimetable(apiKey, dayType, bound);
+    res.status(200).json(data);
+    return;
+  }
+
+  const stationName = encodeURIComponent('서울역');
   const arrivalUrl = `http://swopenapi.seoul.go.kr/api/subway/${apiKey}/json/realtimeStationArrival/0/15/${stationName}`;
 
   try {

@@ -28,3 +28,4 @@ dist-ssr
 
 # Vercel Temporary Files
 .vercel/
+.vercel

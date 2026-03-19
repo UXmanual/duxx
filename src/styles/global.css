@@ -1,3 +1,5 @@
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css');
+
 @font-face {
     font-family: 'YeogiOttaeJalnan';
     src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_four@1.2/JalnanOTF00.woff') format('woff');
@@ -9,14 +11,13 @@
     font-family: 'YeogiOttaeJalnan', sans-serif !important;
 }
 
-@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 /* Basic Structural Styles */
 :root {
+  --app-page-bg: #f3ede1;
   font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
   background-color: var(--theme-bg);
   color: var(--theme-text-primary);
@@ -31,7 +32,7 @@ html, body, #root {
   margin: 0;
   padding: 0;
   overflow: hidden;
-  background-color: #f3ede1 !important;
+  background-color: transparent !important;
   overscroll-behavior: none;
   -webkit-overflow-scrolling: touch;
   
@@ -42,6 +43,12 @@ html, body, #root {
   -ms-user-select: none !important;
   cursor: default !important;
   position: fixed;
+}
+
+#root {
+  background:
+    radial-gradient(circle at top, rgba(255, 255, 255, 0.22), transparent 32%),
+    var(--app-page-bg) !important;
 }
 
 /* 입력창에서만 텍스트 선택 및 커서 허용 */
