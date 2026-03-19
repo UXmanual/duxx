@@ -631,13 +631,16 @@ const Main = () => {
       <Sidebar 
         memo={memos.find(m => m.id === selectedMemoId)} 
         replies={memos.filter(m => m.parent_id === selectedMemoId)} 
-        onClose={() => setSelectedMemoId(null)} 
+        onClose={() => { setSelectedMemoId(null); setSelectedSubwayArrivals(null); setSelectedStarbucksId(null); }} 
         onDelete={handleDeleteMemo} 
         onReplySubmit={handleReplySubmit} 
         onPop={handlePopBubble} 
         replyText={replyText} 
         setReplyText={setReplyText} 
         formatDateTime={formatDateTime} 
+        subwayArrivals={selectedSubwayArrivals}
+        subwayFetchTime={subwayFetchTime}
+        starbucks={starbucksPlaces.find(l => l.id === selectedStarbucksId)}
       />
 
       <div className="pointer-events-none fixed inset-0 z-40 overflow-visible">

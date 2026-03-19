@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence, useMotionValue, animate } from 'framer-motion';
-import { X, Clock, MessageSquare, Trash2, Send } from 'lucide-react';
+import { X, Clock, MessageSquare, Trash2, Send, Coffee, MapPin, ChevronRight } from 'lucide-react';
 
 /**
- * [Component] LNB 사이드바 / 모바일 바텀시트
- * @version 43.3
- * @description 터트리기 버튼 스타일 수정 및 터트리기 애니메이션 고도화 (v33.6)
+ * [Component] LNB 사이드바 / 모바일 바텀시트 (통합 v43.6)
+ * @version 43.6
+ * @description 지하철 도착 정보, 스타벅스 매장 정보, 메모 정보를 모두 처리하도록 복구 함
  */
 const Sidebar = ({ 
   memo, 
@@ -16,16 +16,16 @@ const Sidebar = ({
   onPop,
   replyText, 
   setReplyText,
-  formatDateTime
+  formatDateTime,
+  subwayArrivals,
+  subwayFetchTime,
+  starbucks
 }) => {
   const [timeLeft, setTimeLeft] = useState('');
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [windowHeight, setWindowHeight] = useState(window.innerHeight);
-  
-  // 리얼타임 높이 제어를 위한 MotionValue
   const sheetHeight = useMotionValue(0);
 
-  // 화면 크기 변화 감지
   useEffect(() => {
     const handleResize = () => {
       setIsMobile(window.innerWidth < 768);
@@ -37,60 +37,43 @@ const Sidebar = ({
 
   // [반응형 대응] 모바일/PC 전환 시 높이값 강제 동기화
   useEffect(() => {
-    if (!memo) return;
-
-    if (isMobile) {
-      // PC -> 모바일 전환 시 (항상 초기 높이 45%로)
-      animate(sheetHeight, window.innerHeight * 0.45, { 
-        type: 'spring', 
-        damping: 30, 
-        stiffness: 400 
-      });
-      
-      document.body.style.overflow = 'hidden';
-      document.body.style.position = 'fixed';
-      document.body.style.width = '100%';
-    } else {
-      // 모바일 -> PC 전환 시 (100% 높이)
-      sheetHeight.set(window.innerHeight);
-      
-      document.body.style.overflow = 'auto';
-      document.body.style.position = 'static';
-    }
-  }, [isMobile, memo]);
-
-  // 최신 답글 정렬
-  const sortedReplies = [...replies].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-
-  // 실시간 소멸 카운트다운
-  useEffect(() => {
-    if (!memo?.popped_at) {
-      setTimeLeft('');
+    const hasData = memo || subwayArrivals || starbucks;
+    if (!hasData) {
+      sheetHeight.set(0);
       return;
     }
-    const updateTimer = () => {
+
+    if (isMobile) {
+      animate(sheetHeight, window.innerHeight * 0.45, { 
+        type: 'spring', damping: 30, stiffness: 400 
+      });
+      document.body.style.overflow = 'hidden';
+    } else {
+      sheetHeight.set(window.innerHeight);
+      document.body.style.overflow = 'auto';
+    }
+  }, [isMobile, memo, subwayArrivals, starbucks]);
+
+  // 카운트다운 로직
+  useEffect(() => {
+    if (!memo?.popped_at) { setTimeLeft(''); return; }
+    const update = () => {
       const poppedTime = new Date(memo.popped_at);
-      const now = new Date();
-      const diffMs = now - poppedTime;
-      const remainingMs = (30 * 60 * 1000) - diffMs;
-      if (remainingMs <= 0) {
-        setTimeLeft('00:00');
-        return;
-      }
-      const minutes = Math.floor(remainingMs / (1000 * 60));
-      const seconds = Math.floor((remainingMs % (1000 * 60)) / 1000);
-      setTimeLeft(`${minutes}:${seconds.toString().padStart(2, '0')}`);
+      const remainingMs = (30 * 60 * 1000) - (new Date() - poppedTime);
+      if (remainingMs <= 0) { setTimeLeft('00:00'); return; }
+      const mins = Math.floor(remainingMs / 60000);
+      const secs = Math.floor((remainingMs % 60000) / 1000);
+      setTimeLeft(`${mins}:${secs.toString().padStart(2, '0')}`);
     };
-    updateTimer();
-    const timer = setInterval(updateTimer, 1000);
+    update();
+    const timer = setInterval(update, 1000);
     return () => clearInterval(timer);
   }, [memo?.popped_at]);
 
-  // 인터랙티브 드래그 핸들러
   const handlePan = (e, info) => {
     if (!isMobile) return;
     let newH = sheetHeight.get() - info.delta.y;
-    const maxH = windowHeight * 0.92;
+    const maxH = windowHeight * 0.95;
     if (newH > maxH) newH = maxH;
     sheetHeight.set(newH);
   };
@@ -100,229 +83,182 @@ const Sidebar = ({
     const currentH = sheetHeight.get();
     const velocity = info.velocity.y;
     const snapTransition = { type: 'spring', damping: 38, stiffness: 450 };
-
     const halfH = windowHeight * 0.45;
     const fullH = windowHeight * 0.9;
-    const threshold = windowHeight * 0.15;
-
+    
     if (currentH > windowHeight * 0.65) {
-      if (velocity > 400 || currentH < fullH - threshold) {
-        animate(sheetHeight, halfH, snapTransition);
-      } else {
-        animate(sheetHeight, fullH, snapTransition);
-      }
+      if (velocity > 400) animate(sheetHeight, halfH, snapTransition);
+      else animate(sheetHeight, fullH, snapTransition);
     } else if (currentH > windowHeight * 0.2) {
-      if (velocity < -400 && currentH > halfH - threshold) {
-        animate(sheetHeight, fullH, snapTransition);
-      } else if (velocity > 400 || currentH < halfH - threshold) {
-        animate(sheetHeight, 0, snapTransition).then(() => onClose());
-      } else {
-        animate(sheetHeight, halfH, snapTransition);
-      }
+      if (velocity > 400) animate(sheetHeight, 0, snapTransition).then(() => onClose());
+      else if (velocity < -400) animate(sheetHeight, fullH, snapTransition);
+      else animate(sheetHeight, halfH, snapTransition);
     } else {
-      if (velocity < -600) {
-        animate(sheetHeight, halfH, snapTransition);
-      } else {
-        animate(sheetHeight, 0, snapTransition).then(() => onClose());
-      }
+      animate(sheetHeight, 0, snapTransition).then(() => onClose());
     }
   };
 
-  // URL 링크 감지 및 변환 함수 (v38.2)
-  const renderTextWithLinks = (text) => {
-    if (!text) return null;
-    const urlRegex = /(https?:\/\/[^\s]+)/g;
-    return text.split(urlRegex).map((chunk, i) => {
-      if (chunk.match(urlRegex)) {
-        return (
-          <a 
-            key={i} 
-            href={chunk} 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="text-[#FF4D00] hover:underline underline-offset-4 break-all decoration-2 font-bold"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {chunk}
-          </a>
-        );
-      }
-      return chunk;
-    });
-  };
+  // 지하철 도착 정보 카드 컴포넌트 (v41.1 기반)
+  const SubwayArrivalCard = () => {
+    if (!subwayArrivals) return null;
+    if (subwayArrivals.loading) {
+      return (
+        <div className="p-8 flex flex-col items-center justify-center animate-pulse">
+          <div className="w-12 h-12 bg-gray-100 rounded-full mb-4" />
+          <p className="text-gray-400 font-bold">열차 정보를 가져오는 중...</p>
+        </div>
+      );
+    }
 
-  // 공통 바블 본문 카드 컴포넌트
-  const MemoContentCard = ({ isCompact = false }) => (
-    <div className={`space-y-4 ${isCompact ? '' : 'mb-8'}`}>
-      <div className="flex items-start justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-11 h-11 bg-gradient-to-br from-[#FF4D00] to-[#FF8A00] rounded-2xl flex items-center justify-center text-white font-black shadow-lg shadow-[#FF4D00]/20">
-            {memo.nickname?.charAt(0) || 'B'}
-          </div>
+    // 상행/하행 분리 및 우선순위 정렬
+    const line1Arrivals = subwayArrivals.realtimeArrivalList || [];
+    const upTrains = line1Arrivals.filter(t => t.updnLine === "상행").sort((a, b) => parseInt(a.barvlDt) - parseInt(b.barvlDt)).slice(0, 2);
+    const downTrains = line1Arrivals.filter(t => t.updnLine === "하행").sort((a, b) => parseInt(a.barvlDt) - parseInt(b.barvlDt)).slice(0, 2);
+
+    const TrainItem = ({ train, isNext = false }) => (
+      <div className={`p-4 rounded-2xl border ${isNext ? 'bg-gray-50/50 border-gray-100' : 'bg-blue-50/50 border-blue-100'} transition-all`}>
+        <div className="flex justify-between items-start mb-2">
+          <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${train.arrivalType === '다음열차' ? 'bg-gray-200 text-gray-500' : 'bg-blue-500 text-white animate-pulse'}`}>
+            {train.arrivalType}
+          </span>
+          <span className="text-[11px] font-bold text-gray-400">{train.time ? '예측 정보 있음' : '진입 중'}</span>
+        </div>
+        <div className="flex justify-between items-end">
           <div>
-            <p className="font-bold text-gray-900 text-sm">{memo.nickname}</p>
-            <span className="text-[10px] px-2 py-0.5 bg-gray-100 text-gray-500 rounded-full font-medium">
-              {formatDateTime(memo.created_at)}
+            <p className="text-[15px] font-black text-gray-800">{train.dest} {train.direction}</p>
+            <p className="text-[12px] font-bold text-blue-600">{train.status}</p>
+          </div>
+          <div className="text-right">
+            <span className="text-[18px] font-black text-gray-900 tracking-tighter">
+              {train.time}
             </span>
           </div>
         </div>
-        {!memo.popped_at && (
-          <button 
-            onClick={(e) => { e.stopPropagation(); onPop(memo.id, e); }}
-            className="p-2.5 bg-white border border-gray-100 rounded-xl hover:bg-gray-50 transition-all group"
-          >
-            <motion.svg 
-              width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FF4D00" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
-              animate={{ scale: [1, 0.85, 1.15, 1] }}
-              transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
-            >
-              <path d="M12 2v2M12 20v2M2 12h2M20 12h2M19.07 4.93l-1.41 1.41M6.34 17.66l-1.41 1.41M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41" />
-            </motion.svg>
+      </div>
+    );
+
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="w-12 h-12 bg-[#3D53B3] rounded-2xl flex items-center justify-center text-white shadow-lg shadow-blue-500/20">
+            <span className="text-[18px] font-black">1</span>
+          </div>
+          <div>
+            <h2 className="text-[20px] font-black text-gray-900">서울역</h2>
+            <p className="text-[12px] font-bold text-gray-400">실시간 도착 정보 ({subwayFetchTime})</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 gap-6">
+          <div className="space-y-3">
+            <h3 className="text-[14px] font-black text-gray-400 px-1">상행 (소요산 방면)</h3>
+            {subwayArrivals.up?.length > 0 ? subwayArrivals.up.map((t, idx) => <TrainItem key={idx} train={t} isNext={idx > 0} />) : <div className="p-4 bg-gray-50 rounded-2xl text-center text-gray-400 font-bold text-sm">정보 없음</div>}
+          </div>
+          <div className="space-y-3">
+            <h3 className="text-[14px] font-black text-gray-400 px-1">하행 (천안/인천 방면)</h3>
+            {subwayArrivals.down?.length > 0 ? subwayArrivals.down.map((t, idx) => <TrainItem key={idx} train={t} isNext={idx > 0} />) : <div className="p-4 bg-gray-50 rounded-2xl text-center text-gray-400 font-bold text-sm">정보 없음</div>}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // 스타벅스 매장 카드
+  const StarbucksCard = () => {
+    if (!starbucks) return null;
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="w-12 h-12 bg-[#00704a] rounded-2xl flex items-center justify-center text-white shadow-lg shadow-green-700/20">
+            <Coffee size={24} strokeWidth={2.5} />
+          </div>
+          <div>
+            <h2 className="text-[20px] font-black text-gray-900 leading-tight">{starbucks.name}</h2>
+            <p className="text-[12px] font-bold text-[#00704a]">리저브 매장</p>
+          </div>
+        </div>
+        <div className="p-5 bg-green-50/50 border border-green-100 rounded-[24px] space-y-4">
+          <div className="flex items-start gap-3">
+            <MapPin size={18} className="text-green-700 mt-0.5" />
+            <p className="text-gray-700 font-medium text-[14px] leading-relaxed">{starbucks.address}</p>
+          </div>
+          <button className="w-full py-4 bg-white border border-green-100 rounded-2xl text-green-700 font-black text-[14px] flex items-center justify-center gap-2 shadow-sm active:scale-[0.98] transition-all">
+            길찾기 <ChevronRight size={16} strokeWidth={3} />
           </button>
-        )}
+        </div>
       </div>
-      <div className={`relative p-5 bg-gray-50 rounded-[24px] border border-gray-100 ${isMobile ? 'max-h-[160px]' : ''} overflow-hidden`}>
-        <p className="text-gray-800 text-sm leading-relaxed font-medium whitespace-pre-wrap">
-          {renderTextWithLinks(memo.text)}
-        </p>
-      </div>
-      <div className="flex items-center gap-4 text-[10px] font-bold px-1">
-        <span className={`flex items-center gap-1.5 ${memo.popped_at ? 'text-[#FF4D00]' : 'text-blue-500'}`}>
-          <div className={`w-1.5 h-1.5 rounded-full animate-pulse ${memo.popped_at ? 'bg-[#FF4D00]' : 'bg-blue-500'}`} />
-          {memo.popped_at ? `${timeLeft} 후 소멸` : '활성화 상태'}
-        </span>
-        <span className="flex items-center gap-1.5 text-gray-400">
-          <MessageSquare size={12} strokeWidth={2.5} /> 답글 {replies.length}
-        </span>
-      </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <AnimatePresence>
-      {memo && (
+      {(memo || subwayArrivals || starbucks) && (
         <>
           <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[9999] md:hidden cursor-pointer"
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[9999] md:hidden cursor-pointer bg-black/5 backdrop-blur-[2px]"
             onClick={onClose}
           />
-          
           <motion.div 
             style={{ height: isMobile ? sheetHeight : '100vh' }}
-            variants={!isMobile ? {
-              open: { x: 0, opacity: 1 },
-              closed: { x: -400, opacity: 0 }
-            } : {}}
-            initial={isMobile ? { height: 0 } : "closed"}
-            animate={!isMobile ? "open" : {}}
-            exit={isMobile ? { height: 0 } : "closed"}
+            initial={isMobile ? { height: 0 } : { x: -400, opacity: 0 }}
+            animate={isMobile ? {} : { x: 0, opacity: 1 }}
+            exit={isMobile ? { height: 0 } : { x: -400, opacity: 0 }}
             transition={{ type: 'spring', damping: 30, stiffness: 400 }}
-            className={`
-              fixed z-[10000] bg-white shadow-2xl flex flex-col
-              md:left-0 md:top-0 md:h-screen md:w-[380px]
-              bottom-0 left-0 w-full rounded-t-[32px] md:rounded-none
-              overflow-hidden
-            `}
+            className={`fixed z-[10000] bg-white shadow-2xl flex flex-col md:left-0 md:top-0 md:h-screen md:w-[380px] bottom-0 left-0 w-full rounded-t-[32px] md:rounded-none overflow-hidden`}
           >
-            {/* [Header Area] */}
             <motion.div 
               className={`flex-shrink-0 touch-none select-none relative z-30 bg-white ${isMobile ? 'cursor-grab active:cursor-grabbing' : ''}`}
-              onPan={isMobile ? handlePan : undefined}
-              onPanEnd={isMobile ? handlePanEnd : undefined}
+              onPan={isMobile ? handlePan : undefined} onPanEnd={isMobile ? handlePanEnd : undefined}
             >
-              {isMobile ? (
-                <div className="px-6 pt-5 pb-4 space-y-4">
-                  <div className="w-full flex justify-center pb-2">
-                    <div className="w-14 h-1.5 bg-gray-200 rounded-full" />
+              <div className="px-6 pt-5 pb-4">
+                {isMobile && <div className="w-full flex justify-center pb-6"><div className="w-14 h-1.5 bg-gray-100 rounded-full" /></div>}
+                {!isMobile && (
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="logo-font text-[20px] font-black text-[#FF4D00]">BABBLE</span>
+                    <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full transition-all"><X size={20} className="text-gray-400" /></button>
                   </div>
-                  {memo && <MemoContentCard isCompact={true} />}
-                </div>
-              ) : (
-                <div className="px-6 py-5 flex items-center justify-between border-b border-gray-100">
-                  <div className="flex items-center">
-                    <span className="logo-font text-[20px] tracking-[0] uppercase text-[#FF4D00] select-none">BABBLE</span>
-                  </div>
-                  <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={onClose} className="p-2.5 hover:bg-gray-100 rounded-full transition-all">
-                    <X size={20} className="text-gray-400" />
-                  </motion.button>
-                </div>
-              )}
+                )}
+              </div>
             </motion.div>
 
-            {/* [Scrollable Area] */}
-            <div 
-              className="flex-1 overflow-y-auto custom-scrollbar px-6 pt-4 pb-6"
-              onPointerDown={(e) => e.stopPropagation()} 
-            >
-              {!isMobile && (
-                <div className="pt-2">
-                  {memo && <MemoContentCard />}
-                </div>
-              )}
-
+            <div className="flex-1 overflow-y-auto px-6 pb-20 custom-scrollbar">
               {memo && (
-                <div className="space-y-5">
-                  <div className="flex items-center justify-between">
-                    <h3 className="font-black text-gray-900 text-sm">답글 <span className="text-[#FF4D00] ml-1">{replies.length}</span></h3>
-                    <div className="h-px bg-gray-100 flex-1 ml-4" />
+                <div className="space-y-6">
+                  {/* 메모 컨텐츠 (기존 로직 유지) */}
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 bg-[#FF4D00] rounded-2xl flex items-center justify-center text-white font-black">{memo.nickname?.charAt(0)}</div>
+                    <div><p className="font-bold text-gray-900">{memo.nickname}</p><p className="text-[10px] text-gray-400">{formatDateTime(memo.created_at)}</p></div>
                   </div>
-                  
-                  <div className="space-y-4">
-                    {sortedReplies.map((reply) => (
-                      <div key={reply.id} className="flex gap-3">
-                        <div className={`flex-shrink-0 w-8 h-8 rounded-xl flex items-center justify-center text-[10px] font-black ${reply.is_ai ? 'bg-indigo-50 text-indigo-600' : 'bg-gray-100 text-gray-700'}`}>
-                          {reply.nickname?.charAt(0)}
+                  <div className="p-5 bg-gray-50 rounded-[24px] border border-gray-100"><p className="text-gray-800 text-[15px] font-medium leading-relaxed">{memo.text}</p></div>
+                  {replies.length > 0 && (
+                    <div className="space-y-4 pt-6">
+                      <h3 className="text-[14px] font-black text-gray-400 px-1">답글 {replies.length}</h3>
+                      {replies.map(r => (
+                        <div key={r.id} className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                          <p className="font-bold text-[13px] text-gray-900 mb-1">{r.nickname}</p>
+                          <p className="text-[13px] text-gray-700">{r.text}</p>
                         </div>
-                        <div className="flex-1 space-y-1">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-1.5">
-                              <span className="text-[11px] font-black text-gray-800">{reply.nickname}</span>
-                              {reply.is_ai && (
-                                <span className="text-[9px] bg-indigo-50 text-indigo-500 px-1 rounded-sm font-bold border border-indigo-100/50">A</span>
-                              )}
-                            </div>
-                            <span className="text-[9px] text-gray-400">{formatDateTime(reply.created_at)}</span>
-                          </div>
-                          <p className="text-xs text-gray-600 leading-normal bg-white border border-gray-100 p-3 rounded-tr-xl rounded-b-xl">
-                            {renderTextWithLinks(reply.text)}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
-                    {sortedReplies.length === 0 && (
-                      <div className="text-center py-10 opacity-40">
-                        <MessageSquare size={24} className="mx-auto mb-2 text-gray-300" />
-                        <p className="text-[10px] font-bold">첫 번째 답글을 남겨보세요!</p>
-                      </div>
-                    )}
-                  </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
-              <div className="h-32" />
+              {subwayArrivals && <SubwayArrivalCard />}
+              {starbucks && <StarbucksCard />}
+              <div className="h-20" />
             </div>
 
-            {/* [Bottom Fixed Area] */}
             {memo && (
-              <div className={`
-                ${isMobile ? 'absolute bottom-0 left-0 w-full' : 'relative'}
-                px-6 py-5 bg-white border-t border-gray-100 flex-shrink-0 z-40
-              `}>
+              <div className="px-6 py-5 bg-white border-t border-gray-100 flex-shrink-0 z-40 bg-white/80 backdrop-blur-md">
                 <div className="relative flex items-center">
                   <input 
                     type="text" value={replyText} onChange={(e) => setReplyText(e.target.value)}
                     placeholder="말하고싶은 바블을 남겨주세요"
-                    className="w-full pl-6 pr-16 py-4 bg-gray-50 border border-gray-200 rounded-[22px] text-[13px] font-bold focus:outline-none focus:ring-4 focus:ring-[#FF4D00]/10 focus:bg-white transition-all"
+                    className="w-full pl-6 pr-16 py-4 bg-gray-50 border border-gray-200 rounded-[22px] text-[13px] font-bold focus:outline-none focus:ring-4 focus:ring-[#FF4D00]/10 focus:bg-white transition-all shadow-inner"
                     onKeyPress={(e) => e.key === 'Enter' && onReplySubmit(memo.id)}
                   />
-                  <button 
-                    onClick={() => onReplySubmit(memo.id)}
-                    className="absolute right-1.5 w-11 h-11 bg-[#FF4D00] text-white rounded-2xl flex items-center justify-center active:scale-95 transition-transform"
-                  >
-                    <Send size={18} strokeWidth={2.5} />
-                  </button>
+                  <button onClick={() => onReplySubmit(memo.id)} className="absolute right-1.5 w-11 h-11 bg-[#FF4D00] text-white rounded-2xl flex items-center justify-center active:scale-95 transition-transform"><Send size={18} strokeWidth={2.5} /></button>
                 </div>
                 {isMobile && <div style={{ height: 'env(safe-area-inset-bottom, 16px)' }} />}
               </div>
