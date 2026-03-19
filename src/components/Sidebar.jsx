@@ -161,7 +161,10 @@ const Sidebar = ({
           <div className="flex-1 p-3 border-r border-gray-100 space-y-2">
             {ups.map((t, i) => (
               <div key={i} className="flex flex-col">
-                <span className="text-[13px] font-black text-blue-600">{formatArrivalTime(t)}</span>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[13px] font-black text-blue-600">{formatArrivalTime(t)}</span>
+                  {t.TRAIN_NO && <span className="text-[9px] font-bold text-blue-300 bg-blue-50 px-1 rounded">{t.TRAIN_NO}</span>}
+                </div>
                 <span className="text-[10px] font-bold text-gray-400 truncate">{(t.DESTSTATION_NM || t.TRAIN_DESTINATION_STATION_NM)}행</span>
               </div>
             ))}
@@ -169,7 +172,10 @@ const Sidebar = ({
           <div className="flex-1 p-3 space-y-2 text-right">
             {downs.map((t, i) => (
               <div key={i} className="flex flex-col items-end">
-                <span className="text-[13px] font-black text-gray-900">{formatArrivalTime(t)}</span>
+                <div className="flex items-center gap-1.5 justify-end">
+                  {t.TRAIN_NO && <span className="text-[9px] font-bold text-gray-300 bg-gray-50 px-1 rounded">{t.TRAIN_NO}</span>}
+                  <span className="text-[13px] font-black text-gray-900">{formatArrivalTime(t)}</span>
+                </div>
                 <span className="text-[10px] font-bold text-gray-400 truncate">{(t.DESTSTATION_NM || t.TRAIN_DESTINATION_STATION_NM)}행</span>
               </div>
             ))}
@@ -184,8 +190,15 @@ const Sidebar = ({
           <div className="flex items-center gap-2">
             <span className="bg-[#3D53B3] text-white text-[11px] font-black px-2 py-0.5 rounded shadow-sm shadow-[#3D53B3]/20">1호선</span>
             <div className="flex flex-col">
-              <h2 className="text-[18px] font-black text-gray-900 leading-tight">서울역 <span className="text-gray-400 text-[14px]">시간표</span></h2>
-              {subwayArrivals.isFallback && <span className="text-[9px] font-bold text-gray-400">데이터를 불러오는 중입니다 (내장 정보 표시)</span>}
+              <div className="flex items-center gap-2">
+                <h2 className="text-[18px] font-black text-gray-900 leading-tight">서울역 <span className="text-gray-400 text-[14px]">시간표</span></h2>
+                <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-full border ${!subwayArrivals.isFallback ? 'bg-green-50 text-green-600 border-green-200' : 'bg-orange-50 text-orange-600 border-orange-200'}`}>
+                  {!subwayArrivals.isFallback ? '● LIVE: 공공 서버' : '○ BACKUP'}
+                </span>
+              </div>
+              <span className="text-[9px] font-bold text-gray-400">
+                {!subwayArrivals.isFallback ? 'API를 통해 실시간 데이터를 수신 중입니다' : '서버 연동을 확인 중이며, 내장 데이터가 표시됩니다'}
+              </span>
             </div>
           </div>
           <button 
