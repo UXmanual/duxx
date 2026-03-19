@@ -6,8 +6,8 @@ export default async function handler(req, res) {
     const dType = dayType || "1";
     const bType = bound || "1";
     
-    // 서울역 1호선 시도할 코드 리스트 및 유사 서비스명 교차 대조 (v45.9)
-    const tryCodes = ["0150", "150", "133"];
+    // 서울역 1호선 시도할 코드 리스트 및 유사 서비스명 교차 대조 (v46.1)
+    const tryCodes = ["0150", "150", "133", "0151"];
     const tryServices = ["SearchSTNTimeTableByIDService", "SearchSubwayTimeTableByIDService"];
     
     let finalData = null;
@@ -16,7 +16,8 @@ export default async function handler(req, res) {
     for (const serviceName of tryServices) {
       if (finalData) break;
       for (const stationCode of tryCodes) {
-        const targetUrl = `http://openAPI.seoul.go.kr:8088/${apiKey}/json/${serviceName}/1/500/${stationCode}/${dType}/${bType}`;
+        // [v46.1] 구형 서버 규격을 위해 마지막 슬래시(/) 추가
+        const targetUrl = `http://openAPI.seoul.go.kr:8088/${apiKey}/json/${serviceName}/1/500/${stationCode}/${dType}/${bType}/`;
         try {
           const response = await fetch(targetUrl);
           if (!response.ok) continue;
@@ -24,7 +25,6 @@ export default async function handler(req, res) {
           
           const resCode = data[serviceName]?.RESULT?.CODE || data.RESULT?.CODE || "";
           if (resCode === 'INFO-000' && data[serviceName]?.row?.length > 0) {
-            // 표준 데이터 형식으로 통일하여 반환 (v45.9)
             finalData = {
               SearchSTNTimeTableByIDService: {
                 row: data[serviceName].row
