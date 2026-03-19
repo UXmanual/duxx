@@ -483,7 +483,12 @@ const Main = () => {
             size: { width: 32, height: 32 },
             offset: { x: 16, y: 16 }
           }}
-          onClick={fetchSubwayArrivals}
+          onClick={() => {
+            panToWithOffset(seoulStationCoords.lat, seoulStationCoords.lng);
+            fetchSubwayTimetable("1"); // 기본 평일(1) 조회
+            setSelectedStarbucksId(null);
+            setSelectedMemoId(null);
+          }}
           zIndex={100}
         />
 
@@ -640,6 +645,7 @@ const Main = () => {
         formatDateTime={formatDateTime} 
         subwayArrivals={selectedSubwayArrivals}
         subwayFetchTime={subwayFetchTime}
+        onTimetableTabChange={fetchSubwayTimetable}
         starbucks={starbucksPlaces.find(l => l.id === selectedStarbucksId)}
       />
 

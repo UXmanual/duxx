@@ -3,17 +3,16 @@ import { motion, AnimatePresence, useMotionValue, animate } from 'framer-motion'
 import { X, Clock, MessageSquare, Trash2, Send, Coffee, MapPin, ChevronRight, Info } from 'lucide-react';
 
 /**
- * [Component] LNB 사이드바 / 모바일 바텀시트 (표준 템플릿 v44.2)
- * @version 44.2
- * @rule 
- * 1. 각 섹션은 카테고리별로 완전히 격리되어야 함
- * 2. 새로운 기능 추가 시 아래 [CATEGORY TEMPLATE]을 복사하여 사용
- * 3. 섹션 간 데이터 오염 방지 (Zero-Interference)
+ * [Component] LNB 사이드바 / 모바일 바텀시트 (시간표 고도화 v44.4)
+ * @version 44.4
+ * @description 
+ * - 기능을 [바블/지하철/스타벅스] 세 가지 카테고리로 엄격하게 분리
+ * - 지하철 섹션: 실시간 정보 대신 공식 시간표 UI 구축 (v44.4)
  */
 const Sidebar = ({ 
   memo, replies = [], onClose, onDelete, onReplySubmit, onPop,
   replyText, setReplyText, formatDateTime, subwayArrivals,
-  subwayFetchTime, starbucks
+  subwayFetchTime, onTimetableTabChange, starbucks
 }) => {
   const [timeLeft, setTimeLeft] = useState('');
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
@@ -21,7 +20,7 @@ const Sidebar = ({
   const sheetHeight = useMotionValue(0);
 
   // --------------------------------------------------------------------------
-  // [공통 하부 구조] - 수정 금지 (프레임워크 영역)
+  // [공통 인프라] - 수정 금지 (프레임워크 영역)
   // --------------------------------------------------------------------------
   useEffect(() => {
     const handleResize = () => { setIsMobile(window.innerWidth < 768); setWindowHeight(window.innerHeight); };
@@ -45,7 +44,7 @@ const Sidebar = ({
   const handlePanEnd = (e, info) => { if (!isMobile) return; const currentH = sheetHeight.get(); const velocity = info.velocity.y; const snapTransition = { type: 'spring', damping: 38, stiffness: 450 }; const halfH = windowHeight * 0.45; const fullH = windowHeight * 0.9; if (currentH > windowHeight * 0.65) { if (velocity > 400) animate(sheetHeight, halfH, snapTransition); else animate(sheetHeight, fullH, snapTransition); } else if (currentH > windowHeight * 0.2) { if (velocity > 400) animate(sheetHeight, 0, snapTransition).then(() => onClose()); else if (velocity < -400) animate(sheetHeight, fullH, snapTransition); else animate(sheetHeight, halfH, snapTransition); } else { animate(sheetHeight, 0, snapTransition).then(() => onClose()); } };
 
   // --------------------------------------------------------------------------
-  // [CATEGORY 1: BABBLE MEMO] - 바블(메모) 관련 독립 모듈
+  // [CATEGORY 1: BABBLE MEMO]
   // --------------------------------------------------------------------------
   const MemoSection = () => {
     if (!memo) return null;
@@ -102,35 +101,113 @@ const Sidebar = ({
   };
 
   // --------------------------------------------------------------------------
-  // [CATEGORY 2: SUBWAY] - 지하철 마커 전용 독립 모듈
+  // [CATEGORY 2: SUBWAY TIMETABLE] - 지하철 시간표 고도화 (v44.4)
   // --------------------------------------------------------------------------
   const SubwaySection = () => {
     if (!subwayArrivals) return null;
-    if (subwayArrivals.loading) return <div className="p-8 flex flex-col items-center justify-center animate-pulse"><div className="w-12 h-12 bg-gray-200 rounded-full mb-4" /><p className="text-gray-400 font-bold text-sm">정보를 가져오는 중...</p></div>;
+    const scrollRef = useRef(null);
+    const [selectedHour, setSelectedHour] = useState(new Date().getHours());
 
-    const TrainItem = ({ train }) => (
-      <div className={`p-4 rounded-2xl border ${train.arrivalType === '다음열차' ? 'bg-gray-50/50 border-gray-100' : 'bg-blue-50/50 border-blue-100'}`}>
-        <div className="flex justify-between items-start mb-2"><span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${train.arrivalType === '다음열차' ? 'bg-gray-200 text-gray-500' : 'bg-blue-500 text-white animate-pulse'}`}>{train.arrivalType}</span><span className="text-[11px] font-bold text-gray-400">{train.time ? '예측' : '진입중'}</span></div>
-        <div className="flex justify-between items-end"><div><p className="text-[15px] font-black text-gray-800">{train.dest} {train.direction}</p><p className="text-[12px] font-bold text-blue-600">{train.status}</p></div><div className="text-right"><span className="text-[18px] font-black text-gray-900 tracking-tighter">{train.time}</span></div></div>
-      </div>
-    );
+    if (subwayArrivals.loading) return <div className="p-8 flex flex-col items-center justify-center animate-pulse"><div className="w-12 h-12 bg-gray-200 rounded-full mb-4" /><p className="text-gray-400 font-bold text-sm">시간표 데이터를 불러오는 중...</p></div>;
+
+    // 요일별 한글 명칭
+    const dayNames = { "1": "평일", "2": "토요일", "3": "공휴일" };
+    const currentDayType = subwayArrivals.dayType || "1";
+
+    // 시간표 데이터 가공 (시간 단위 정렬)
+    const hours = Array.from({ length: 20 }, (_, i) => i + 5); // 05시 ~ 24시
+    
+    const formatArrivalTime = (arrTime) => {
+      if (!arrTime) return "";
+      const [h, m, s] = arrTime.split(":");
+      return `${h}:${m}`;
+    };
+
+    const TimetableRow = ({ h }) => {
+      // 해당 시간대의 상/하행 데이터 필터링
+      const ups = subwayArrivals.up?.filter(t => t.LEFTTIME.startsWith(h.toString().padStart(2, '0'))) || [];
+      const downs = subwayArrivals.down?.filter(t => t.LEFTTIME.startsWith(h.toString().padStart(2, '0'))) || [];
+      const maxLines = Math.max(ups.length, downs.length);
+
+      if (maxLines === 0) return null;
+
+      return (
+        <div id={`hour-${h}`} className="flex border-b border-gray-50 group hover:bg-gray-50/50 transition-colors">
+          {/* 상행 (좌측) */}
+          <div className="flex-1 p-3 border-right border-gray-100 space-y-2">
+            {ups.map((t, i) => (
+              <div key={i} className="flex flex-col">
+                <span className="text-[13px] font-black text-blue-600">{formatArrivalTime(t.LEFTTIME)}</span>
+                <span className="text-[10px] font-bold text-gray-400 truncate">{t.TRAIN_DESTINATION_STATION_NM}행</span>
+              </div>
+            ))}
+          </div>
+          {/* 하행 (우측) */}
+          <div className="flex-1 p-3 space-y-2 text-right">
+            {downs.map((t, i) => (
+              <div key={i} className="flex flex-col items-end">
+                <span className="text-[13px] font-black text-gray-900">{formatArrivalTime(t.LEFTTIME)}</span>
+                <span className="text-[10px] font-bold text-gray-400 truncate">{t.TRAIN_DESTINATION_STATION_NM}행</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    };
 
     return (
-      <div className="space-y-6 category-subway animate-fade-in">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="w-12 h-12 bg-[#3D53B3] rounded-2xl flex items-center justify-center text-white shadow-lg shadow-blue-500/20"><span className="text-[18px] font-black">1</span></div>
-          <div><h2 className="text-[20px] font-black text-gray-900">서울역</h2><p className="text-[12px] font-bold text-gray-400">실시간 도착 정보 ({subwayFetchTime})</p></div>
+      <div className="category-subway animate-fade-in flex flex-col h-full overflow-hidden">
+        {/* 헤더 및 팝업 닫기 등 (공통 UI 활용) */}
+        <div className="flex justify-between items-center mb-4">
+          <div className="flex items-center gap-2">
+            <span className="bg-[#3D53B3] text-white text-[11px] font-black px-2 py-0.5 rounded">1호선</span>
+            <h2 className="text-[18px] font-black text-gray-900 leading-tight tracking-tighter">서울역 <span className="text-gray-400 text-[14px]">시간표</span></h2>
+          </div>
         </div>
-        <div className="grid grid-cols-1 gap-6">
-          <div className="space-y-3"><h3 className="text-[14px] font-black text-gray-400 px-1">상행 (소요산 방면)</h3>{subwayArrivals.up?.map((t, i) => <TrainItem key={i} train={t} />)}</div>
-          <div className="space-y-3"><h3 className="text-[14px] font-black text-gray-400 px-1">하행 (천안/인천 방면)</h3>{subwayArrivals.down?.map((t, i) => <TrainItem key={i} train={t} />)}</div>
+
+        {/* 요일 선택 탭 (v44.4) */}
+        <div className="flex gap-1 bg-gray-100 p-1 rounded-xl mb-4">
+          {Object.entries(dayNames).map(([val, name]) => (
+            <button 
+              key={val} 
+              onClick={() => onTimetableTabChange(val)}
+              className={`flex-1 py-2 text-[13px] font-black rounded-lg transition-all ${currentDayType === val ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-400'}`}
+            >
+              {name}
+            </button>
+          ))}
+        </div>
+
+        {/* 시간 선택 가로 스크롤 */}
+        <div className="flex gap-2 overflow-x-auto pb-4 no-scrollbar border-b border-gray-100 mb-2 px-1">
+          {hours.map(h => (
+            <button 
+              key={h}
+              onClick={() => {
+                setSelectedHour(h);
+                document.getElementById(`hour-${h}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              }}
+              className={`flex-shrink-0 w-11 h-11 flex items-center justify-center rounded-xl font-black text-[13px] transition-all ${selectedHour === h ? 'bg-blue-600 text-white shadow-lg' : 'bg-gray-50 text-gray-400'}`}
+            >
+              {h}시
+            </button>
+          ))}
+        </div>
+
+        {/* 시간표 데이터 리스트 (2컬럼) */}
+        <div className="flex items-center justify-between text-[11px] font-black text-gray-400 px-4 py-2 bg-gray-50 mb-1 rounded-lg">
+          <span>소요산 방면</span>
+          <span>천안/인천 방면</span>
+        </div>
+        <div className="flex-1 overflow-y-auto no-scrollbar pb-10">
+          {hours.map(h => <TimetableRow key={h} h={h} />)}
         </div>
       </div>
     );
   };
 
   // --------------------------------------------------------------------------
-  // [CATEGORY 3: STARBUCKS] - 스타벅스 마커 전용 독립 모듈
+  // [CATEGORY 3: STARBUCKS]
   // --------------------------------------------------------------------------
   const StarbucksSection = () => {
     if (!starbucks) return null;
@@ -147,20 +224,6 @@ const Sidebar = ({
       </div>
     );
   };
-
-  // --------------------------------------------------------------------------
-  // [NEW CATEGORY TEMPLATE: COPY THIS]
-  // --------------------------------------------------------------------------
-  /*
-  const NewCategorySection = () => {
-    if (!newCategoryData) return null;
-    return (
-      <div className="category-new animate-fade-in">
-        // Your UI logic here
-      </div>
-    );
-  };
-  */
 
   // [메인 레이아웃 렌더링]
   return (
