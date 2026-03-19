@@ -9,7 +9,7 @@ const Layout = () => {
   return (
     <div 
       id="duxx-app-root" 
-      className="fixed top-0 left-0 right-0 -bottom-[100px] w-full min-h-[-webkit-fill-available] overflow-visible font-sans antialiased bg-transparent"
+      className="fixed inset-0 w-full h-full overflow-visible font-sans antialiased bg-transparent"
     >
       <main 
         id="main-content" 

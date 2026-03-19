@@ -27,12 +27,11 @@
 
 html, body, #root {
   height: 100% !important;
-  min-height: -webkit-fill-available;
   width: 100% !important;
   margin: 0;
   padding: 0;
   overflow: hidden;
-  background-color: #F8FAFC !important; /* 지도의 기본 배경색과 일치시켜 흰색 바 원천 봉쇄 */
+  background-color: #f3ede1 !important; /* 사용자 지정 배경색으로 조화롭게 변경 */
   overscroll-behavior: none;
   -webkit-overflow-scrolling: touch;
   cursor: default;

@@ -455,14 +455,14 @@ const Main = () => {
   }
 
   return (
-    <div className="fixed top-0 left-0 right-0 -bottom-[150px] w-full min-h-[120vh] overflow-visible font-sans antialiased bg-transparent z-0">
+    <div className="fixed inset-0 w-full h-full overflow-visible font-sans antialiased bg-transparent z-0">
       <Map
         center={initialCenter}
         level={4}
-        onCreate={m => { setMap(m); m.setMaxLevel(11); m.relayout(); setTimeout(() => m.relayout(), 1000); }}
+        onCreate={m => { setMap(m); m.setMaxLevel(11); m.relayout(); setTimeout(() => m.relayout(), 300); }}
         onZoomChanged={m => setMapLevel(m.getLevel())}
         onClick={handleMapClick}
-        style={{ width: '100%', height: '120%' }}
+        style={{ width: '100%', height: '100%' }}
       >
         {myLocation && (
           <CustomOverlayMap position={myLocation} zIndex={999} xAnchor={0.5} yAnchor={0.5}>
