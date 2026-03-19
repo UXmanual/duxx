@@ -677,14 +677,6 @@ const Main = () => {
         </div>
       </div>
 
-      {/* [Footer] Version Info Area (v41.7) */}
-      <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[9999] pointer-events-none select-none opacity-40">
-        <div className="flex flex-col items-center gap-0.5">
-          <span className="text-[10px] font-black tracking-widest text-[#FF4D00]">V41.7</span>
-          <span className="text-[9px] font-bold text-gray-400 uppercase tracking-tighter">iOS Layout Optimized</span>
-        </div>
-      </div>
-
       <style>{`
         @keyframes bubble-spawn { 
           0% { transform: scale(0); opacity: 0; filter: brightness(2); }
