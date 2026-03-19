@@ -277,41 +277,44 @@ const Main = () => {
       lng: mouseEvent.latLng.getLng()
     });
   };
-  // [v45.0] 서울역 공식 시간표 데이터 가져오기 (Fallback 로직 도입)
-  const fetchSubwayTimetable = async (dayType = "1") => {
+  // [v45.3] 서울역 공식 시간표 데이터 가져오기 (데이터 누락 대응 로직 강화)
+  const fetchSubwayTimetable = async (dayType = "1", force = false) => {
     const CACHE_KEY = `subway_timetable_${dayType}`;
     const CACHE_DURATION = 30 * 24 * 60 * 60 * 1000; 
     
-    // 1. 캐시 데이터가 있는지 확인
-    const cached = localStorage.getItem(CACHE_KEY);
-    if (cached) {
-      try {
-        const { data, timestamp } = JSON.parse(cached);
-        const isExpired = new Date().getTime() - timestamp > CACHE_DURATION;
-        if (!isExpired) {
-          setSelectedSubwayArrivals({ ...data, loading: false });
-          return;
-        }
-      } catch (e) { console.error('Cache Parse Error:', e); }
+    // 1. 캐시 확인 (v45.3: force 옵션 추가)
+    if (!force) {
+      const cached = localStorage.getItem(CACHE_KEY);
+      if (cached) {
+        try {
+          const { data, timestamp } = JSON.parse(cached);
+          const isExpired = new Date().getTime() - timestamp > CACHE_DURATION;
+          if (!isExpired && data.up && data.up.length > 0) {
+            setSelectedSubwayArrivals({ ...data, loading: false });
+            return;
+          }
+        } catch (e) { console.error('Cache Parse Error:', e); }
+      }
     }
 
-    // 2. 캐시 없으면 API 호출
+    // 2. 데이터 요청
     setSelectedSubwayArrivals({ loading: true });
     
     try {
       const resp = await fetch(`/api/subway?type=timetable&dayType=${dayType}&bound=1`);
       const data = await resp.json();
       
-      // 만약 API 응답에 에러가 있거나 데이터가 비어있으면 Fallback 데이터 사용 (v45.0)
-      if (data.error || (data.SearchSTNTimeTableByIDService?.row?.length === 0)) {
-        console.warn('API Error or Empty, using static fallback for SEOUL STATION');
+      // [v45.3] 데이터 누락(row가 없거나 비어있는 경우) 시 Fallback 처리 강화
+      const rowData = data.SearchSTNTimeTableByIDService?.row;
+      if (data.error || !rowData || rowData.length === 0) {
+        console.warn('API Response Empty or Error, using static fallback');
         const fallbackRaw = SEOUL_STATION_TIMETABLE_STATIC[dayType] || SEOUL_STATION_TIMETABLE_STATIC["1"];
-        const timetableData = { type: 'timetable', dayType, up: fallbackRaw.up, down: fallbackRaw.down };
+        const timetableData = { type: 'timetable', dayType, up: fallbackRaw.up, down: fallbackRaw.down, isFallback: true };
         setSelectedSubwayArrivals({ ...timetableData, loading: false });
         return;
       }
 
-      // API 정상 시 데이터 가공 및 캐싱
+      // API 정상이면 상하행 모두 수집
       const [upRes, downRes] = await Promise.all([
         fetch(`/api/subway?type=timetable&dayType=${dayType}&bound=1`),
         fetch(`/api/subway?type=timetable&dayType=${dayType}&bound=2`)
@@ -323,15 +326,15 @@ const Main = () => {
         type: 'timetable',
         dayType,
         up: upData.SearchSTNTimeTableByIDService?.row || [],
-        down: downData.SearchSTNTimeTableByIDService?.row || []
+        down: downData.SearchSTNTimeTableByIDService?.row || [],
+        isFallback: false
       };
 
       localStorage.setItem(CACHE_KEY, JSON.stringify({ data: timetableData, timestamp: new Date().getTime() }));
       setSelectedSubwayArrivals({ ...timetableData, loading: false });
     } catch (e) {
-      // 통신 에러 발생 시에도 Fallback 사용 (v45.0)
       const fallbackRaw = SEOUL_STATION_TIMETABLE_STATIC[dayType] || SEOUL_STATION_TIMETABLE_STATIC["1"];
-      setSelectedSubwayArrivals({ type: 'timetable', dayType, up: fallbackRaw.up, down: fallbackRaw.down, loading: false });
+      setSelectedSubwayArrivals({ type: 'timetable', dayType, up: fallbackRaw.up, down: fallbackRaw.down, isFallback: true, loading: false });
     }
   };
 

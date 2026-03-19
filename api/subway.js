@@ -1,16 +1,14 @@
 export default async function handler(req, res) {
-  const apiKey = process.env.VITE_SUBWAY_API_KEY;
-  const { type, dayType, bound } = req.query; // type: arrival or timetable
+  const apiKey = process.env.VITE_SUBWAY_API_KEY || process.env.SUBWAY_API_KEY;
+  const { type, dayType, bound } = req.query; 
 
   if (type === 'timetable') {
-    // [공식 시간표 조회] 서울역(0150), 요일(dayType: 1-평일, 2-토, 3-일), 상하행(bound: 1-상행, 2-하행)
-    // OA-101 서비스는 일반 데이터 광장 API 키가 필요함 (v45.1)
-    const stationCode = "0150";
+    const stationCode = "0150"; // 서울역 1호선 표준 코드
     const dType = dayType || "1";
     const bType = bound || "1";
     
-    // 포트 8088 (http) 사용이 표준이며, 인증키 불일치 시 INFO-001 반환됨
-    const targetUrl = `http://openAPI.seoul.go.kr:8088/${apiKey}/json/SearchSTNTimeTableByIDService/1/500/${stationCode}/${dType}/${bType}/`;
+    // 말단 슬래시 제거 및 프로토콜 점검
+    const targetUrl = `http://openAPI.seoul.go.kr:8088/${apiKey}/json/SearchSTNTimeTableByIDService/1/500/${stationCode}/${dType}/${bType}`;
 
     try {
       const response = await fetch(targetUrl);

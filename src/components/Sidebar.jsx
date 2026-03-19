@@ -183,8 +183,18 @@ const Sidebar = ({
         <div className="flex justify-between items-center px-1">
           <div className="flex items-center gap-2">
             <span className="bg-[#3D53B3] text-white text-[11px] font-black px-2 py-0.5 rounded shadow-sm shadow-[#3D53B3]/20">1호선</span>
-            <h2 className="text-[18px] font-black text-gray-900 leading-tight">서울역 <span className="text-gray-400 text-[14px]">시간표</span></h2>
+            <div className="flex flex-col">
+              <h2 className="text-[18px] font-black text-gray-900 leading-tight">서울역 <span className="text-gray-400 text-[14px]">시간표</span></h2>
+              {subwayArrivals.isFallback && <span className="text-[9px] font-bold text-gray-400">데이터를 불러오는 중입니다 (내장 정보 표시)</span>}
+            </div>
           </div>
+          <button 
+            onClick={() => onTimetableTabChange(currentDayType, true)} 
+            className="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-400 hover:text-gray-900"
+            title="새로고침"
+          >
+            <RefreshCw size={18} className={subwayArrivals.loading ? 'animate-spin' : ''} />
+          </button>
         </div>
 
         <div className="flex gap-1 bg-gray-100 p-1 rounded-2xl">
