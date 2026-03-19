@@ -7,6 +7,8 @@ import { supabase } from '../lib/supabaseClient';
 import { starbucksReserveStores } from '../data/starbucksReserve';
 import { AI_PERSONAS } from '../data/aiPersonas';
 import Sidebar from '../components/Sidebar';
+import Header from '../components/Header';
+import Footer from '../components/Footer';
 import SubwaySidebar from '../components/SubwaySidebar';
 import confetti from 'canvas-confetti';
 
@@ -453,17 +455,14 @@ const Main = () => {
   }
 
   return (
-    <div className="fixed top-0 left-0 right-0 -bottom-[150px] w-full bg-transparent overflow-visible font-sans antialiased">
+    <div className="fixed top-0 left-0 right-0 -bottom-[100px] w-full bg-black overflow-visible font-sans antialiased z-0">
       <Map
         center={initialCenter}
         level={4}
-        onCreate={m => { setMap(m); m.setMaxLevel(11); setMapLevel(m.getLevel()); setTimeout(() => m.relayout(), 100); }}
+        onCreate={m => { setMap(m); m.setMaxLevel(11); m.relayout(); setTimeout(() => m.relayout(), 300); }}
         onZoomChanged={m => setMapLevel(m.getLevel())}
         onClick={handleMapClick}
-        style={{ 
-          width: '100%', 
-          height: 'calc(100% + env(safe-area-inset-bottom, 50px))' 
-        }}
+        style={{ width: '100%', height: '100%' }}
       >
         {myLocation && (
           <CustomOverlayMap position={myLocation} zIndex={999} xAnchor={0.5} yAnchor={0.5}>
@@ -613,7 +612,12 @@ const Main = () => {
           </div>
         )}
       </AnimatePresence>
-      
+      {/* [Layer 2] UI Layer (Header & Footer) */}
+      <div className="pointer-events-none fixed inset-0 z-40 overflow-visible">
+        <Header />
+        <Footer />
+      </div>
+
       <Sidebar 
         memo={memos.find(m => m.id === selectedMemoId)} 
         replies={memos.filter(m => m.parent_id === selectedMemoId)} 
@@ -626,10 +630,10 @@ const Main = () => {
         formatDateTime={formatDateTime} 
       />
 
-      <SubwaySidebar 
-        subwayData={selectedSubwayArrivals}
-        onClose={() => setSelectedSubwayArrivals(null)}
-      />
+      <div className="pointer-events-none fixed inset-0 z-40 overflow-visible">
+        <Header />
+        <Footer />
+      </div>
 
       <div className="fixed bottom-10 right-8 z-[9999] pointer-events-none">
         <div className="flex flex-col items-end gap-2 pointer-events-auto">
