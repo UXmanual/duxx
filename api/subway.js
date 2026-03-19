@@ -6,8 +6,8 @@ export default async function handler(req, res) {
     const dType = dayType || "1";
     const bType = bound || "1";
     
-    // 서울역 1호선 시도할 코드 리스트 및 유사 서비스명 교차 대조 (v46.1)
-    const tryCodes = ["0150", "150", "133", "0151"];
+    // [v46.5] 서울역 1호선 코드 후보군 (0101 코레일 규격을 최상위로 격상)
+    const tryCodes = ["0101", "1001", "150", "0150", "133", "1001000150", "1001000133"];
     const tryServices = ["SearchSTNTimeTableByIDService", "SearchSubwayTimeTableByIDService"];
     
     let finalData = null;
@@ -16,8 +16,8 @@ export default async function handler(req, res) {
     for (const serviceName of tryServices) {
       if (finalData) break;
       for (const stationCode of tryCodes) {
-        // [v46.1] 구형 서버 규격을 위해 마지막 슬래시(/) 추가
-        const targetUrl = `http://openAPI.seoul.go.kr:8088/${apiKey}/json/${serviceName}/1/500/${stationCode}/${dType}/${bType}/`;
+        // [v46.5] 샘플 URL과 동일하게 소문자 도메인 및 말단 슬래시 적용
+        const targetUrl = `http://openapi.seoul.go.kr:8088/${apiKey}/json/${serviceName}/1/500/${stationCode}/${dType}/${bType}/`;
         try {
           const response = await fetch(targetUrl);
           if (!response.ok) continue;
