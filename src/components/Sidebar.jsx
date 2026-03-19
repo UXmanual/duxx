@@ -18,6 +18,14 @@ const Sidebar = ({
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [windowHeight, setWindowHeight] = useState(window.innerHeight);
   const sheetHeight = useMotionValue(0);
+  const contentRef = useRef(null);
+
+  // 컨텐츠 전환 시 스크롤 맨 위로 초기화 (v44.9)
+  useEffect(() => {
+    if (contentRef.current) {
+      contentRef.current.scrollTop = 0;
+    }
+  }, [memo?.id, subwayArrivals?.dayType, starbucks?.id]);
 
   // --------------------------------------------------------------------------
   // [공통 인프라] - 수정 금지 (프레임워크 영역)
@@ -120,6 +128,15 @@ const Sidebar = ({
     }, [subwayArrivals.loading]); // 데이터 로딩 완료 시점에 실행
 
     if (subwayArrivals.loading) return <div className="p-8 flex flex-col items-center justify-center animate-pulse"><div className="w-12 h-12 bg-gray-200 rounded-full mb-4" /><p className="text-gray-400 font-bold text-sm">시간표 데이터를 불러오는 중...</p></div>;
+
+    if (subwayArrivals.error) return (
+      <div className="p-8 bg-red-50 rounded-3xl border border-red-100 flex flex-col items-center text-center gap-3 animate-fade-in">
+        <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center text-red-500"><Info size={24} /></div>
+        <p className="text-red-800 font-black text-sm">{subwayArrivals.error}</p>
+        <p className="text-red-500 text-[12px] font-medium leading-relaxed">{subwayArrivals.message || "API 인증키 문제이거나 일시적인 통신 장애일 수 있습니다."}</p>
+        <button onClick={() => onTimetableTabChange(currentDayType)} className="mt-2 px-6 py-2.5 bg-white border border-red-200 text-red-600 rounded-xl font-bold text-[13px] hover:bg-red-100 transition-colors">다시 시도</button>
+      </div>
+    );
 
     const dayNames = { "1": "평일", "2": "토요일", "3": "공휴일" };
     const currentDayType = subwayArrivals.dayType || "1";
@@ -237,7 +254,7 @@ const Sidebar = ({
             </motion.div>
             
             {/* Content Slot */}
-            <div className="flex-1 overflow-y-auto px-6 pb-20 custom-scrollbar scroll-smooth">
+            <div ref={contentRef} className="flex-1 overflow-y-auto px-6 pb-20 custom-scrollbar scroll-smooth">
               <MemoSection />
               <SubwaySection />
               <StarbucksSection />

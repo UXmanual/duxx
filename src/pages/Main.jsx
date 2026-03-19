@@ -311,6 +311,16 @@ const Main = () => {
       const upData = await upRes.json();
       const downData = await downRes.json();
       
+      // [v44.9] 백엔드에서 내려준 에러 메시지 체크
+      if (upData.error || downData.error) {
+        setSelectedSubwayArrivals({ 
+          error: upData.error || downData.error, 
+          message: upData.message || downData.message, 
+          loading: false 
+        });
+        return;
+      }
+      
       const upList = upData.SearchSTNTimeTableByIDService?.row || [];
       const downList = downData.SearchSTNTimeTableByIDService?.row || [];
 
