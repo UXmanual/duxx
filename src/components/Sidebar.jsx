@@ -105,18 +105,27 @@ const Sidebar = ({
   // --------------------------------------------------------------------------
   const SubwaySection = () => {
     if (!subwayArrivals) return null;
-    const scrollRef = useRef(null);
-    const [selectedHour, setSelectedHour] = useState(new Date().getHours());
+    const hourScrollRef = useRef(null);
+    const currentHour = new Date().getHours();
+    const [selectedHour, setSelectedHour] = useState(currentHour);
+
+    useEffect(() => {
+      // 컴포넌트 마운트 시 현재 시간 버튼으로 가로 스크롤 이동 (v44.7)
+      if (hourScrollRef.current) {
+        const activeBtn = hourScrollRef.current.querySelector(`#btn-hour-${currentHour}`);
+        if (activeBtn) {
+          activeBtn.scrollIntoView({ behavior: 'auto', block: 'nearest', inline: 'center' });
+        }
+      }
+    }, [subwayArrivals.loading]); // 데이터 로딩 완료 시점에 실행
 
     if (subwayArrivals.loading) return <div className="p-8 flex flex-col items-center justify-center animate-pulse"><div className="w-12 h-12 bg-gray-200 rounded-full mb-4" /><p className="text-gray-400 font-bold text-sm">시간표 데이터를 불러오는 중...</p></div>;
 
-    // 요일별 한글 명칭
     const dayNames = { "1": "평일", "2": "토요일", "3": "공휴일" };
     const currentDayType = subwayArrivals.dayType || "1";
-
-    // 시간표 데이터 가공 (시간 단위 정렬)
-    const hours = Array.from({ length: 20 }, (_, i) => i + 5); // 05시 ~ 24시
+    const hours = Array.from({ length: 20 }, (_, i) => i + 5); 
     
+    // ... (formatArrivalTime, TimetableRow 생략 - 내부 함수 유지를 위해 전체를 바꿈)
     const formatArrivalTime = (t) => {
       const arrTime = t.LEFTTIME || t.ARRIVETIME || "";
       if (!arrTime) return "";
@@ -127,17 +136,12 @@ const Sidebar = ({
     const TimetableRow = ({ h }) => {
       const hStr = h.toString().padStart(2, '0');
       const getHourOfTime = (t) => (t.LEFTTIME || t.ARRIVETIME || "").startsWith(hStr);
-
       const ups = subwayArrivals.up?.filter(getHourOfTime) || [];
       const downs = subwayArrivals.down?.filter(getHourOfTime) || [];
-      const maxLines = Math.max(ups.length, downs.length);
-
-      if (maxLines === 0) return null;
-
+      if (ups.length === 0 && downs.length === 0) return null;
       return (
         <div id={`hour-${h}`} className="flex border-b border-gray-50 group hover:bg-gray-50/50 transition-colors">
-          {/* 상행 (좌측) */}
-          <div className="flex-1 p-3 border-right border-gray-100 space-y-2">
+          <div className="flex-1 p-3 border-r border-gray-100 space-y-2">
             {ups.map((t, i) => (
               <div key={i} className="flex flex-col">
                 <span className="text-[13px] font-black text-blue-600">{formatArrivalTime(t)}</span>
@@ -145,7 +149,6 @@ const Sidebar = ({
               </div>
             ))}
           </div>
-          {/* 하행 (우측) */}
           <div className="flex-1 p-3 space-y-2 text-right">
             {downs.map((t, i) => (
               <div key={i} className="flex flex-col items-end">
@@ -159,51 +162,44 @@ const Sidebar = ({
     };
 
     return (
-      <div className="category-subway animate-fade-in flex flex-col h-full overflow-hidden">
-        {/* 헤더 및 팝업 닫기 등 (공통 UI 활용) */}
-        <div className="flex justify-between items-center mb-4">
+      <div className="category-subway animate-fade-in space-y-4">
+        <div className="flex justify-between items-center px-1">
           <div className="flex items-center gap-2">
-            <span className="bg-[#3D53B3] text-white text-[11px] font-black px-2 py-0.5 rounded">1호선</span>
-            <h2 className="text-[18px] font-black text-gray-900 leading-tight tracking-tighter">서울역 <span className="text-gray-400 text-[14px]">시간표</span></h2>
+            <span className="bg-[#3D53B3] text-white text-[11px] font-black px-2 py-0.5 rounded shadow-sm shadow-[#3D53B3]/20">1호선</span>
+            <h2 className="text-[18px] font-black text-gray-900 leading-tight">서울역 <span className="text-gray-400 text-[14px]">시간표</span></h2>
           </div>
         </div>
 
-        {/* 요일 선택 탭 (v44.4) */}
-        <div className="flex gap-1 bg-gray-100 p-1 rounded-xl mb-4">
+        <div className="flex gap-1 bg-gray-100 p-1 rounded-2xl">
           {Object.entries(dayNames).map(([val, name]) => (
-            <button 
-              key={val} 
-              onClick={() => onTimetableTabChange(val)}
-              className={`flex-1 py-2 text-[13px] font-black rounded-lg transition-all ${currentDayType === val ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-400'}`}
-            >
-              {name}
-            </button>
+            <button key={val} onClick={() => onTimetableTabChange(val)} className={`flex-1 py-2.5 text-[13px] font-black rounded-[14px] transition-all ${currentDayType === val ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-400'}`}>{name}</button>
           ))}
         </div>
 
-        {/* 시간 선택 가로 스크롤 */}
-        <div className="flex gap-2 overflow-x-auto pb-4 no-scrollbar border-b border-gray-100 mb-2 px-1">
+        <div ref={hourScrollRef} className="flex gap-2.5 overflow-x-auto pb-4 no-scrollbar border-b border-gray-100 px-1 scroll-smooth">
           {hours.map(h => (
             <button 
+              id={`btn-hour-${h}`}
               key={h}
               onClick={() => {
                 setSelectedHour(h);
                 document.getElementById(`hour-${h}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
               }}
-              className={`flex-shrink-0 w-11 h-11 flex items-center justify-center rounded-xl font-black text-[13px] transition-all ${selectedHour === h ? 'bg-blue-600 text-white shadow-lg' : 'bg-gray-50 text-gray-400'}`}
+              className={`flex-shrink-0 w-12 h-12 flex items-center justify-center rounded-[20px] font-black text-[14px] transition-all ${selectedHour === h ? 'bg-blue-600 text-white shadow-lg shadow-blue-200 scale-105' : 'bg-gray-50 text-gray-400 hover:bg-gray-100'}`}
             >
-              {h}시
+              {h}
             </button>
           ))}
         </div>
 
-        {/* 시간표 데이터 리스트 (2컬럼) */}
-        <div className="flex items-center justify-between text-[11px] font-black text-gray-400 px-4 py-2 bg-gray-50 mb-1 rounded-lg">
-          <span>소요산 방면</span>
-          <span>천안/인천 방면</span>
-        </div>
-        <div className="flex-1 overflow-y-auto no-scrollbar pb-10">
-          {hours.map(h => <TimetableRow key={h} h={h} />)}
+        <div>
+          <div className="flex items-center justify-between text-[11px] font-black text-gray-500 px-4 py-2 bg-gray-50/80 rounded-xl mb-2">
+            <span>상행 (소요산)</span>
+            <span>하행 (인천/천안)</span>
+          </div>
+          <div className="space-y-0 pb-10">
+            {hours.map(h => <TimetableRow key={h} h={h} />)}
+          </div>
         </div>
       </div>
     );
