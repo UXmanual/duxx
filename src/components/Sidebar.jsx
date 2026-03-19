@@ -4,7 +4,7 @@ import { X, Clock, MessageSquare, Trash2, Send } from 'lucide-react';
 
 /**
  * [Component] LNB 사이드바 / 모바일 바텀시트
- * @version 43.1
+ * @version 43.3
  * @description 터트리기 버튼 스타일 수정 및 터트리기 애니메이션 고도화 (v33.6)
  */
 const Sidebar = ({ 

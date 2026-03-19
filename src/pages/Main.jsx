@@ -25,7 +25,7 @@ const formatDateTime = (dateString) => {
 
 /**
  * [Page] 메인 페이지 (지도 메모 기능 통합 버전)
- * @version 43.1
+ * @version 43.3
  * @description 
  * - 지하철 도착 정보 정렬 로직 강화 및 이번열차/다음열차 구분 (v41.1)
  * - 커스텀 메모 폼 복구 및 사이드바 노출 정상화 (v36.7)
@@ -455,7 +455,7 @@ const Main = () => {
   }
 
   return (
-    <div className="fixed inset-0 w-full h-[100dvh] overflow-visible font-sans antialiased bg-transparent z-0">
+    <div className="fixed top-0 left-0 right-0 -bottom-[150px] w-full min-h-screen overflow-visible font-sans antialiased bg-transparent z-0">
       <Map
         center={initialCenter}
         level={4}
@@ -528,9 +528,14 @@ const Main = () => {
           rootMemos.map(memo => (
             <CustomOverlayMap key={`memo-${memo.id}`} position={{ lat: memo.lat, lng: memo.lng }} xAnchor={0} yAnchor={0} zIndex={replyTargetId === memo.id ? 999 : (memo.popped_at ? 1 : 10)}>
               <motion.div 
-                initial={{ opacity: 0, scale: 0, y: 10 }}
+                initial={{ opacity: 0, scale: 0, y: 30 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
-                transition={{ type: 'spring', damping: 25, stiffness: 400 }}
+                transition={{ 
+                  type: 'spring', 
+                  damping: 15, 
+                  stiffness: 280,
+                  mass: 0.8
+                }}
                 className={`relative w-0 h-0 group pointer-events-none ${memo.is_popping ? 'animate-bubble-pop' : ''}`}
               >
                 <div className="absolute bottom-0 left-1/2 -translate-x-1/2 pb-2 pointer-events-auto transition-opacity duration-500" style={{ opacity: memo.popped_at ? 0.4 : 1 }}>
