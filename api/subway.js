@@ -6,8 +6,8 @@ export default async function handler(req, res) {
     const dType = dayType || "1";
     const bType = bound || "1";
     
-    // [v46.5] 서울역 1호선 코드 후보군 (0101 코레일 규격을 최상위로 격상)
-    const tryCodes = ["0101", "1001", "150", "0150", "133", "1001000150", "1001000133"];
+    // [v46.6] ERROR-500 서버 장애 대응을 위한 코드 및 슬래시 유연화
+    const tryCodes = ["0150", "133", "150", "0101"];
     const tryServices = ["SearchSTNTimeTableByIDService", "SearchSubwayTimeTableByIDService"];
     
     let finalData = null;
@@ -16,25 +16,27 @@ export default async function handler(req, res) {
     for (const serviceName of tryServices) {
       if (finalData) break;
       for (const stationCode of tryCodes) {
-        // [v46.5] 샘플 URL과 동일하게 소문자 도메인 및 말단 슬래시 적용
-        const targetUrl = `http://openapi.seoul.go.kr:8088/${apiKey}/json/${serviceName}/1/500/${stationCode}/${dType}/${bType}/`;
-        try {
-          const response = await fetch(targetUrl);
-          if (!response.ok) continue;
-          const data = await response.json();
-          
-          const resCode = data[serviceName]?.RESULT?.CODE || data.RESULT?.CODE || "";
-          if (resCode === 'INFO-000' && data[serviceName]?.row?.length > 0) {
-            finalData = {
-              SearchSTNTimeTableByIDService: {
-                row: data[serviceName].row
-              }
-            };
-            break;
-          } else {
-            lastError = resCode || "DATA_NOT_FOUND";
-          }
-        } catch (e) { lastError = e.message; }
+        // 슬래시가 없는 표준 URL 먼저 시도 (v46.6)
+        const urls = [
+          `http://openapi.seoul.go.kr:8088/${apiKey}/json/${serviceName}/1/500/${stationCode}/${dType}/${bType}`,
+          `http://openapi.seoul.go.kr:8088/${apiKey}/json/${serviceName}/1/500/${stationCode}/${dType}/${bType}/`
+        ];
+
+        for (const targetUrl of urls) {
+          try {
+            const response = await fetch(targetUrl);
+            const data = await response.json();
+            
+            const resCode = data[serviceName]?.RESULT?.CODE || data.RESULT?.CODE || "";
+            if (resCode === 'INFO-000' && data[serviceName]?.row?.length > 0) {
+              finalData = { SearchSTNTimeTableByIDService: { row: data[serviceName].row } };
+              break;
+            } else {
+              lastError = resCode || "EMPTY";
+            }
+          } catch (e) { lastError = e.message; }
+        }
+        if (finalData) break;
       }
     }
 
