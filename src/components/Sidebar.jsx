@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence, useMotionValue, animate } from 'framer-motion';
-import { X, Clock, MessageSquare, Trash2, Send, Coffee, MapPin, ChevronRight, Info } from 'lucide-react';
+import { X, Clock, MessageSquare, Trash2, Send, Coffee, MapPin, ChevronRight, Info, RefreshCw } from 'lucide-react';
 
 /**
  * [Component] LNB 사이드바 / 모바일 바텀시트 (시간표 고도화 v44.4)
