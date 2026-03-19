@@ -276,66 +276,33 @@ const Main = () => {
       lng: mouseEvent.latLng.getLng()
     });
   };
-  const fetchSubwayArrivals = async () => {
-    // 이미 로딩 중이거나 데이터가 있으면 중복 호출 방지 (v40.3)
-    if (selectedSubwayArrivals) return;
-    
+  // [v44.5] 서울역 공식 시간표 데이터 가져오기 (ReferenceError 수정)
+  const fetchSubwayTimetable = async (dayType = "1") => {
     setSelectedSubwayArrivals({ loading: true });
-    setSelectedMemoId(null); // 메모 LNB 닫기
-    panToWithOffset(seoulStationCoords.lat, seoulStationCoords.lng);
-
-    const now = new Date();
-    const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
-    setSubwayFetchTime(timeStr);
-
+    setSubwayFetchTime(new Date().toLocaleTimeString());
+    
     try {
-      const res = await fetch(`/api/subway`);
-      const data = await res.json();
+      const [upRes, downRes] = await Promise.all([
+        fetch(`/api/subway?type=timetable&dayType=${dayType}&bound=1`),
+        fetch(`/api/subway?type=timetable&dayType=${dayType}&bound=2`)
+      ]);
       
-      if (data.realtimeArrivalList && data.realtimeArrivalList.length > 0) {
-        // 1호선 서울역 데이터만 필터링 (subwayId "1001")
-        const line1All = data.realtimeArrivalList.filter(item => item.subwayId === "1001");
-        
-        // 정렬 기준: barvlDt(도착예측시간) 기준 오름차순
-        // 만약 barvlDt가 0이거나 데이터가 불확실하면 arvlCd(도착코드) 등을 참고할 수 있으나, 
-        // 일반적으로 barvlDt가 가장 정확한 우선순위를 제공함
-        const upTrains = line1All
-          .filter(item => item.updnLine === "상행")
-          .sort((a, b) => parseInt(a.barvlDt) - parseInt(b.barvlDt))
-          .slice(0, 2);
-          
-        const downTrains = line1All
-          .filter(item => item.updnLine === "하행")
-          .sort((a, b) => parseInt(a.barvlDt) - parseInt(b.barvlDt))
-          .slice(0, 2);
-        
-        const parseSubwayInfo = (train, idx) => {
-          if (!train) return null;
-          const [dest, dir] = train.trainLineNm.split(" - ");
-          // '서울' 문구를 '당역'으로 치환 (v40.0)
-          const statusMsg = train.arvlMsg2.replace(/서울/g, "당역");
-          
-          return {
-            dest: dest,
-            direction: dir ? `(${dir})` : "",
-            status: statusMsg,
-            // 0번째는 이번열차, 1번째는 다음열차로 표기 (v41.1)
-            arrivalType: idx === 0 ? "이번열차" : "다음열차",
-            time: (train.barvlDt && train.barvlDt !== "0") ? `${Math.floor(train.barvlDt / 60)}분 ${train.barvlDt % 60}초 후 도착` : ""
-          };
-        };
+      const upData = await upRes.json();
+      const downData = await downRes.json();
+      
+      const upList = upData.SearchSTNTimeTableByIDService?.row || [];
+      const downList = downData.SearchSTNTimeTableByIDService?.row || [];
 
-        // 그룹화된 데이터로 저장 (v41.1)
-        setSelectedSubwayArrivals({
-          up: upTrains.map((t, i) => parseSubwayInfo(t, i)),
-          down: downTrains.map((t, i) => parseSubwayInfo(t, i))
-        });
-      } else {
-        setSelectedSubwayArrivals({ up: [], down: [], error: "현재 운행 정보가 없습니다." });
-      }
+      setSelectedSubwayArrivals({
+        type: 'timetable',
+        dayType,
+        up: upList,
+        down: downList,
+        loading: false
+      });
     } catch (e) {
-      console.error('Subway API Error:', e);
-      setSelectedSubwayArrivals({ up: [], down: [], error: "데이터 오류" });
+      console.error('Timetable Fetch Error:', e);
+      setSelectedSubwayArrivals({ error: "시간표를 불러올 수 없습니다.", loading: false });
     }
   };
 

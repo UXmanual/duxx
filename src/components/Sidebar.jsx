@@ -124,9 +124,9 @@ const Sidebar = ({
     };
 
     const TimetableRow = ({ h }) => {
-      // 해당 시간대의 상/하행 데이터 필터링
-      const ups = subwayArrivals.up?.filter(t => t.LEFTTIME.startsWith(h.toString().padStart(2, '0'))) || [];
-      const downs = subwayArrivals.down?.filter(t => t.LEFTTIME.startsWith(h.toString().padStart(2, '0'))) || [];
+      const hStr = h.toString().padStart(2, '0');
+      const ups = subwayArrivals.up?.filter(t => t.LEFTTIME?.startsWith(hStr)) || [];
+      const downs = subwayArrivals.down?.filter(t => t.LEFTTIME?.startsWith(hStr)) || [];
       const maxLines = Math.max(ups.length, downs.length);
 
       if (maxLines === 0) return null;
@@ -138,7 +138,7 @@ const Sidebar = ({
             {ups.map((t, i) => (
               <div key={i} className="flex flex-col">
                 <span className="text-[13px] font-black text-blue-600">{formatArrivalTime(t.LEFTTIME)}</span>
-                <span className="text-[10px] font-bold text-gray-400 truncate">{t.TRAIN_DESTINATION_STATION_NM}행</span>
+                <span className="text-[10px] font-bold text-gray-400 truncate">{(t.DESTSTATION_NM || t.TRAIN_DESTINATION_STATION_NM)}행</span>
               </div>
             ))}
           </div>
@@ -147,7 +147,7 @@ const Sidebar = ({
             {downs.map((t, i) => (
               <div key={i} className="flex flex-col items-end">
                 <span className="text-[13px] font-black text-gray-900">{formatArrivalTime(t.LEFTTIME)}</span>
-                <span className="text-[10px] font-bold text-gray-400 truncate">{t.TRAIN_DESTINATION_STATION_NM}행</span>
+                <span className="text-[10px] font-bold text-gray-400 truncate">{(t.DESTSTATION_NM || t.TRAIN_DESTINATION_STATION_NM)}행</span>
               </div>
             ))}
           </div>
