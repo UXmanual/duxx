@@ -527,7 +527,12 @@ const Main = () => {
         ) : (
           rootMemos.map(memo => (
             <CustomOverlayMap key={`memo-${memo.id}`} position={{ lat: memo.lat, lng: memo.lng }} xAnchor={0} yAnchor={0} zIndex={replyTargetId === memo.id ? 999 : (memo.popped_at ? 1 : 10)}>
-              <div className={`relative w-0 h-0 group pointer-events-none ${memo.is_popping ? 'animate-bubble-pop' : ''}`}>
+              <motion.div 
+                initial={{ opacity: 0, scale: 0, y: 10 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                transition={{ type: 'spring', damping: 25, stiffness: 400 }}
+                className={`relative w-0 h-0 group pointer-events-none ${memo.is_popping ? 'animate-bubble-pop' : ''}`}
+              >
                 <div className="absolute bottom-0 left-1/2 -translate-x-1/2 pb-2 pointer-events-auto transition-opacity duration-500" style={{ opacity: memo.popped_at ? 0.4 : 1 }}>
                   {memo.is_popping && (
                     <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-[1001]">
@@ -559,7 +564,7 @@ const Main = () => {
                     )}
                   </div>
                 </div>
-              </div>
+              </motion.div>
             </CustomOverlayMap>
           ))
         )}
