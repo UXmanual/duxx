@@ -176,7 +176,7 @@ const Sidebar = ({
           ))}
         </div>
 
-        <div ref={hourScrollRef} className="flex gap-2.5 overflow-x-auto pb-4 no-scrollbar border-b border-gray-100 px-1 scroll-smooth">
+        <div ref={hourScrollRef} className="flex gap-2.5 overflow-x-auto pt-2 pb-4 no-scrollbar border-b border-gray-100 px-1 scroll-smooth">
           {hours.map(h => (
             <button 
               id={`btn-hour-${h}`}

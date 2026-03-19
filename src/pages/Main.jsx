@@ -276,8 +276,29 @@ const Main = () => {
       lng: mouseEvent.latLng.getLng()
     });
   };
-  // [v44.5] 서울역 공식 시간표 데이터 가져오기 (ReferenceError 수정)
+  // [v44.8] 서울역 공식 시간표 데이터 가져오기 (30일 캐싱 로직 도입)
   const fetchSubwayTimetable = async (dayType = "1") => {
+    const CACHE_KEY = `subway_timetable_${dayType}`;
+    const CACHE_DURATION = 30 * 24 * 60 * 60 * 1000; // 30일 (ms)
+    
+    // 1. 캐시 데이터가 있는지 확인
+    const cached = localStorage.getItem(CACHE_KEY);
+    if (cached) {
+      try {
+        const { data, timestamp } = JSON.parse(cached);
+        const isExpired = new Date().getTime() - timestamp > CACHE_DURATION;
+        
+        if (!isExpired) {
+          console.log(`[Cache Hit] Subway Timetable (${dayType})`);
+          setSelectedSubwayArrivals({ ...data, loading: false });
+          return;
+        }
+      } catch (e) {
+        console.error('Cache Parse Error:', e);
+      }
+    }
+
+    // 2. 캐시가 없거나 만료된 경우 API 호출
     setSelectedSubwayArrivals({ loading: true });
     setSubwayFetchTime(new Date().toLocaleTimeString());
     
@@ -293,13 +314,20 @@ const Main = () => {
       const upList = upData.SearchSTNTimeTableByIDService?.row || [];
       const downList = downData.SearchSTNTimeTableByIDService?.row || [];
 
-      setSelectedSubwayArrivals({
+      const timetableData = {
         type: 'timetable',
         dayType,
         up: upList,
-        down: downList,
-        loading: false
-      });
+        down: downList
+      };
+
+      // 3. 로컬 스토리지에 캐싱 (v44.8)
+      localStorage.setItem(CACHE_KEY, JSON.stringify({
+        data: timetableData,
+        timestamp: new Date().getTime()
+      }));
+
+      setSelectedSubwayArrivals({ ...timetableData, loading: false });
     } catch (e) {
       console.error('Timetable Fetch Error:', e);
       setSelectedSubwayArrivals({ error: "시간표를 불러올 수 없습니다.", loading: false });
