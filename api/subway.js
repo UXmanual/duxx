@@ -6,28 +6,35 @@ export default async function handler(req, res) {
     const dType = dayType || "1";
     const bType = bound || "1";
     
-    // 서울역 1호선 시도할 코드 리스트 (v45.8)
+    // 서울역 1호선 시도할 코드 리스트 및 유사 서비스명 교차 대조 (v45.9)
     const tryCodes = ["0150", "150", "133"];
+    const tryServices = ["SearchSTNTimeTableByIDService", "SearchSubwayTimeTableByIDService"];
+    
     let finalData = null;
     let lastError = null;
 
-    for (const stationCode of tryCodes) {
-      const targetUrl = `http://openAPI.seoul.go.kr:8088/${apiKey}/json/SearchSTNTimeTableByIDService/1/500/${stationCode}/${dType}/${bType}`;
-      try {
-        const response = await fetch(targetUrl);
-        if (!response.ok) continue;
-        const data = await response.json();
-        
-        const resCode = data.SearchSTNTimeTableByIDService?.RESULT?.CODE || data.RESULT?.CODE || "";
-        // INFO-000(성공)인 경우에만 루프 종료 (v45.8)
-        if (resCode === 'INFO-000' && data.SearchSTNTimeTableByIDService?.row?.length > 0) {
-          finalData = data;
-          break;
-        } else {
-          lastError = resCode || "DATA_NOT_FOUND";
-        }
-      } catch (e) {
-        lastError = e.message;
+    for (const serviceName of tryServices) {
+      if (finalData) break;
+      for (const stationCode of tryCodes) {
+        const targetUrl = `http://openAPI.seoul.go.kr:8088/${apiKey}/json/${serviceName}/1/500/${stationCode}/${dType}/${bType}`;
+        try {
+          const response = await fetch(targetUrl);
+          if (!response.ok) continue;
+          const data = await response.json();
+          
+          const resCode = data[serviceName]?.RESULT?.CODE || data.RESULT?.CODE || "";
+          if (resCode === 'INFO-000' && data[serviceName]?.row?.length > 0) {
+            // 표준 데이터 형식으로 통일하여 반환 (v45.9)
+            finalData = {
+              SearchSTNTimeTableByIDService: {
+                row: data[serviceName].row
+              }
+            };
+            break;
+          } else {
+            lastError = resCode || "DATA_NOT_FOUND";
+          }
+        } catch (e) { lastError = e.message; }
       }
     }
 
