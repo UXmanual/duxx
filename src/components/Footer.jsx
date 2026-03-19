@@ -13,7 +13,7 @@ const Footer = () => {
   return (
     <footer style={{ display: 'contents' }}>
       <div 
-        className="absolute left-0 px-10 z-10 pointer-events-none"
+        className="absolute left-0 px-10 z-[5] pointer-events-none"
         style={{ bottom: 'env(safe-area-inset-bottom, 0px)' }}
       >
         <div className="flex flex-col items-start gap-1 py-8 inline-block pointer-events-auto text-black opacity-30 select-none">

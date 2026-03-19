@@ -453,7 +453,7 @@ const Main = () => {
   }
 
   return (
-    <div className="fixed top-0 left-0 right-0 bottom-0 w-full h-full bg-transparent overflow-visible font-sans antialiased">
+    <div className="fixed top-0 left-0 right-0 -bottom-[150px] w-full bg-transparent overflow-visible font-sans antialiased">
       <Map
         center={initialCenter}
         level={4}
