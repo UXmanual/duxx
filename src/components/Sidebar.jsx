@@ -9,7 +9,7 @@ import { X, Clock, MessageSquare, Trash2, Send, Coffee, MapPin, ChevronRight } f
  */
 const Sidebar = ({ 
   memo, 
-  replies, 
+  replies = [], 
   onClose, 
   onDelete, 
   onReplySubmit, 
@@ -53,6 +53,9 @@ const Sidebar = ({
       document.body.style.overflow = 'auto';
     }
   }, [isMobile, memo, subwayArrivals, starbucks]);
+
+  // 최신 답글 정렬 (Crash 방지 Safety Logic v44.0)
+  const sortedReplies = [...(replies || [])].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
   // 카운트다운 로직
   useEffect(() => {
