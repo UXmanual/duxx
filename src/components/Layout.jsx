@@ -18,7 +18,7 @@ const Layout = () => {
   return (
     <div 
       id="duxx-app-root" 
-      className="fixed top-0 left-0 right-0 bottom-0 w-full h-full overflow-hidden font-sans antialiased bg-transparent"
+      className="fixed top-0 left-0 right-0 bottom-0 w-full h-full overflow-visible font-sans antialiased bg-transparent"
     >
       {/* [Semantic 1] Header (UI Layer) */}
       <Header />
