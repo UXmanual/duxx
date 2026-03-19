@@ -600,7 +600,7 @@ const Main = () => {
                 value={newMemoText}
                 onChange={(e) => setNewMemoText(e.target.value)}
                 placeholder="어떤 이야기를 남길까요?"
-                className="w-full h-24 bg-white/50 rounded-2xl p-4 text-[15px] font-medium border border-gray-100 focus:border-[#FF4D00] focus:ring-4 focus:ring-[#FF4D00]/10 focus:outline-none transition-all resize-none mb-6 placeholder:text-gray-400"
+                className="w-full h-24 bg-white/50 rounded-2xl p-4 text-[16px] font-medium border border-gray-100 focus:border-[#FF4D00] focus:ring-4 focus:ring-[#FF4D00]/10 focus:outline-none transition-all resize-none mb-6 placeholder:text-gray-400"
               />
 
               <div className="flex gap-3">
