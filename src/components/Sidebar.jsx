@@ -225,19 +225,59 @@ const Sidebar = ({
             <div className="flex-1 overflow-y-auto px-6 pb-20 custom-scrollbar">
               {memo && (
                 <div className="space-y-6">
-                  {/* 메모 컨텐츠 (기존 로직 유지) */}
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 bg-[#FF4D00] rounded-2xl flex items-center justify-center text-white font-black">{memo.nickname?.charAt(0)}</div>
-                    <div><p className="font-bold text-gray-900">{memo.nickname}</p><p className="text-[10px] text-gray-400">{formatDateTime(memo.created_at)}</p></div>
+                  {/* 메모 컨텐츠 (v43.9 - Pop 버튼 및 정렬 복구) */}
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 bg-gradient-to-br from-[#FF4D00] to-[#FF8A00] rounded-2xl flex items-center justify-center text-white font-black shadow-lg shadow-[#FF4D00]/20">
+                        {memo.nickname?.charAt(0)}
+                      </div>
+                      <div>
+                        <p className="font-bold text-gray-900 leading-tight">{memo.nickname}</p>
+                        <p className="text-[10px] text-gray-400 font-medium">{formatDateTime(memo.created_at)}</p>
+                      </div>
+                    </div>
+                    {!memo.popped_at && (
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); onPop(memo.id, e); }}
+                        className="p-2.5 bg-white border border-gray-100 rounded-xl hover:bg-gray-50 transition-all group shadow-sm active:scale-90"
+                      >
+                        <motion.svg 
+                          width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FF4D00" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+                          animate={{ scale: [1, 0.85, 1.15, 1] }}
+                          transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+                        >
+                          <path d="M12 2v2M12 20v2M2 12h2M20 12h2M19.07 4.93l-1.41 1.41M6.34 17.66l-1.41 1.41M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41" />
+                        </motion.svg>
+                      </button>
+                    )}
                   </div>
-                  <div className="p-5 bg-gray-50 rounded-[24px] border border-gray-100"><p className="text-gray-800 text-[15px] font-medium leading-relaxed">{memo.text}</p></div>
+
+                  <div className="p-5 bg-gray-50 rounded-[24px] border border-gray-100">
+                    <p className="text-gray-800 text-[15px] font-medium leading-relaxed whitespace-pre-wrap">
+                      {memo.text}
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-4 text-[10px] font-bold px-1">
+                    <span className={`flex items-center gap-1.5 ${memo.popped_at ? 'text-[#FF4D00]' : 'text-blue-500'}`}>
+                      <div className={`w-1.5 h-1.5 rounded-full animate-pulse ${memo.popped_at ? 'bg-[#FF4D00]' : 'bg-blue-500'}`} />
+                      {memo.popped_at ? `${timeLeft} 후 소멸` : '활성화 상태'}
+                    </span>
+                    <span className="flex items-center gap-1.5 text-gray-400">
+                      <MessageSquare size={12} strokeWidth={2.5} /> 답글 {replies.length}
+                    </span>
+                  </div>
+
                   {replies.length > 0 && (
-                    <div className="space-y-4 pt-6">
+                    <div className="space-y-4 pt-4 border-t border-gray-50">
                       <h3 className="text-[14px] font-black text-gray-400 px-1">답글 {replies.length}</h3>
-                      {replies.map(r => (
+                      {sortedReplies.map(r => (
                         <div key={r.id} className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
-                          <p className="font-bold text-[13px] text-gray-900 mb-1">{r.nickname}</p>
-                          <p className="text-[13px] text-gray-700">{r.text}</p>
+                          <div className="flex justify-between items-start mb-1">
+                            <p className="font-bold text-[13px] text-gray-900">{r.nickname}</p>
+                            <span className="text-[10px] text-gray-400 font-medium">{formatDateTime(r.created_at)}</span>
+                          </div>
+                          <p className="text-[13px] text-gray-700 leading-relaxed">{r.text}</p>
                         </div>
                       ))}
                     </div>
