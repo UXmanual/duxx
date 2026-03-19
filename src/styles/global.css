@@ -32,7 +32,7 @@ html, body, #root {
   margin: 0;
   padding: 0;
   overflow: hidden;
-  background-color: transparent;
+  background-color: #F8FAFC !important; /* 지도의 기본 배경색과 일치시켜 흰색 바 원천 봉쇄 */
   overscroll-behavior: none;
   -webkit-overflow-scrolling: touch;
   cursor: default;
