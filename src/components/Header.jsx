@@ -178,7 +178,7 @@ const Header = () => {
         style={{ top: 'env(safe-area-inset-top, 0px)' }}
       >
         <div className="flex flex-col items-end gap-1">
-          <div className="flex items-center gap-3 bg-white/80 backdrop-blur-md px-4 py-2 rounded-full shadow-sm pointer-events-auto cursor-default border border-orange-50 min-w-[90px] h-[40px] justify-center overflow-hidden">
+          <div className="flex items-center gap-3 bg-white/80 backdrop-blur-md px-4 py-2 rounded-full pointer-events-auto cursor-default min-w-[90px] h-[40px] justify-center overflow-hidden">
             <AnimatePresence mode="wait">
               {loading ? (
                 /* 스켈레톤 로딩 바 (v32.3) */
