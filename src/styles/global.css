@@ -30,7 +30,7 @@ html, body {
   margin: 0;
   padding: 0;
   overflow: hidden;
-  background-color: transparent; /* Safari 상단 바 투명화를 위해 명시적 투명 지정 */
+  background-color: #000000; /* Safari 상단/하단 흰색 노출 차단을 위해 검은색 지정 */
   overscroll-behavior: none;
   -webkit-overflow-scrolling: touch;
 }
