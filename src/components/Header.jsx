@@ -163,14 +163,20 @@ const Header = () => {
 
   return (
     <header style={{ display: 'contents' }}>
-      <div className="absolute top-0 left-0 px-10 h-24 flex items-center z-10 pointer-events-none text-[#FF4D00]">
+      <div 
+        className="absolute left-0 px-10 h-24 flex items-center z-10 pointer-events-none text-[#FF4D00]"
+        style={{ top: 'env(safe-area-inset-top, 0px)' }}
+      >
         <span className="logo-font text-[24px] tracking-[0] uppercase select-none pointer-events-auto">
           BABBLE
         </span>
       </div>
 
       {/* [Weather Widget Layer] */}
-      <div className="absolute top-0 right-0 px-10 h-24 flex items-center z-20 pointer-events-none">
+      <div 
+        className="absolute right-0 px-10 h-24 flex items-center z-20 pointer-events-none"
+        style={{ top: 'env(safe-area-inset-top, 0px)' }}
+      >
         <div className="flex flex-col items-end gap-1">
           <div className="flex items-center gap-3 bg-white/80 backdrop-blur-md px-4 py-2 rounded-full shadow-sm pointer-events-auto cursor-default border border-orange-50 min-w-[90px] h-[40px] justify-center overflow-hidden">
             <AnimatePresence mode="wait">

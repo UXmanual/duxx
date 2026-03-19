@@ -23,7 +23,7 @@ const formatDateTime = (dateString) => {
 
 /**
  * [Page] 메인 페이지 (지도 메모 기능 통합 버전)
- * @version 41.7
+ * @version 41.8
  * @description 
  * - 지하철 도착 정보 정렬 로직 강화 및 이번열차/다음열차 구분 (v41.1)
  * - 커스텀 메모 폼 복구 및 사이드바 노출 정상화 (v36.7)

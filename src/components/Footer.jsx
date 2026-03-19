@@ -12,8 +12,11 @@ import pkg from '../../package.json';
 const Footer = () => {
   return (
     <footer style={{ display: 'contents' }}>
-      <div className="absolute bottom-0 left-0 px-10 py-8 z-10 pointer-events-none">
-        <div className="flex flex-col items-start gap-1 py-5 inline-block pointer-events-auto text-black opacity-30 select-none">
+      <div 
+        className="absolute left-0 px-10 z-10 pointer-events-none"
+        style={{ bottom: 'env(safe-area-inset-bottom, 0px)' }}
+      >
+        <div className="flex flex-col items-start gap-1 py-8 inline-block pointer-events-auto text-black opacity-30 select-none">
           {/* 시스템 정보: 블랙 0.3 */}
           <div className="flex items-center gap-3">
             <p className="text-[14px] font-bold tracking-[0]">
