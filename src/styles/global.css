@@ -27,7 +27,10 @@
 
 html, body {
   height: 100dvh;
+  margin: 0;
+  padding: 0;
   overflow: hidden;
+  background-color: var(--theme-bg);
   overscroll-behavior: none;
   -webkit-overflow-scrolling: touch;
 }
