@@ -117,16 +117,19 @@ const Sidebar = ({
     // 시간표 데이터 가공 (시간 단위 정렬)
     const hours = Array.from({ length: 20 }, (_, i) => i + 5); // 05시 ~ 24시
     
-    const formatArrivalTime = (arrTime) => {
+    const formatArrivalTime = (t) => {
+      const arrTime = t.LEFTTIME || t.ARRIVETIME || "";
       if (!arrTime) return "";
-      const [h, m, s] = arrTime.split(":");
-      return `${h}:${m}`;
+      const parts = arrTime.split(":");
+      return parts.length >= 2 ? `${parts[0]}:${parts[1]}` : arrTime;
     };
 
     const TimetableRow = ({ h }) => {
       const hStr = h.toString().padStart(2, '0');
-      const ups = subwayArrivals.up?.filter(t => t.LEFTTIME?.startsWith(hStr)) || [];
-      const downs = subwayArrivals.down?.filter(t => t.LEFTTIME?.startsWith(hStr)) || [];
+      const getHourOfTime = (t) => (t.LEFTTIME || t.ARRIVETIME || "").startsWith(hStr);
+
+      const ups = subwayArrivals.up?.filter(getHourOfTime) || [];
+      const downs = subwayArrivals.down?.filter(getHourOfTime) || [];
       const maxLines = Math.max(ups.length, downs.length);
 
       if (maxLines === 0) return null;
@@ -137,7 +140,7 @@ const Sidebar = ({
           <div className="flex-1 p-3 border-right border-gray-100 space-y-2">
             {ups.map((t, i) => (
               <div key={i} className="flex flex-col">
-                <span className="text-[13px] font-black text-blue-600">{formatArrivalTime(t.LEFTTIME)}</span>
+                <span className="text-[13px] font-black text-blue-600">{formatArrivalTime(t)}</span>
                 <span className="text-[10px] font-bold text-gray-400 truncate">{(t.DESTSTATION_NM || t.TRAIN_DESTINATION_STATION_NM)}행</span>
               </div>
             ))}
@@ -146,7 +149,7 @@ const Sidebar = ({
           <div className="flex-1 p-3 space-y-2 text-right">
             {downs.map((t, i) => (
               <div key={i} className="flex flex-col items-end">
-                <span className="text-[13px] font-black text-gray-900">{formatArrivalTime(t.LEFTTIME)}</span>
+                <span className="text-[13px] font-black text-gray-900">{formatArrivalTime(t)}</span>
                 <span className="text-[10px] font-bold text-gray-400 truncate">{(t.DESTSTATION_NM || t.TRAIN_DESTINATION_STATION_NM)}행</span>
               </div>
             ))}
