@@ -158,25 +158,25 @@ const Sidebar = ({
       if (ups.length === 0 && downs.length === 0) return null;
       return (
         <div id={`hour-${h}`} className="flex border-b border-gray-50 group hover:bg-gray-50/50 transition-colors">
-          <div className="flex-1 p-3 border-r border-gray-100 space-y-2">
+          <div className="flex-1 p-4 border-r border-gray-100 space-y-3">
             {ups.map((t, i) => (
               <div key={i} className="flex flex-col">
                 <div className="flex items-center gap-1.5">
-                  <span className="text-[13px] font-black text-blue-600">{formatArrivalTime(t)}</span>
-                  {t.TRAIN_NO && <span className="text-[9px] font-bold text-blue-300 bg-blue-50 px-1 rounded">{t.TRAIN_NO}</span>}
+                  <span className="text-[15px] font-[900] text-blue-600 tracking-tighter">{formatArrivalTime(t)}</span>
+                  {t.TRAIN_NO && <span className="text-[8px] font-bold text-blue-300 border border-blue-100 px-1 rounded-sm">{t.TRAIN_NO}</span>}
                 </div>
-                <span className="text-[10px] font-bold text-gray-400 truncate">{(t.DESTSTATION_NM || t.TRAIN_DESTINATION_STATION_NM)}행</span>
+                <span className="text-[11px] font-bold text-gray-400">{(t.DESTSTATION_NM || t.TRAIN_DESTINATION_STATION_NM)}행</span>
               </div>
             ))}
           </div>
-          <div className="flex-1 p-3 space-y-2 text-right">
+          <div className="flex-1 p-4 space-y-3 text-right">
             {downs.map((t, i) => (
               <div key={i} className="flex flex-col items-end">
                 <div className="flex items-center gap-1.5 justify-end">
-                  {t.TRAIN_NO && <span className="text-[9px] font-bold text-gray-300 bg-gray-50 px-1 rounded">{t.TRAIN_NO}</span>}
-                  <span className="text-[13px] font-black text-gray-900">{formatArrivalTime(t)}</span>
+                  {t.TRAIN_NO && <span className="text-[8px] font-bold text-gray-300 border border-gray-100 px-1 rounded-sm">{t.TRAIN_NO}</span>}
+                  <span className="text-[15px] font-[900] text-gray-900 tracking-tighter">{formatArrivalTime(t)}</span>
                 </div>
-                <span className="text-[10px] font-bold text-gray-400 truncate">{(t.DESTSTATION_NM || t.TRAIN_DESTINATION_STATION_NM)}행</span>
+                <span className="text-[11px] font-bold text-gray-400">{(t.DESTSTATION_NM || t.TRAIN_DESTINATION_STATION_NM)}행</span>
               </div>
             ))}
           </div>
