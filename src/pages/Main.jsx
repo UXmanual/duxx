@@ -102,6 +102,15 @@ const Main = () => {
     }
   };
 
+  const focusSeoulStationAtDefaultZoom = () => {
+    if (!map) return;
+
+    map.setLevel(4);
+    window.setTimeout(() => {
+      panToWithOffset(seoulStationCoords.lat, seoulStationCoords.lng);
+    }, 180);
+  };
+
   const fetchMemos = async () => {
     if (!supabase) return;
     try {
@@ -498,10 +507,17 @@ const Main = () => {
             offset: { x: 16, y: 16 }
           }}
           onClick={() => {
-            panToWithOffset(seoulStationCoords.lat, seoulStationCoords.lng);
-            fetchSubwayTimetable("1"); // 기본 평일(1) 조회
             setSelectedStarbucksId(null);
             setSelectedMemoId(null);
+            setSelectedSubwayArrivals(null);
+
+            if (mapLevel >= 6) {
+              focusSeoulStationAtDefaultZoom();
+              return;
+            }
+
+            panToWithOffset(seoulStationCoords.lat, seoulStationCoords.lng);
+            fetchSubwayTimetable("1");
           }}
           zIndex={100}
         />
@@ -512,6 +528,7 @@ const Main = () => {
               image={{ src: 'data:image/svg+xml;base64,' + btoa('<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="10" fill="#00704a" stroke="white" stroke-width="2"/><path d="M12 6.25L13.5 10.75H18L14.5 13.25L15.5 17.75L12 15.25L8.5 17.75L9.5 13.25L6 10.75H10.5L12 6.25Z" fill="white"/></svg>'), size: { width: 24, height: 24 } }}
               onClick={() => { 
                 panToWithOffset(place.lat, place.lng);
+                setSelectedSubwayArrivals(null);
                 setSelectedStarbucksId(selectedStarbucksId === place.id ? null : place.id); 
                 if (selectedStarbucksId !== place.id) { setExpandedGroupIds([]); setSelectedMemoId(null); } 
               }}
@@ -660,7 +677,7 @@ const Main = () => {
         subwayArrivals={selectedSubwayArrivals}
         subwayFetchTime={subwayFetchTime}
         onTimetableTabChange={fetchSubwayTimetable}
-        starbucks={starbucksPlaces.find(l => l.id === selectedStarbucksId)}
+        starbucks={null}
       />
 
       <div className="pointer-events-none fixed inset-0 z-40 overflow-visible">

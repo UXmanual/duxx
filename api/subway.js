@@ -40,7 +40,7 @@ async function fetchTimetable(apiKey, dayType, bound) {
             serviceName,
             stationCode,
             stationName: '서울역',
-            line: '01호선'
+            line: '1호선'
           }
         };
       }
@@ -58,7 +58,7 @@ async function fetchTimetable(apiKey, dayType, bound) {
       stationCd: SEOUL_STATION_CODES.stationCd,
       frCode: SEOUL_STATION_CODES.frCode,
       stationName: '서울역',
-      line: '01호선'
+      line: '1호선'
     }
   };
 }
@@ -72,20 +72,14 @@ export default async function handler(req, res) {
     return;
   }
 
-  if (type === 'timetable') {
-    const data = await fetchTimetable(apiKey, dayType, bound);
-    res.status(200).json(data);
+  if (type !== 'timetable') {
+    res.status(400).json({
+      error: 'UNSUPPORTED_TYPE',
+      message: 'This endpoint only supports type=timetable.'
+    });
     return;
   }
 
-  const stationName = encodeURIComponent('서울역');
-  const arrivalUrl = `http://swopenapi.seoul.go.kr/api/subway/${apiKey}/json/realtimeStationArrival/0/15/${stationName}`;
-
-  try {
-    const response = await fetch(arrivalUrl);
-    const data = await response.json();
-    res.status(200).json(data);
-  } catch (error) {
-    res.status(500).json({ error: 'Arrival API Error', details: error.message });
-  }
+  const data = await fetchTimetable(apiKey, dayType, bound);
+  res.status(200).json(data);
 }
