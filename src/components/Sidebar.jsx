@@ -507,24 +507,80 @@ const Sidebar = ({
       );
     };
 
+    const TimetableSkeletonRow = ({ align = 'left', highlighted = false, withBadge = false }) => (
+      <div
+        className={`flex flex-col ${align === 'right' ? 'items-end' : ''} rounded-2xl px-3 py-2 ${
+          highlighted ? 'bg-blue-50/70 ring-1 ring-blue-100 shadow-sm' : ''
+        }`}
+      >
+        <div className={`flex items-center gap-1.5 ${align === 'right' ? 'justify-end' : ''}`}>
+          {withBadge && <div className="h-3.5 w-7 rounded-md bg-gray-200/90 animate-pulse" />}
+          <div className="h-5 w-14 rounded-full bg-gray-300 animate-pulse" />
+        </div>
+        <div className="mt-2 h-3.5 w-16 rounded-full bg-gray-200 animate-pulse" />
+      </div>
+    );
+
+    const TimetableSkeletonHourBlock = ({ emphasize = false }) => (
+      <div className="flex border-b border-gray-50">
+        <div className="flex-1 p-4 border-r border-gray-100 space-y-3">
+          <TimetableSkeletonRow highlighted={emphasize} withBadge />
+          <TimetableSkeletonRow />
+        </div>
+        <div className="flex-1 p-4 space-y-3">
+          <TimetableSkeletonRow align="right" highlighted={emphasize} withBadge />
+          <TimetableSkeletonRow align="right" />
+        </div>
+      </div>
+    );
+
     if (subwayArrivals.loading) {
       return (
-        <div className="animate-fade-in">
-          <div className="rounded-[28px] border border-gray-200 bg-white px-5 py-5 shadow-sm">
-            <div className="space-y-2">
-              <div className="h-3.5 w-20 rounded-full bg-gray-200 animate-pulse" />
-              <div className="h-6 w-32 rounded-full bg-gray-300 animate-pulse" />
+        <div className="category-subway animate-fade-in h-full flex flex-col">
+          <div className="sticky top-0 z-10 bg-white pb-4 space-y-4">
+            <div className="flex justify-between items-start gap-3 px-1">
+              <div className="min-w-0 flex items-start gap-3">
+                <div className="w-12 h-12 rounded-2xl bg-[#3D53B3]/10 border border-blue-100 flex flex-col items-center justify-center leading-none">
+                  <div className="h-2.5 w-6 rounded-full bg-[#3D53B3]/30 animate-pulse" />
+                  <div className="mt-1.5 h-2 w-5 rounded-full bg-[#3D53B3]/20 animate-pulse" />
+                </div>
+                <div className="min-w-0 space-y-2 pt-0.5">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <div className="h-6 w-24 rounded-full bg-gray-300 animate-pulse" />
+                    <div className="h-5 w-12 rounded-full bg-blue-100 animate-pulse" />
+                  </div>
+                  <div className="h-3.5 w-32 rounded-full bg-gray-200 animate-pulse" />
+                </div>
+              </div>
+              <div className="w-9 h-9 rounded-full bg-gray-100 animate-pulse" />
             </div>
 
-            <div className="mt-5 grid grid-cols-2 gap-3">
-              {[0, 1, 2, 3].map((item) => (
+            <div className="flex gap-1 bg-gray-100 p-1 rounded-2xl">
+              {[0, 1, 2].map((item) => (
                 <div
                   key={item}
-                  className="rounded-2xl border border-gray-100 bg-gray-50 px-4 py-4"
+                  className={`flex-1 rounded-[14px] py-2.5 ${
+                    item === 0 ? 'bg-white shadow-sm' : 'bg-transparent'
+                  }`}
                 >
-                  <div className="h-4 w-14 rounded-full bg-gray-200 animate-pulse" />
-                  <div className="mt-3 h-5 w-20 rounded-full bg-gray-300 animate-pulse" />
-                  <div className="mt-2 h-3.5 w-16 rounded-full bg-gray-200 animate-pulse" />
+                  <div className="mx-auto h-4 w-12 rounded-full bg-gray-200 animate-pulse" />
+                </div>
+              ))}
+            </div>
+
+            <div className="flex gap-2.5 overflow-hidden pt-2 pb-4 no-scrollbar border-b border-gray-100 px-1">
+              {hourRows.slice(0, isMobile ? 5 : 8).map((hour, index) => (
+                <div
+                  key={`skeleton-hour-${hour}`}
+                  className={`flex-shrink-0 w-12 h-12 rounded-[20px] flex items-center justify-center ${
+                    index === 1 ? 'bg-blue-600 shadow-lg shadow-blue-100' : 'bg-gray-50'
+                  }`}
+                >
+                  <div
+                    className={`h-4 w-5 rounded-full animate-pulse ${
+                      index === 1 ? 'bg-white/80' : 'bg-gray-200'
+                    }`}
+                  />
                 </div>
               ))}
             </div>
@@ -532,6 +588,20 @@ const Sidebar = ({
             <p className="mt-4 text-[12px] font-bold tracking-tight text-gray-400">
               서울역 시간표 데이터를 새로 불러오는 중입니다.
             </p>
+          </div>
+
+          <div className="flex items-center justify-between text-[11px] font-black text-gray-500 px-4 py-2 bg-gray-50/80 rounded-xl mb-2">
+            <div className="h-3.5 w-10 rounded-full bg-gray-200 animate-pulse" />
+            <div className="h-3.5 w-10 rounded-full bg-gray-200 animate-pulse" />
+          </div>
+
+          <div className="flex-1 min-h-0 overflow-hidden">
+            {hourRows.slice(0, isMobile ? 3 : 4).map((hour, index) => (
+              <TimetableSkeletonHourBlock
+                key={`skeleton-block-${hour}`}
+                emphasize={index === 0}
+              />
+            ))}
           </div>
         </div>
       );

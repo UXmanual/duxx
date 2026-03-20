@@ -358,7 +358,17 @@ const Main = () => {
     }
 
     // 2. 오직 실시간 API 요청 (백업 데이터 없음)
-    setSelectedSubwayArrivals({ loading: true, error: null });
+    setSelectedSubwayArrivals((prev) => ({
+      ...(prev || {}),
+      type: prev?.type || 'timetable',
+      dayType,
+      up: prev?.up || [],
+      down: prev?.down || [],
+      loading: true,
+      error: null,
+      message: null,
+      isFallback: false
+    }));
     
     try {
       // 상행(1)과 하행(2) 데이터를 순차적으로 정확히 수집
