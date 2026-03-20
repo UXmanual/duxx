@@ -526,9 +526,9 @@ const Main = () => {
         <MapMarker
           position={yangjaeFlowerMarketCoords}
           image={{
-            src: 'data:image/svg+xml;base64,' + btoa(`<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="16" cy="16" r="14" fill="#B84D8E" stroke="white" stroke-width="2.5"/><g transform="translate(16 16) scale(0.7)"><ellipse cx="0" cy="-8.8" rx="4.6" ry="7.4" fill="#D39AC3"/><ellipse cx="8.4" cy="-2.7" rx="4.6" ry="7.4" transform="rotate(72 8.4 -2.7)" fill="#D39AC3"/><ellipse cx="5.2" cy="7.1" rx="4.6" ry="7.4" transform="rotate(144 5.2 7.1)" fill="#D39AC3"/><ellipse cx="-5.2" cy="7.1" rx="4.6" ry="7.4" transform="rotate(-144 -5.2 7.1)" fill="#D39AC3"/><ellipse cx="-8.4" cy="-2.7" rx="4.6" ry="7.4" transform="rotate(-72 -8.4 -2.7)" fill="#D39AC3"/><circle cx="0" cy="0" r="4.8" fill="#FFD24A"/></g></svg>`),
-            size: { width: 32, height: 32 },
-            offset: { x: 16, y: 16 }
+            src: 'data:image/svg+xml;base64,' + btoa(`<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="10" fill="#E7A8CF" stroke="white" stroke-width="2"/><g transform="translate(12 12) scale(0.45)"><ellipse cx="0" cy="-8.8" rx="4.6" ry="7.4" fill="#D79BC4"/><ellipse cx="8.4" cy="-2.7" rx="4.6" ry="7.4" transform="rotate(72 8.4 -2.7)" fill="#D79BC4"/><ellipse cx="5.2" cy="7.1" rx="4.6" ry="7.4" transform="rotate(144 5.2 7.1)" fill="#D79BC4"/><ellipse cx="-5.2" cy="7.1" rx="4.6" ry="7.4" transform="rotate(-144 -5.2 7.1)" fill="#D79BC4"/><ellipse cx="-8.4" cy="-2.7" rx="4.6" ry="7.4" transform="rotate(-72 -8.4 -2.7)" fill="#D79BC4"/><circle cx="0" cy="0" r="4.8" fill="#FFD24A"/></g></svg>`),
+            size: { width: 24, height: 24 },
+            offset: { x: 12, y: 12 }
           }}
           onClick={() => {
             setSelectedStarbucksId(null);
