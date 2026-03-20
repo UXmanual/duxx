@@ -113,6 +113,34 @@ const Main = () => {
     }, 180);
   };
 
+  const openYangjaeFlowerMarketDirections = () => {
+    const { lat, lng } = yangjaeFlowerMarketCoords;
+    const encodedName = encodeURIComponent('양재 꽃시장');
+    const tmapUrl = `tmap://route?goalx=${lng}&goaly=${lat}&name=${encodedName}`;
+    const userAgent = navigator.userAgent || '';
+    const isAndroid = /Android/i.test(userAgent);
+    const isIOS = /iPhone|iPad|iPod/i.test(userAgent);
+
+    if (!isAndroid && !isIOS) {
+      alert('모바일 기기에서 티맵 길찾기를 열 수 있습니다.');
+      return;
+    }
+
+    const fallbackUrl = isIOS
+      ? 'https://apps.apple.com/kr/app/tmap/id431589174'
+      : 'https://play.google.com/store/apps/details?id=com.skt.tmap.ku';
+
+    const fallbackTimer = window.setTimeout(() => {
+      window.location.href = fallbackUrl;
+    }, 1200);
+
+    const clearFallback = () => window.clearTimeout(fallbackTimer);
+
+    window.addEventListener('pagehide', clearFallback, { once: true });
+    window.addEventListener('blur', clearFallback, { once: true });
+    window.location.href = tmapUrl;
+  };
+
   const fetchMemos = async () => {
     if (!supabase) return;
     try {
@@ -551,11 +579,11 @@ const Main = () => {
               className="bg-white px-3 py-1.5 rounded-full border-2 border-[#FF2FA3] shadow-lg flex items-center gap-1.5 relative select-none cursor-pointer animate-pop-in [touch-action:manipulation]"
               onClick={(e) => {
                 e.stopPropagation();
-                setIsYangjaeFlowerMarketSelected(false);
+                openYangjaeFlowerMarketDirections();
               }}
             >
               <span className="text-[13px] font-bold text-[#FF2FA3] whitespace-nowrap">
-                양재 꽃시장
+                ?? ??? ???
               </span>
             </div>
           </CustomOverlayMap>
