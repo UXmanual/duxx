@@ -62,6 +62,7 @@ const Main = () => {
   const [subwayFetchTime, setSubwayFetchTime] = useState(null);
   const seoulStationCoords = { lat: 37.554648, lng: 126.972559 };
   const yangjaeFlowerMarketCoords = { lat: 37.467715, lng: 127.039455 };
+  const yangjaeFlowerMarketName = '양재동 화훼공판장';
 
   // 초기 위치 로딩 최적화 상태
   const [isLocationLoaded, setIsLocationLoaded] = useState(false);
@@ -115,7 +116,7 @@ const Main = () => {
 
   const openYangjaeFlowerMarketDirections = () => {
     const { lat, lng } = yangjaeFlowerMarketCoords;
-    const encodedName = encodeURIComponent('양재 꽃시장');
+    const encodedName = encodeURIComponent(yangjaeFlowerMarketName);
     const tmapUrl = `tmap://route?goalx=${lng}&goaly=${lat}&name=${encodedName}`;
     const userAgent = navigator.userAgent || '';
     const isAndroid = /Android/i.test(userAgent);
@@ -583,7 +584,7 @@ const Main = () => {
               }}
             >
               <span className="text-[13px] font-bold text-[#FF2FA3] whitespace-nowrap">
-                양재 꽃시장
+                {yangjaeFlowerMarketName}
               </span>
             </div>
           </CustomOverlayMap>
