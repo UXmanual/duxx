@@ -57,6 +57,7 @@ const Main = () => {
   const [starbucksPlaces, setStarbucksPlaces] = useState(starbucksReserveStores);
   const [isStarbucksVisible, setIsStarbucksVisible] = useState(true);
   const [selectedStarbucksId, setSelectedStarbucksId] = useState(null);
+  const [isYangjaeFlowerMarketSelected, setIsYangjaeFlowerMarketSelected] = useState(false);
   const [selectedSubwayArrivals, setSelectedSubwayArrivals] = useState(null);
   const [subwayFetchTime, setSubwayFetchTime] = useState(null);
   const seoulStationCoords = { lat: 37.554648, lng: 126.972559 };
@@ -534,10 +535,31 @@ const Main = () => {
             setSelectedStarbucksId(null);
             setSelectedMemoId(null);
             setSelectedSubwayArrivals(null);
+            setIsYangjaeFlowerMarketSelected((prev) => !prev);
             panToWithOffset(yangjaeFlowerMarketCoords.lat, yangjaeFlowerMarketCoords.lng);
           }}
           zIndex={100}
         />
+        {isYangjaeFlowerMarketSelected && (
+          <CustomOverlayMap
+            position={yangjaeFlowerMarketCoords}
+            yAnchor={1.85}
+            zIndex={1000}
+            clickable={true}
+          >
+            <div
+              className="bg-white px-3 py-1.5 rounded-full border-2 border-[#FF2FA3] shadow-lg flex items-center gap-1.5 relative select-none cursor-pointer animate-pop-in [touch-action:manipulation]"
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsYangjaeFlowerMarketSelected(false);
+              }}
+            >
+              <span className="text-[13px] font-bold text-[#FF2FA3] whitespace-nowrap">
+                양재 꽃시장
+              </span>
+            </div>
+          </CustomOverlayMap>
+        )}
 
         {isStarbucksVisible && starbucksPlaces.map(place => (
           <React.Fragment key={`sb-${place.id}`}>
@@ -546,6 +568,7 @@ const Main = () => {
               onClick={() => { 
                 panToWithOffset(place.lat, place.lng);
                 setSelectedSubwayArrivals(null);
+                setIsYangjaeFlowerMarketSelected(false);
                 setSelectedStarbucksId(selectedStarbucksId === place.id ? null : place.id); 
                 if (selectedStarbucksId !== place.id) { setExpandedGroupIds([]); setSelectedMemoId(null); } 
               }}
@@ -602,6 +625,7 @@ const Main = () => {
                       e.stopPropagation(); 
                       panToWithOffset(memo.lat, memo.lng);
                       setSelectedStarbucksId(null); 
+                      setIsYangjaeFlowerMarketSelected(false);
                       setSelectedSubwayArrivals(null); // 지하철 LNB 닫기
                       setSelectedMemoId(memo.id); 
                       setExpandedGroupIds([memo.id]); 
@@ -684,7 +708,7 @@ const Main = () => {
       <Sidebar 
         memo={memos.find(m => m.id === selectedMemoId)} 
         replies={memos.filter(m => m.parent_id === selectedMemoId)} 
-        onClose={() => { setSelectedMemoId(null); setSelectedSubwayArrivals(null); setSelectedStarbucksId(null); }} 
+        onClose={() => { setSelectedMemoId(null); setSelectedSubwayArrivals(null); setSelectedStarbucksId(null); setIsYangjaeFlowerMarketSelected(false); }} 
         onDelete={handleDeleteMemo} 
         onReplySubmit={handleReplySubmit} 
         onPop={handlePopBubble} 
