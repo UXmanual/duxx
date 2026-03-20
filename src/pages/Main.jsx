@@ -115,9 +115,8 @@ const Main = () => {
   };
 
   const openYangjaeFlowerMarketDirections = () => {
-    const { lat, lng } = yangjaeFlowerMarketCoords;
     const encodedName = encodeURIComponent(yangjaeFlowerMarketName);
-    const tmapUrl = `tmap://route?goalx=${lng}&goaly=${lat}&name=${encodedName}`;
+    const tmapUrl = `tmap://search?name=${encodedName}`;
     const userAgent = navigator.userAgent || '';
     const isAndroid = /Android/i.test(userAgent);
     const isIOS = /iPhone|iPad|iPod/i.test(userAgent);
