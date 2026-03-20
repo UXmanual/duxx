@@ -21,6 +21,7 @@ const Sidebar = ({
   const sheetHeight = useMotionValue(0);
   const contentRef = useRef(null);
   const isSubwayOnlyView = !!subwayArrivals && !memo && !starbucks;
+  const wasOpenRef = useRef(false);
 
   useEffect(() => {
     if (contentRef.current) {
@@ -39,20 +40,27 @@ const Sidebar = ({
   }, []);
 
   useEffect(() => {
-    const hasData = memo || subwayArrivals || starbucks;
+    const hasData = !!(memo || subwayArrivals || starbucks);
     if (!hasData) {
+      wasOpenRef.current = false;
       sheetHeight.set(0);
+      document.body.style.overflow = 'auto';
       return;
     }
 
     if (isMobile) {
-      animate(sheetHeight, window.innerHeight * 0.45, { type: 'spring', damping: 30, stiffness: 400 });
+      if (!wasOpenRef.current) {
+        const initialHeight = windowHeight * (isSubwayOnlyView ? 0.9 : 0.45);
+        animate(sheetHeight, initialHeight, { type: 'spring', damping: 30, stiffness: 400 });
+      }
       document.body.style.overflow = 'hidden';
     } else {
       sheetHeight.set(window.innerHeight);
       document.body.style.overflow = 'auto';
     }
-  }, [isMobile, memo, subwayArrivals, starbucks, sheetHeight]);
+
+    wasOpenRef.current = true;
+  }, [isMobile, isSubwayOnlyView, !!memo, !!subwayArrivals, !!starbucks, sheetHeight, windowHeight]);
 
   const handlePan = (e, info) => {
     if (!isMobile) return;
@@ -190,6 +198,15 @@ const Sidebar = ({
     const [selectedHour, setSelectedHour] = useState(initialHour);
     const hourScrollRef = useRef(null);
     const listScrollRef = useRef(null);
+    const isHourMouseDownRef = useRef(false);
+    const isHourDraggingRef = useRef(false);
+    const dragStartXRef = useRef(0);
+    const dragStartScrollLeftRef = useRef(0);
+    const dragDistanceRef = useRef(0);
+    const dragVelocityRef = useRef(0);
+    const lastPointerXRef = useRef(0);
+    const lastPointerTimeRef = useRef(0);
+    const momentumFrameRef = useRef(null);
 
     if (!subwayArrivals) return null;
 
@@ -246,27 +263,61 @@ const Sidebar = ({
       const target = document.getElementById(`hour-${hour}`);
       if (!listContainer || !target) return;
 
+      const headerOffset = 56;
+      const currentHour = new Date().getHours();
+      const containerRect = listContainer.getBoundingClientRect();
+      const targetRect = target.getBoundingClientRect();
+      const hourSectionTop =
+        targetRect.top - containerRect.top + listContainer.scrollTop - headerOffset;
+
+      if (hour !== currentHour) {
+        listContainer.scrollTo({
+          top: Math.max(0, hourSectionTop),
+          behavior: 'smooth'
+        });
+        return;
+      }
+
+      const nextTrainTarget = target.querySelector('[data-next-train="true"]');
+      if (!nextTrainTarget) {
+        listContainer.scrollTo({
+          top: Math.max(0, hourSectionTop),
+          behavior: 'smooth'
+        });
+        return;
+      }
+
+      const nextTrainRect = nextTrainTarget.getBoundingClientRect();
+      const nextTrainTop =
+        nextTrainRect.top - containerRect.top + listContainer.scrollTop - headerOffset;
+
       listContainer.scrollTo({
-        top: target.offsetTop - 12,
+        top: Math.max(0, nextTrainTop),
         behavior: 'smooth'
       });
     };
 
-    const scrollHourTabToFront = (hour) => {
+    const scrollHourTabToCenter = (hour) => {
       const container = hourScrollRef.current;
       const button = document.getElementById(`btn-hour-${hour}`);
       if (!container || !button) return;
 
+      const centeredLeft =
+        button.offsetLeft - (container.clientWidth - button.clientWidth) / 2;
+      const maxScrollLeft = container.scrollWidth - container.clientWidth;
+
       container.scrollTo({
-        left: Math.max(0, button.offsetLeft - container.offsetLeft - 4),
-        behavior: 'smooth'
+        behavior: 'smooth',
+        left: Math.max(0, Math.min(centeredLeft, maxScrollLeft))
       });
     };
 
     const handleHourClick = (hour) => {
+      if (isHourDraggingRef.current) return;
+
       setSelectedHour(hour);
       requestAnimationFrame(() => {
-        scrollHourTabToFront(hour);
+        scrollHourTabToCenter(hour);
         scrollToHour(hour);
       });
     };
@@ -275,10 +326,114 @@ const Sidebar = ({
       if (subwayArrivals.loading) return;
 
       requestAnimationFrame(() => {
-        scrollHourTabToFront(selectedHour);
+        scrollHourTabToCenter(selectedHour);
         scrollToHour(selectedHour);
       });
     }, [selectedHour, subwayArrivals.loading]);
+
+    const handleHourMouseDown = (event) => {
+      if (isMobile) return;
+
+      const container = hourScrollRef.current;
+      if (!container) return;
+
+      if (momentumFrameRef.current) {
+        cancelAnimationFrame(momentumFrameRef.current);
+        momentumFrameRef.current = null;
+      }
+
+      isHourMouseDownRef.current = true;
+      isHourDraggingRef.current = false;
+      dragStartXRef.current = event.pageX;
+      dragStartScrollLeftRef.current = container.scrollLeft;
+      dragDistanceRef.current = 0;
+      dragVelocityRef.current = 0;
+      lastPointerXRef.current = event.pageX;
+      lastPointerTimeRef.current = performance.now();
+      container.classList.add('cursor-grabbing');
+    };
+
+    const handleHourMouseMove = (event) => {
+      if (isMobile || !isHourMouseDownRef.current) return;
+
+      const container = hourScrollRef.current;
+      if (!container) return;
+
+      const deltaX = event.pageX - dragStartXRef.current;
+      dragDistanceRef.current = Math.abs(deltaX);
+
+      if (!isHourDraggingRef.current && dragDistanceRef.current < 6) {
+        return;
+      }
+
+      event.preventDefault();
+      isHourDraggingRef.current = true;
+      container.scrollLeft = dragStartScrollLeftRef.current - deltaX;
+
+      const now = performance.now();
+      const elapsed = Math.max(now - lastPointerTimeRef.current, 1);
+      dragVelocityRef.current = (lastPointerXRef.current - event.pageX) / elapsed;
+      lastPointerXRef.current = event.pageX;
+      lastPointerTimeRef.current = now;
+    };
+
+    const startHourMomentum = () => {
+      const container = hourScrollRef.current;
+      if (!container) return;
+
+      let velocity = dragVelocityRef.current * 18;
+      if (Math.abs(velocity) < 0.8) return;
+
+      const step = () => {
+        velocity *= 0.92;
+
+        if (Math.abs(velocity) < 0.2) {
+          momentumFrameRef.current = null;
+          return;
+        }
+
+        container.scrollLeft += velocity;
+        momentumFrameRef.current = requestAnimationFrame(step);
+      };
+
+      momentumFrameRef.current = requestAnimationFrame(step);
+    };
+
+    const resetHourDrag = () => {
+      const container = hourScrollRef.current;
+      const shouldStartMomentum = isHourDraggingRef.current && Math.abs(dragVelocityRef.current) > 0.01;
+
+      isHourMouseDownRef.current = false;
+      container?.classList.remove('cursor-grabbing');
+
+      if (shouldStartMomentum) {
+        startHourMomentum();
+      }
+
+      window.setTimeout(() => {
+        isHourDraggingRef.current = false;
+        dragDistanceRef.current = 0;
+        dragVelocityRef.current = 0;
+      }, 0);
+    };
+
+    useEffect(() => {
+      if (isMobile) return undefined;
+
+      const handleMouseUp = () => {
+        if (!isHourMouseDownRef.current) return;
+        resetHourDrag();
+      };
+
+      window.addEventListener('mouseup', handleMouseUp);
+      return () => window.removeEventListener('mouseup', handleMouseUp);
+    }, [isMobile]);
+
+    useEffect(() => () => {
+      if (momentumFrameRef.current) {
+        cancelAnimationFrame(momentumFrameRef.current);
+      }
+    }, []);
 
     const nextUpTrain = getNextTrain(subwayArrivals.up);
     const nextDownTrain = getNextTrain(subwayArrivals.down);
@@ -288,6 +443,22 @@ const Sidebar = ({
       const matchesHour = (train) => getStationEventRawTime(train).startsWith(hourPrefix);
       const ups = subwayArrivals.up?.filter(matchesHour) || [];
       const downs = subwayArrivals.down?.filter(matchesHour) || [];
+      const now = new Date();
+      const isCurrentHour = now.getHours() === hour;
+
+      const getUpcomingDiff = (train) => {
+        const diff = getMillisecondsUntilTrain(train);
+        return diff === Number.POSITIVE_INFINITY ? Number.POSITIVE_INFINITY : diff;
+      };
+
+      const upcomingCandidates = isCurrentHour
+        ? [...ups, ...downs]
+            .map((train) => ({ train, diff: getUpcomingDiff(train) }))
+            .filter(({ diff }) => diff >= 0)
+            .sort((a, b) => a.diff - b.diff)
+        : [];
+
+      const currentHourAnchorTrain = upcomingCandidates[0]?.train || null;
 
       if (ups.length === 0 && downs.length === 0) return null;
 
@@ -298,6 +469,7 @@ const Sidebar = ({
               <div
                 key={`up-${hour}-${index}`}
                 className={`flex flex-col rounded-2xl px-3 py-2 ${train === nextUpTrain ? 'bg-blue-50 ring-1 ring-blue-200 shadow-sm' : ''}`}
+                data-next-train={train === currentHourAnchorTrain}
               >
                 <div className="flex items-center gap-1.5">
                   <span className="text-[15px] font-[900] text-blue-600 tracking-tighter">{formatArrivalTime(train)}</span>
@@ -317,6 +489,7 @@ const Sidebar = ({
               <div
                 key={`down-${hour}-${index}`}
                 className={`flex flex-col items-end rounded-2xl px-3 py-2 ${train === nextDownTrain ? 'bg-orange-50 ring-1 ring-orange-200 shadow-sm' : ''}`}
+                data-next-train={train === currentHourAnchorTrain}
               >
                 <div className="flex items-center gap-1.5 justify-end">
                   {train.TRAIN_NO && (
@@ -336,9 +509,30 @@ const Sidebar = ({
 
     if (subwayArrivals.loading) {
       return (
-        <div className="p-8 flex flex-col items-center justify-center animate-pulse">
-          <div className="w-12 h-12 bg-gray-200 rounded-full mb-4" />
-          <p className="text-gray-400 font-bold text-sm">시간표 데이터를 불러오는 중...</p>
+        <div className="animate-fade-in">
+          <div className="rounded-[28px] border border-gray-200 bg-white px-5 py-5 shadow-sm">
+            <div className="space-y-2">
+              <div className="h-3.5 w-20 rounded-full bg-gray-200 animate-pulse" />
+              <div className="h-6 w-32 rounded-full bg-gray-300 animate-pulse" />
+            </div>
+
+            <div className="mt-5 grid grid-cols-2 gap-3">
+              {[0, 1, 2, 3].map((item) => (
+                <div
+                  key={item}
+                  className="rounded-2xl border border-gray-100 bg-gray-50 px-4 py-4"
+                >
+                  <div className="h-4 w-14 rounded-full bg-gray-200 animate-pulse" />
+                  <div className="mt-3 h-5 w-20 rounded-full bg-gray-300 animate-pulse" />
+                  <div className="mt-2 h-3.5 w-16 rounded-full bg-gray-200 animate-pulse" />
+                </div>
+              ))}
+            </div>
+
+            <p className="mt-4 text-[12px] font-bold tracking-tight text-gray-400">
+              서울역 시간표 데이터를 새로 불러오는 중입니다.
+            </p>
+          </div>
         </div>
       );
     }
@@ -366,19 +560,20 @@ const Sidebar = ({
     return (
       <div className="category-subway animate-fade-in h-full flex flex-col">
         <div className="sticky top-0 z-10 bg-white pb-4 space-y-4">
-          <div className="flex justify-between items-center px-1">
-            <div className="flex items-center gap-2">
-              <span className="bg-[#3D53B3] text-white text-[11px] font-black px-2 py-0.5 rounded shadow-sm">1호선</span>
-              <div className="flex flex-col">
-                <div className="flex items-center gap-2">
-                  <h2 className="text-[18px] font-black text-gray-900 leading-tight">
-                    서울역 <span className="text-gray-400 text-[14px]">시간표</span>
-                  </h2>
-                  <span className="text-[9px] font-black px-1.5 py-0.5 rounded-full border bg-green-50 text-green-600 border-green-200">
-                    LIVE
+          <div className="flex justify-between items-start gap-3 px-1">
+            <div className="min-w-0 flex items-start gap-3">
+              <div className="w-12 h-12 rounded-2xl bg-[#3D53B3] text-white shadow-lg shadow-[#3D53B3]/20 flex flex-col items-center justify-center leading-none">
+                <span className="text-[10px] font-black tracking-tight">1호선</span>
+                <span className="mt-1 text-[8px] font-bold text-blue-100">LINE</span>
+              </div>
+              <div className="min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h2 className="text-[20px] font-black text-gray-900 leading-tight">서울역</h2>
+                  <span className="text-[10px] font-black px-2 py-1 rounded-full border bg-blue-50 text-[#3D53B3] border-blue-100">
+                    시간표
                   </span>
                 </div>
-                <span className="text-[9px] font-bold text-gray-400">공식 API 시간표 데이터</span>
+                <span className="text-[11px] font-bold text-gray-400">공식 API 기준 열차 시간 안내</span>
               </div>
             </div>
             <button
@@ -406,12 +601,22 @@ const Sidebar = ({
 
           <div
             ref={hourScrollRef}
-            className="flex gap-2.5 overflow-x-auto pt-2 pb-4 no-scrollbar border-b border-gray-100 px-1 scroll-smooth"
+            className={`flex gap-2.5 overflow-x-auto pt-2 pb-4 no-scrollbar border-b border-gray-100 px-1 ${isMobile ? '' : 'cursor-grab active:cursor-grabbing select-none'}`}
+            onMouseDown={handleHourMouseDown}
+            onMouseMove={handleHourMouseMove}
+            onMouseUp={resetHourDrag}
+            onMouseLeave={resetHourDrag}
+            onDragStart={(event) => event.preventDefault()}
           >
             {hourRows.map((hour) => (
               <button
                 id={`btn-hour-${hour}`}
                 key={hour}
+                onMouseDown={(event) => {
+                  if (isHourDraggingRef.current || dragDistanceRef.current >= 6) {
+                    event.preventDefault();
+                  }
+                }}
                 onClick={() => handleHourClick(hour)}
                 className={`flex-shrink-0 w-12 h-12 flex items-center justify-center rounded-[20px] font-black text-[14px] transition-all ${
                   selectedHour === hour
@@ -430,7 +635,7 @@ const Sidebar = ({
           <span>하행</span>
         </div>
 
-        <div ref={listScrollRef} className="flex-1 min-h-0 overflow-y-auto custom-scrollbar pb-10">
+        <div ref={listScrollRef} className="flex-1 min-h-0 overflow-y-auto custom-scrollbar pb-0">
           {hourRows.map((hour) => (
             <TimetableRow key={hour} hour={hour} />
           ))}
@@ -500,7 +705,7 @@ const Sidebar = ({
                 )}
                 {!isMobile && (
                   <div className="flex items-center justify-between mb-2">
-                    <span className="logo-font text-[20px] font-black text-[#FF4D00]">BABBLE</span>
+                    <span className="logo-font text-[20px] font-black text-[#FF4D00] mix-blend-multiply">BABBLE</span>
                     <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full transition-all group">
                       <X size={20} className="text-gray-400 group-hover:text-gray-600" />
                     </button>
@@ -511,7 +716,9 @@ const Sidebar = ({
 
             <div
               ref={contentRef}
-              className={`flex-1 px-6 pb-20 custom-scrollbar scroll-smooth ${isSubwayOnlyView ? 'overflow-hidden' : 'overflow-y-auto'}`}
+              className={`flex-1 px-6 custom-scrollbar scroll-smooth ${
+                isSubwayOnlyView ? 'overflow-hidden pb-0' : 'overflow-y-auto pb-20'
+              }`}
             >
               <MemoSection />
               <SubwaySection />

@@ -11,6 +11,7 @@ import Sidebar from '../components/Sidebar';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import SubwaySidebar from '../components/SubwaySidebar';
+import FlowerMarketSheet from '../components/FlowerMarketSheet';
 import confetti from 'canvas-confetti';
 
 const formatDateTime = (dateString) => {
@@ -58,11 +59,31 @@ const Main = () => {
   const [isStarbucksVisible, setIsStarbucksVisible] = useState(true);
   const [selectedStarbucksId, setSelectedStarbucksId] = useState(null);
   const [isYangjaeFlowerMarketSelected, setIsYangjaeFlowerMarketSelected] = useState(false);
+  const [isFlowerMarketSheetOpen, setIsFlowerMarketSheetOpen] = useState(false);
   const [selectedSubwayArrivals, setSelectedSubwayArrivals] = useState(null);
   const [subwayFetchTime, setSubwayFetchTime] = useState(null);
   const seoulStationCoords = { lat: 37.554648, lng: 126.972559 };
   const yangjaeFlowerMarketCoords = { lat: 37.467715, lng: 127.039455 };
   const yangjaeFlowerMarketName = '양재동 화훼공판장';
+  const yangjaeFlowerMarketInfo = {
+    name: yangjaeFlowerMarketName,
+    address: '서울 서초구 강남대로 27 aT센터 화훼공판장',
+    access: [
+      '신분당선 양재시민의숲(매헌)역 4번 출구',
+      '버스 이용 시 AT센터 정류장 하차 후 도보 이동'
+    ],
+    hours: [
+      '부자재점(2층): 01:00~15:00',
+      '분화온실: 07:00~19:00',
+      '화환점포: 06:00~20:00',
+      '기타점포: 07:00~19:00'
+    ],
+    phone: '02-579-3417',
+    amenities: [
+      '점포/동별 운영 시간이 달라 방문 전 확인 권장',
+      '후문(남문) 개방시간: 01:00~20:00'
+    ]
+  };
 
   // 초기 위치 로딩 최적화 상태
   const [isLocationLoaded, setIsLocationLoaded] = useState(false);
@@ -490,18 +511,26 @@ const Main = () => {
 
   if (loading || !isLocationLoaded) {
     return (
-      <div className="w-full h-[100dvh] bg-white flex flex-col items-center justify-center pb-[20vh]">
-        <div className="flex flex-col items-center gap-4">
+      <div className="w-full h-[100dvh] bg-[#F3EDE1] flex flex-col items-center justify-center pb-[20vh]">
+        <div className="flex flex-col items-center gap-5">
           <div className="relative">
-            <div className="absolute inset-0 bg-gray-200 rounded-full animate-ping opacity-40" />
-            <div className="relative">
-              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#D1D5DB" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <div className="absolute inset-0 rounded-full bg-white/40 blur-xl scale-125" />
+            <div className="relative flex h-16 w-16 items-center justify-center rounded-full border border-white/60 bg-white/45 shadow-[0_12px_40px_rgba(104,86,58,0.12)] backdrop-blur-sm">
+              <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#9E9484" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M14.106 5.553a2 2 0 0 0 1.788 0l3.659-1.83a1 1 0 0 1 1.447.894v11.549a2 2 0 0 1-1.106 1.789l-4.553 2.276a2 2 0 0 1-1.788 0l-4.553-2.276a2 2 0 0 0-1.788 0l-3.659 1.83A1 1 0 0 1 2 18.894V7.345a2 2 0 0 1 1.106-1.789l4.553-2.276a2 2 0 0 1 1.788 0l4.553 2.276Z" />
-                <path d="M15 5.5v13" /><path d="M9 5.5v13" />
+                <path d="M15 5.5v13" />
+                <path d="M9 5.5v13" />
               </svg>
             </div>
           </div>
-          <span className="text-[#9CA3AF] text-[15px] font-semibold animate-pulse">Loading Map...</span>
+          <div className="flex flex-col items-center gap-2">
+            <span className="text-[#7D7467] text-[15px] font-semibold tracking-tight">지도를 준비하는 중입니다</span>
+            <div className="flex items-center gap-1.5">
+              <span className="h-1.5 w-1.5 rounded-full bg-[#B8AA93] animate-bounce [animation-delay:-0.2s]" />
+              <span className="h-1.5 w-1.5 rounded-full bg-[#B8AA93] animate-bounce [animation-delay:-0.1s]" />
+              <span className="h-1.5 w-1.5 rounded-full bg-[#B8AA93] animate-bounce" />
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -563,31 +592,12 @@ const Main = () => {
             setSelectedStarbucksId(null);
             setSelectedMemoId(null);
             setSelectedSubwayArrivals(null);
-            setIsYangjaeFlowerMarketSelected((prev) => !prev);
+            setIsYangjaeFlowerMarketSelected(false);
+            setIsFlowerMarketSheetOpen(true);
             panToWithOffset(yangjaeFlowerMarketCoords.lat, yangjaeFlowerMarketCoords.lng);
           }}
           zIndex={100}
         />
-        {isYangjaeFlowerMarketSelected && (
-          <CustomOverlayMap
-            position={yangjaeFlowerMarketCoords}
-            yAnchor={1.85}
-            zIndex={1000}
-            clickable={true}
-          >
-            <div
-              className="bg-white px-3 py-1.5 rounded-full border-2 border-[#FF2FA3] shadow-lg flex items-center gap-1.5 relative select-none cursor-pointer animate-pop-in [touch-action:manipulation]"
-              onClick={(e) => {
-                e.stopPropagation();
-                openYangjaeFlowerMarketDirections();
-              }}
-            >
-              <span className="text-[13px] font-bold text-[#FF2FA3] whitespace-nowrap">
-                {yangjaeFlowerMarketName}
-              </span>
-            </div>
-          </CustomOverlayMap>
-        )}
 
         {isStarbucksVisible && starbucksPlaces.map(place => (
           <React.Fragment key={`sb-${place.id}`}>
@@ -597,6 +607,7 @@ const Main = () => {
                 panToWithOffset(place.lat, place.lng);
                 setSelectedSubwayArrivals(null);
                 setIsYangjaeFlowerMarketSelected(false);
+                setIsFlowerMarketSheetOpen(false);
                 setSelectedStarbucksId(selectedStarbucksId === place.id ? null : place.id); 
                 if (selectedStarbucksId !== place.id) { setExpandedGroupIds([]); setSelectedMemoId(null); } 
               }}
@@ -654,6 +665,7 @@ const Main = () => {
                       panToWithOffset(memo.lat, memo.lng);
                       setSelectedStarbucksId(null); 
                       setIsYangjaeFlowerMarketSelected(false);
+                      setIsFlowerMarketSheetOpen(false);
                       setSelectedSubwayArrivals(null); // 지하철 LNB 닫기
                       setSelectedMemoId(memo.id); 
                       setExpandedGroupIds([memo.id]); 
@@ -736,7 +748,7 @@ const Main = () => {
       <Sidebar 
         memo={memos.find(m => m.id === selectedMemoId)} 
         replies={memos.filter(m => m.parent_id === selectedMemoId)} 
-        onClose={() => { setSelectedMemoId(null); setSelectedSubwayArrivals(null); setSelectedStarbucksId(null); setIsYangjaeFlowerMarketSelected(false); }} 
+        onClose={() => { setSelectedMemoId(null); setSelectedSubwayArrivals(null); setSelectedStarbucksId(null); setIsYangjaeFlowerMarketSelected(false); setIsFlowerMarketSheetOpen(false); }} 
         onDelete={handleDeleteMemo} 
         onReplySubmit={handleReplySubmit} 
         onPop={handlePopBubble} 
@@ -747,6 +759,12 @@ const Main = () => {
         subwayFetchTime={subwayFetchTime}
         onTimetableTabChange={fetchSubwayTimetable}
         starbucks={null}
+      />
+
+      <FlowerMarketSheet
+        market={isFlowerMarketSheetOpen ? yangjaeFlowerMarketInfo : null}
+        onClose={() => setIsFlowerMarketSheetOpen(false)}
+        onDirections={openYangjaeFlowerMarketDirections}
       />
 
       <div className="pointer-events-none fixed inset-0 z-40 overflow-visible">
