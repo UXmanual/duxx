@@ -526,7 +526,7 @@ const Main = () => {
         <MapMarker
           position={yangjaeFlowerMarketCoords}
           image={{
-            src: 'data:image/svg+xml;base64,' + btoa(`<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="16" cy="16" r="14" fill="#D94B8A" stroke="white" stroke-width="2.5"/><path d="M16 10.2C17.6 7.9 20.7 8.2 21.4 10.9C24.1 10.2 25.8 12.9 24.2 14.9C26.5 16 26.2 19.1 23.5 19.8C24.2 22.5 21.5 24.2 19.5 22.6C18.4 24.9 15.3 24.6 14.6 21.9C11.9 22.6 10.2 19.9 11.8 17.9C9.5 16.8 9.8 13.7 12.5 13C11.8 10.3 14.5 8.6 16.5 10.2H16Z" fill="white"/><circle cx="16" cy="16" r="3.2" fill="#D94B8A"/><path d="M16 20.2V25" stroke="white" stroke-width="2" stroke-linecap="round"/><path d="M13.8 24.2H18.2" stroke="white" stroke-width="2" stroke-linecap="round"/></svg>`),
+            src: 'data:image/svg+xml;base64,' + btoa(`<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg"><g transform="translate(16 16)"><ellipse cx="0" cy="-8.8" rx="4.3" ry="7.2" fill="#D39AC3"/><ellipse cx="8.4" cy="-2.7" rx="4.3" ry="7.2" transform="rotate(72 8.4 -2.7)" fill="#D39AC3"/><ellipse cx="5.2" cy="7.1" rx="4.3" ry="7.2" transform="rotate(144 5.2 7.1)" fill="#D39AC3"/><ellipse cx="-5.2" cy="7.1" rx="4.3" ry="7.2" transform="rotate(-144 -5.2 7.1)" fill="#D39AC3"/><ellipse cx="-8.4" cy="-2.7" rx="4.3" ry="7.2" transform="rotate(-72 -8.4 -2.7)" fill="#D39AC3"/><circle cx="0" cy="0" r="4.3" fill="#FFD24A"/></g></svg>`),
             size: { width: 32, height: 32 },
             offset: { x: 16, y: 16 }
           }}
