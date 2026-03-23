@@ -13,21 +13,23 @@ const Sidebar = ({
   formatDateTime,
   subwayArrivals,
   onTimetableTabChange,
-  starbucks
+  starbucks,
+  busStop,
+  onBusRefresh
 }) => {
   const [timeLeft, setTimeLeft] = useState('');
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [windowHeight, setWindowHeight] = useState(window.innerHeight);
   const sheetHeight = useMotionValue(0);
   const contentRef = useRef(null);
-  const isSubwayOnlyView = !!subwayArrivals && !memo && !starbucks;
+  const isSubwayOnlyView = (!!subwayArrivals || !!busStop) && !memo && !starbucks;
   const wasOpenRef = useRef(false);
 
   useEffect(() => {
     if (contentRef.current) {
       contentRef.current.scrollTop = 0;
     }
-  }, [memo?.id, subwayArrivals?.dayType, starbucks?.id]);
+  }, [memo?.id, subwayArrivals?.dayType, starbucks?.id, busStop?.station?.id]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -40,7 +42,7 @@ const Sidebar = ({
   }, []);
 
   useEffect(() => {
-    const hasData = !!(memo || subwayArrivals || starbucks);
+    const hasData = !!(memo || subwayArrivals || starbucks || busStop);
     if (!hasData) {
       wasOpenRef.current = false;
       sheetHeight.set(0);
@@ -60,7 +62,7 @@ const Sidebar = ({
     }
 
     wasOpenRef.current = true;
-  }, [isMobile, isSubwayOnlyView, !!memo, !!subwayArrivals, !!starbucks, sheetHeight, windowHeight]);
+  }, [isMobile, isSubwayOnlyView, !!memo, !!subwayArrivals, !!starbucks, !!busStop, sheetHeight, windowHeight]);
 
   const handlePan = (e, info) => {
     if (!isMobile) return;
@@ -742,9 +744,113 @@ const Sidebar = ({
     );
   };
 
+  const BusSection = () => {
+    if (!busStop) return null;
+
+    const station = busStop.station;
+    const arrivals = [...(busStop.arrivals || [])].sort((a, b) => {
+      const aTime = Number(a.predictTimeSec1 || a.predictTime1 || Number.POSITIVE_INFINITY);
+      const bTime = Number(b.predictTimeSec1 || b.predictTime1 || Number.POSITIVE_INFINITY);
+      return aTime - bTime;
+    });
+
+    const formatMinutes = (minutes) => {
+      if (minutes === null || minutes === undefined || Number.isNaN(Number(minutes))) return '-';
+      if (Number(minutes) <= 0) return '곧 도착';
+      return `${minutes}분`;
+    };
+
+    return (
+      <div className="space-y-6 animate-fade-in">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0 flex items-start gap-3">
+            <div className="w-12 h-12 rounded-2xl bg-[#F97316] text-white shadow-lg shadow-orange-200 flex flex-col items-center justify-center leading-none">
+              <span className="text-[10px] font-black tracking-tight">BUS</span>
+              <span className="mt-1 text-[8px] font-bold text-orange-100">14156</span>
+            </div>
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h2 className="text-[20px] font-black text-gray-900 leading-tight">{station?.name}</h2>
+                <span className="text-[10px] font-black px-2 py-1 rounded-full border border-orange-100 bg-orange-50 text-[#F97316]">
+                  버스정류장
+                </span>
+              </div>
+              <span className="text-[11px] font-bold text-gray-400">
+                {station?.regionName} {station?.mobileNo}
+              </span>
+            </div>
+          </div>
+          <button
+            onClick={() => onBusRefresh?.(true)}
+            className="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-400 hover:text-gray-900"
+            title="새로고침"
+          >
+            <RefreshCw size={18} className={busStop.loading ? 'animate-spin' : ''} />
+          </button>
+        </div>
+
+        {busStop.error ? (
+          <div className="p-6 bg-red-50 rounded-3xl border border-red-100 flex flex-col items-center text-center gap-3">
+            <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center text-red-500">
+              <Info size={24} />
+            </div>
+            <p className="text-red-800 font-black text-sm">{busStop.error}</p>
+            <p className="text-red-500 text-[12px] font-medium leading-relaxed">
+              {busStop.message || '버스 도착정보를 불러오지 못했습니다.'}
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {arrivals.map((bus) => (
+              <div key={`${bus.routeId}-${bus.routeName}`} className="p-4 rounded-[24px] bg-gray-50 border border-gray-100">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[18px] font-[900] tracking-tight text-[#F97316]">{bus.routeName}</span>
+                      <span className="text-[11px] font-bold text-gray-400">{bus.routeDestName}</span>
+                    </div>
+                    <p className="mt-1 text-[12px] font-bold text-gray-400">
+                      다음 정류장 {bus.stationNm1 || '-'} / 두 번째 {bus.stationNm2 || '-'}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-[18px] font-[900] tracking-tight text-gray-900">
+                      {formatMinutes(bus.predictTime1)}
+                    </p>
+                    <p className="text-[11px] font-bold text-gray-400">
+                      {bus.locationNo1 ? `${bus.locationNo1}정거장 전` : '접근 중'}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mt-3 flex items-center justify-between gap-3 rounded-2xl bg-white px-3 py-2 border border-gray-100">
+                  <div>
+                    <p className="text-[10px] font-black text-gray-400">두 번째 도착</p>
+                    <p className="text-[13px] font-bold text-gray-900">{formatMinutes(bus.predictTime2)}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-[10px] font-black text-gray-400">저상/혼잡</p>
+                    <p className="text-[13px] font-bold text-gray-900">
+                      {bus.lowPlate1 ? '저상' : '일반'} / {bus.crowded1 === 1 ? '여유' : bus.crowded1 === 2 ? '보통' : '혼잡'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ))}
+            {arrivals.length === 0 && (
+              <div className="p-6 rounded-[24px] bg-gray-50 border border-gray-100 text-center">
+                <p className="text-[14px] font-bold text-gray-500">표시할 버스 도착정보가 없습니다.</p>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <AnimatePresence>
-      {(memo || subwayArrivals || starbucks) && (
+      {(memo || subwayArrivals || starbucks || busStop) && (
         <>
           <motion.div
             initial={{ opacity: 0 }}
@@ -792,6 +898,7 @@ const Sidebar = ({
             >
               <MemoSection />
               <SubwaySection />
+              <BusSection />
               <StarbucksSection />
               {!isSubwayOnlyView && <div className="h-24" />}
             </div>

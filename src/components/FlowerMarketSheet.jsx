@@ -1,6 +1,27 @@
 import React, { useEffect, useState } from 'react';
 import { AnimatePresence, motion, useMotionValue, animate } from 'framer-motion';
-import { X, Flower2, MapPin, Navigation, Phone, Clock3, Link as LinkIcon, Info } from 'lucide-react';
+import { X, MapPin, Navigation, Phone, Clock3, Link as LinkIcon, Info } from 'lucide-react';
+
+const FlowerPetalIcon = ({ className = '', size = 24, color = 'currentColor' }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="-16 -16 32 32"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    className={className}
+    aria-hidden="true"
+  >
+    <g transform="scale(0.9)">
+      <ellipse cx="0" cy="-8.8" rx="4.6" ry="7.4" fill={color} />
+      <ellipse cx="8.4" cy="-2.7" rx="4.6" ry="7.4" transform="rotate(72 8.4 -2.7)" fill={color} />
+      <ellipse cx="5.2" cy="7.1" rx="4.6" ry="7.4" transform="rotate(144 5.2 7.1)" fill={color} />
+      <ellipse cx="-5.2" cy="7.1" rx="4.6" ry="7.4" transform="rotate(-144 -5.2 7.1)" fill={color} />
+      <ellipse cx="-8.4" cy="-2.7" rx="4.6" ry="7.4" transform="rotate(-72 -8.4 -2.7)" fill={color} />
+      <circle cx="0" cy="0" r="4.8" fill={color} />
+    </g>
+  </svg>
+);
 
 const FlowerMarketSheet = ({ market, onClose, onDirections }) => {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
@@ -150,7 +171,7 @@ const FlowerMarketSheet = ({ market, onClose, onDirections }) => {
               </div>
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 rounded-2xl bg-[#FF2FA3] text-white flex items-center justify-center shadow-lg">
-                  <Flower2 size={24} strokeWidth={2.5} />
+                  <FlowerPetalIcon size={18} color="#FFFFFF" />
                 </div>
                 <div>
                   <p className="text-[11px] font-black text-[#FF2FA3]">FLOWER MARKET</p>
@@ -162,7 +183,7 @@ const FlowerMarketSheet = ({ market, onClose, onDirections }) => {
             <div className="px-6 py-5 flex items-center justify-between border-b border-gray-100">
               <div className="flex items-center gap-3">
                 <div className="w-11 h-11 rounded-2xl bg-[#FF2FA3] text-white flex items-center justify-center">
-                  <Flower2 size={22} strokeWidth={2.5} />
+                  <FlowerPetalIcon size={17} color="#FFFFFF" />
                 </div>
                 <div>
                   <p className="text-[10px] font-black text-[#FF2FA3]">FLOWER MARKET</p>
@@ -180,7 +201,7 @@ const FlowerMarketSheet = ({ market, onClose, onDirections }) => {
           <div className="space-y-5">
             <div className="p-5 rounded-[28px] bg-gradient-to-br from-[#FFF1F8] to-[#FFE3F2] border border-[#FFD0E8]">
               <div className="flex items-center gap-2 mb-3">
-                <Flower2 size={16} className="text-[#FF2FA3]" />
+                <FlowerPetalIcon size={16} color="#FF2FA3" />
                 <span className="text-[12px] font-black text-[#FF2FA3]">꽃 도매/소매 복합 시장</span>
               </div>
               <p className="text-[15px] font-bold text-gray-900 leading-relaxed">

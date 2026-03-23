@@ -61,8 +61,10 @@ const Main = () => {
   const [isYangjaeFlowerMarketSelected, setIsYangjaeFlowerMarketSelected] = useState(false);
   const [isFlowerMarketSheetOpen, setIsFlowerMarketSheetOpen] = useState(false);
   const [selectedSubwayArrivals, setSelectedSubwayArrivals] = useState(null);
+  const [selectedBusStop, setSelectedBusStop] = useState(null);
   const [subwayFetchTime, setSubwayFetchTime] = useState(null);
   const seoulStationCoords = { lat: 37.554648, lng: 126.972559 };
+  const haanBusStopCoords = { lat: 37.4675333, lng: 126.8756167 };
   const yangjaeFlowerMarketCoords = { lat: 37.467715, lng: 127.039455 };
   const yangjaeFlowerMarketName = '양재동 화훼공판장';
   const yangjaeFlowerMarketInfo = {
@@ -160,6 +162,52 @@ const Main = () => {
     window.addEventListener('pagehide', clearFallback, { once: true });
     window.addEventListener('blur', clearFallback, { once: true });
     window.location.href = tmapUrl;
+  };
+
+  const fetchBusStopArrival = async (force = false) => {
+    setSelectedBusStop((prev) => ({
+      ...(prev || {
+        station: {
+          id: 213000090,
+          mobileNo: '14156',
+          name: '하안주공2.9단지',
+          regionName: '광명',
+          x: haanBusStopCoords.lng,
+          y: haanBusStopCoords.lat
+        },
+        arrivals: []
+      }),
+      loading: true,
+      error: null,
+      message: null
+    }));
+
+    try {
+      const response = await fetch(`/api/bus?station=14156${force ? '&force=1' : ''}`);
+      const data = await response.json();
+
+      setSelectedBusStop({
+        ...data,
+        loading: false
+      });
+    } catch (error) {
+      setSelectedBusStop((prev) => ({
+        ...(prev || {
+          station: {
+            id: 213000090,
+            mobileNo: '14156',
+            name: '하안주공2.9단지',
+            regionName: '광명',
+            x: haanBusStopCoords.lng,
+            y: haanBusStopCoords.lat
+          },
+          arrivals: []
+        }),
+        loading: false,
+        error: '버스 API 오류',
+        message: error.message
+      }));
+    }
   };
 
   const fetchMemos = async () => {
@@ -579,6 +627,7 @@ const Main = () => {
             setSelectedStarbucksId(null);
             setSelectedMemoId(null);
             setSelectedSubwayArrivals(null);
+            setSelectedBusStop(null);
 
             if (mapLevel >= 6) {
               focusSeoulStationAtDefaultZoom();
@@ -602,9 +651,32 @@ const Main = () => {
             setSelectedStarbucksId(null);
             setSelectedMemoId(null);
             setSelectedSubwayArrivals(null);
+            setSelectedBusStop(null);
             setIsYangjaeFlowerMarketSelected(false);
             setIsFlowerMarketSheetOpen(true);
             panToWithOffset(yangjaeFlowerMarketCoords.lat, yangjaeFlowerMarketCoords.lng);
+          }}
+          zIndex={100}
+        />
+
+        <MapMarker
+          position={haanBusStopCoords}
+          image={{
+            src:
+              'data:image/svg+xml;base64,' +
+              btoa(
+                `<svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="14" cy="14" r="12" fill="#F97316" stroke="white" stroke-width="2.5"/><path d="M9.5 10.5C9.5 9.11929 10.6193 8 12 8H16C17.3807 8 18.5 9.11929 18.5 10.5V17.5C18.5 18.8807 17.3807 20 16 20H12C10.6193 20 9.5 18.8807 9.5 17.5V10.5Z" fill="white"/><path d="M11.5 11.5H16.5V14.5H11.5V11.5Z" fill="#F97316"/><circle cx="12.25" cy="18.2" r="1" fill="#F97316"/><circle cx="15.75" cy="18.2" r="1" fill="#F97316"/></svg>`
+              ),
+            size: { width: 28, height: 28 },
+            offset: { x: 14, y: 14 }
+          }}
+          onClick={() => {
+            setSelectedStarbucksId(null);
+            setSelectedMemoId(null);
+            setSelectedSubwayArrivals(null);
+            setIsFlowerMarketSheetOpen(false);
+            panToWithOffset(haanBusStopCoords.lat, haanBusStopCoords.lng);
+            fetchBusStopArrival();
           }}
           zIndex={100}
         />
@@ -616,6 +688,7 @@ const Main = () => {
               onClick={() => { 
                 panToWithOffset(place.lat, place.lng);
                 setSelectedSubwayArrivals(null);
+                setSelectedBusStop(null);
                 setIsYangjaeFlowerMarketSelected(false);
                 setIsFlowerMarketSheetOpen(false);
                 setSelectedStarbucksId(selectedStarbucksId === place.id ? null : place.id); 
@@ -758,7 +831,7 @@ const Main = () => {
       <Sidebar 
         memo={memos.find(m => m.id === selectedMemoId)} 
         replies={memos.filter(m => m.parent_id === selectedMemoId)} 
-        onClose={() => { setSelectedMemoId(null); setSelectedSubwayArrivals(null); setSelectedStarbucksId(null); setIsYangjaeFlowerMarketSelected(false); setIsFlowerMarketSheetOpen(false); }} 
+        onClose={() => { setSelectedMemoId(null); setSelectedSubwayArrivals(null); setSelectedBusStop(null); setSelectedStarbucksId(null); setIsYangjaeFlowerMarketSelected(false); setIsFlowerMarketSheetOpen(false); }} 
         onDelete={handleDeleteMemo} 
         onReplySubmit={handleReplySubmit} 
         onPop={handlePopBubble} 
@@ -768,6 +841,8 @@ const Main = () => {
         subwayArrivals={selectedSubwayArrivals}
         subwayFetchTime={subwayFetchTime}
         onTimetableTabChange={fetchSubwayTimetable}
+        busStop={selectedBusStop}
+        onBusRefresh={fetchBusStopArrival}
         starbucks={null}
       />
 
