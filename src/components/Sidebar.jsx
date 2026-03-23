@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence, useMotionValue, animate } from 'framer-motion';
-import { X, MessageSquare, Send, Coffee, MapPin, ChevronRight, Info, RefreshCw } from 'lucide-react';
+import { X, MessageSquare, Send, Coffee, MapPin, ChevronRight, Info, RefreshCw, Copy, Check } from 'lucide-react';
 
 const Sidebar = ({
   memo,
@@ -18,6 +18,7 @@ const Sidebar = ({
   onBusRefresh
 }) => {
   const [timeLeft, setTimeLeft] = useState('');
+  const [copiedCoords, setCopiedCoords] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [windowHeight, setWindowHeight] = useState(window.innerHeight);
   const sheetHeight = useMotionValue(0);
@@ -125,6 +126,17 @@ const Sidebar = ({
       return () => clearInterval(timer);
     }, [memo.popped_at]);
 
+    const coordsText = `${Number(memo.lat).toFixed(6)}, ${Number(memo.lng).toFixed(6)}`;
+    const handleCopyCoords = async () => {
+      try {
+        await navigator.clipboard.writeText(coordsText);
+        setCopiedCoords(true);
+        window.setTimeout(() => setCopiedCoords(false), 1500);
+      } catch (error) {
+        console.error('Failed to copy coordinates:', error);
+      }
+    };
+
     return (
       <div className="space-y-6 category-babble animate-fade-in">
         <div className="flex items-start justify-between">
@@ -175,6 +187,15 @@ const Sidebar = ({
           <span className="flex items-center gap-1.5 text-gray-400">
             <MessageSquare size={12} strokeWidth={2.5} /> 댓글 {replies.length}
           </span>
+          <button
+            type="button"
+            onClick={handleCopyCoords}
+            className="ml-auto flex items-center gap-1.5 text-gray-400 hover:text-gray-700 transition-colors"
+            title="좌표 복사"
+          >
+            {copiedCoords ? <Check size={12} strokeWidth={2.5} /> : <Copy size={12} strokeWidth={2.5} />}
+            <span>{coordsText}</span>
+          </button>
         </div>
 
         {sortedReplies.length > 0 && (
@@ -766,7 +787,7 @@ const Sidebar = ({
           <div className="min-w-0 flex items-start gap-3">
             <div className="w-12 h-12 rounded-2xl bg-[#F97316] text-white shadow-lg shadow-orange-200 flex flex-col items-center justify-center leading-none">
               <span className="text-[10px] font-black tracking-tight">BUS</span>
-              <span className="mt-1 text-[8px] font-bold text-orange-100">14156</span>
+              <span className="mt-1 text-[8px] font-bold text-orange-100">{station?.mobileNo || '-'}</span>
             </div>
             <div className="min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
