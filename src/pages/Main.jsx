@@ -106,6 +106,7 @@ const Main = () => {
   const [selectedMemoId, setSelectedMemoId] = useState(null); // LNB???쒖떆??硫붾え ID
   const [writingMemoCoords, setWritingMemoCoords] = useState(null); // 硫붾え ?묒꽦 以묒씤 醫뚰몴
   const [newMemoText, setNewMemoText] = useState(''); // ??硫붾え ?낅젰 ?띿뒪??
+  const [memoComposerKeyboardInset, setMemoComposerKeyboardInset] = useState(0);
 
   const [isSubmittingMemo, setIsSubmittingMemo] = useState(false);
   const [starbucksPlaces, setStarbucksPlaces] = useState(starbucksReserveStores);
@@ -511,6 +512,38 @@ const Main = () => {
     }
     fetchMemos();
   }, []);
+
+  useEffect(() => {
+    if (!writingMemoCoords) {
+      setMemoComposerKeyboardInset(0);
+      return;
+    }
+
+    const updateViewportInset = () => {
+      if (!window.visualViewport) {
+        setMemoComposerKeyboardInset(0);
+        return;
+      }
+
+      const inset = Math.max(
+        0,
+        window.innerHeight - window.visualViewport.height - window.visualViewport.offsetTop
+      );
+      setMemoComposerKeyboardInset(inset);
+    };
+
+    updateViewportInset();
+
+    if (!window.visualViewport) return undefined;
+
+    window.visualViewport.addEventListener('resize', updateViewportInset);
+    window.visualViewport.addEventListener('scroll', updateViewportInset);
+
+    return () => {
+      window.visualViewport.removeEventListener('resize', updateViewportInset);
+      window.visualViewport.removeEventListener('scroll', updateViewportInset);
+    };
+  }, [writingMemoCoords]);
 
   useEffect(() => {
     const reaper = setInterval(async () => {
@@ -1200,12 +1233,18 @@ const Main = () => {
 
       <AnimatePresence>
         {writingMemoCoords && (
-          <div className="fixed inset-0 z-[70] flex items-center justify-center px-4 pointer-events-none">
+          <div
+            className="fixed inset-0 z-[10010] flex items-end justify-center px-4 pt-6 pb-6 pointer-events-none md:items-center"
+            style={{
+              paddingBottom:
+                memoComposerKeyboardInset > 0 ? `${memoComposerKeyboardInset + 16}px` : undefined
+            }}
+          >
             <motion.div
               initial={{ opacity: 0, y: 24, scale: 0.94 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="w-full max-w-[400px] bg-white rounded-[32px] p-8 shadow-[0_30px_60px_rgba(255,77,0,0.15)] pointer-events-auto border border-white"
+              className="w-full max-w-[400px] bg-white rounded-[32px] p-8 shadow-[0_30px_60px_rgba(255,77,0,0.15)] pointer-events-auto border border-white max-h-[calc(100dvh-2rem)] overflow-y-auto md:max-h-none"
             >
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-[18px] font-black text-gray-900 tracking-tight">여기에 바블 남기기</h3>
@@ -1292,7 +1331,7 @@ const Main = () => {
         <Footer />
       </div>
 
-      {!isIntroVisible && (
+      {!isIntroVisible && !writingMemoCoords && (
       <div className="fixed bottom-10 right-8 z-[9999] pointer-events-none">
         <div className="flex flex-col items-end gap-2 pointer-events-auto">
           <AnimatePresence>

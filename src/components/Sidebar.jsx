@@ -21,12 +21,14 @@ const Sidebar = ({
   const [timeLeft, setTimeLeft] = useState('');
   const [copiedCoords, setCopiedCoords] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
-  const [windowHeight, setWindowHeight] = useState(window.innerHeight);
+  const getViewportHeight = () => window.visualViewport?.height || window.innerHeight;
+  const [windowHeight, setWindowHeight] = useState(getViewportHeight());
   const sheetHeight = useMotionValue(0);
   const contentRef = useRef(null);
   const isTransitOnlyView = (!!subwayArrivals || !!busStop) && !memo && !starbucks && !currentLocationInfo;
   const isSubwayOnlyView = !!subwayArrivals && !busStop && !memo && !starbucks && !currentLocationInfo;
   const wasOpenRef = useRef(false);
+  const viewportWidthRef = useRef(window.innerWidth);
 
   useEffect(() => {
     if (contentRef.current) {
@@ -36,12 +38,28 @@ const Sidebar = ({
 
   useEffect(() => {
     const handleResize = () => {
-      setIsMobile(window.innerWidth < 768);
-      setWindowHeight(window.innerHeight);
+      const nextWidth = window.innerWidth;
+      const nextHeight = getViewportHeight();
+      const widthDelta = Math.abs(nextWidth - viewportWidthRef.current);
+
+      viewportWidthRef.current = nextWidth;
+      setIsMobile(nextWidth < 768);
+      setWindowHeight((prevHeight) => {
+        if (widthDelta > 120) {
+          return nextHeight;
+        }
+
+        return Math.max(prevHeight, nextHeight);
+      });
     };
 
     window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    window.visualViewport?.addEventListener('resize', handleResize);
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      window.visualViewport?.removeEventListener('resize', handleResize);
+    };
   }, []);
 
   useEffect(() => {
@@ -1126,7 +1144,6 @@ const Sidebar = ({
 };
 
 export default Sidebar;
-
 
 
 
