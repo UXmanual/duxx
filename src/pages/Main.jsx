@@ -25,18 +25,70 @@ const formatDateTime = (dateString) => {
   return `${yyyy}.${mm}.${dd} ${hh}:${min}`;
 };
 
+const toRadians = (value) => (value * Math.PI) / 180;
+
+const calculateDistanceMeters = (from, to) => {
+  if (!from || !to) return Number.POSITIVE_INFINITY;
+
+  const earthRadius = 6371000;
+  const dLat = toRadians(to.lat - from.lat);
+  const dLng = toRadians(to.lng - from.lng);
+  const lat1 = toRadians(from.lat);
+  const lat2 = toRadians(to.lat);
+
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2;
+
+  return Math.round(earthRadius * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
+};
+
 /**
- * [Page] 메인 페이지 (지도 메모 기능 통합 버전)
+ * [Page] 硫붿씤 ?섏씠吏 (吏??硫붾え 湲곕뒫 ?듯빀 踰꾩쟾)
  * @version 43.3
  * @description 
- * - 지하철 도착 정보 정렬 로직 강화 및 이번열차/다음열차 구분 (v41.1)
- * - 커스텀 메모 폼 복구 및 사이드바 노출 정상화 (v36.7)
+ * - 吏?섏쿋 ?꾩갑 ?뺣낫 ?뺣젹 濡쒖쭅 媛뺥솕 諛??대쾲?댁감/?ㅼ쓬?댁감 援щ텇 (v41.1)
+ * - 而ㅼ뒪? 硫붾え ??蹂듦뎄 諛??ъ씠?쒕컮 ?몄텧 ?뺤긽??(v36.7)
  */
 
-// 닉네임 조합용 상수
-const PERSONALITIES = ["친절한", "배고픈", "심심한", "행복한", "궁금한", "신난", "차분한", "활발한", "꿈꾸는", "조용한", "똑똑한", "멋진", "귀여운", "용감한", "미스테리한", "발랄한"];
-const SUFFIXES = ["바블러", "바블리", "바블몬", "바블링", "바블러브", "바블맨", "바블걸", "바블키즈", "바블마스터"];
-const OLD_NEIGHBORHOODS = ["바블동네", "비밀동네", "우리동네", "이웃동네", "정겨운동네", "신비로운동네"];
+// ?됰꽕??議고빀???곸닔
+const PERSONALITIES = [
+  '\uCE5C\uC808\uD55C',
+  '\uBC18\uAC00\uC6B4',
+  '\uC218\uB2E4\uC2A4\uB7EC\uC6B4',
+  '\uD589\uBCF5\uD55C',
+  '\uAD81\uAE08\uD55C',
+  '\uC194\uC9C1\uD55C',
+  '\uCC28\uBD84\uD55C',
+  '\uD65C\uBC1C\uD55C',
+  '\uC6A9\uAC10\uD55C',
+  '\uC870\uC6A9\uD55C',
+  '\uC124\uB808\uB294',
+  '\uBA4B\uC9C4',
+  '\uADC0\uC5EC\uC6B4',
+  '\uC720\uCF8C\uD55C',
+  '\uC2E0\uAE30\uD55C',
+  '\uBC1C\uB784\uD55C'
+];
+const SUFFIXES = [
+  '\uBC14\uBE14',
+  '\uBC14\uBE14\uB7EC',
+  '\uBC14\uBE14\uB9C1',
+  '\uBC14\uBE14\uBAA8\uC5B8',
+  '\uBC14\uBE14\uD53C\uD50C',
+  '\uBC14\uBE14\uD504\uB80C\uC988',
+  '\uBC14\uBE14\uD06C\uB8E8',
+  '\uBC14\uBE14\uD329\uD1A0\uB9AC',
+  '\uBC14\uBE14\uB77C\uC6B4\uC9C0'
+];
+const OLD_NEIGHBORHOODS = [
+  '\uBC14\uBE14\uB3D9\uB124',
+  '\uBE44\uBC00\uB3D9\uB124',
+  '\uC6B0\uB9AC\uB3D9\uB124',
+  '\uC774\uC6C3\uB3D9\uB124',
+  '\uC815\uACA8\uC6B4\uB3D9\uB124',
+  '\uC2E0\uBE44\uB85C\uC6B4\uB3D9\uB124'
+];
 
 const Main = () => {
   const { isDark } = useTheme();
@@ -44,17 +96,18 @@ const Main = () => {
   const [mapLevel, setMapLevel] = useState(4);
   const [myLocation, setMyLocation] = useState(null);
   
-  // 메모 관련 상태
+  // 硫붾え 愿???곹깭
   const [memos, setMemos] = useState([]);
   const [isMemoMode, setIsMemoMode] = useState(false);
   const [expandedGroupIds, setExpandedGroupIds] = useState([]); 
-  const [showReplyIds, setShowReplyIds] = useState([]); // 답글 펼침 상태 관리
-  const [replyTargetId, setReplyTargetId] = useState(null); // 답글 작성 중인 메모 ID
-  const [replyText, setReplyText] = useState(''); // 답글 입력 텍스트
-  const [selectedMemoId, setSelectedMemoId] = useState(null); // LNB에 표시할 메모 ID
-  const [writingMemoCoords, setWritingMemoCoords] = useState(null); // 메모 작성 중인 좌표
-  const [newMemoText, setNewMemoText] = useState(''); // 새 메모 입력 텍스트
+  const [showReplyIds, setShowReplyIds] = useState([]); // ?듦? ?쇱묠 ?곹깭 愿由?
+  const [replyTargetId, setReplyTargetId] = useState(null); // ?듦? ?묒꽦 以묒씤 硫붾え ID
+  const [replyText, setReplyText] = useState(''); // ?듦? ?낅젰 ?띿뒪??
+  const [selectedMemoId, setSelectedMemoId] = useState(null); // LNB???쒖떆??硫붾え ID
+  const [writingMemoCoords, setWritingMemoCoords] = useState(null); // 硫붾え ?묒꽦 以묒씤 醫뚰몴
+  const [newMemoText, setNewMemoText] = useState(''); // ??硫붾え ?낅젰 ?띿뒪??
 
+  const [isSubmittingMemo, setIsSubmittingMemo] = useState(false);
   const [starbucksPlaces, setStarbucksPlaces] = useState(starbucksReserveStores);
   const [isStarbucksVisible, setIsStarbucksVisible] = useState(true);
   const [selectedStarbucksId, setSelectedStarbucksId] = useState(null);
@@ -62,8 +115,11 @@ const Main = () => {
   const [isFlowerMarketSheetOpen, setIsFlowerMarketSheetOpen] = useState(false);
   const [selectedSubwayArrivals, setSelectedSubwayArrivals] = useState(null);
   const [selectedBusStop, setSelectedBusStop] = useState(null);
+  const [selectedCurrentLocationInfo, setSelectedCurrentLocationInfo] = useState(null);
   const [activeBusStopConfig, setActiveBusStopConfig] = useState(null);
   const [subwayFetchTime, setSubwayFetchTime] = useState(null);
+  const busRequestIdRef = useRef(0);
+  const currentLocationRequestIdRef = useRef(0);
   const seoulStationCoords = { lat: 37.554648, lng: 126.972559 };
   const gyeonggiBusStop = {
     provider: 'gyeonggi',
@@ -72,8 +128,8 @@ const Main = () => {
     fallbackStation: {
       id: 213000090,
       mobileNo: '14156',
-      name: '하안주공2.9단지',
-      regionName: '광명'
+      name: '\uD558\uC548\uC8FC\uACF52.9\uB2E8\uC9C0\uC55E',
+      regionName: '\uAD11\uBA85'
     }
   };
   const seoulBusStop = {
@@ -81,45 +137,59 @@ const Main = () => {
     stationNumber: '18-643',
     coords: { lat: 37.466408, lng: 126.887668 },
     fallbackStation: {
-      id: '18643',
+      id: '117000181',
       mobileNo: '18-643',
-      name: '독산역앞',
-      regionName: '서울'
+      name: '\uB3C5\uC0B0\uC5ED2\uBC88\uCD9C\uAD6C',
+      regionName: '\uC11C\uC6B8'
     }
   };
   const haanBusStopCoords = gyeonggiBusStop.coords;
+  const citizenGymBusStop = {
+    provider: 'gyeonggi',
+    stationNumber: '14141',
+    coords: { lat: 37.463746, lng: 126.871174 },
+    fallbackStation: {
+      id: 213000119,
+      mobileNo: '14141',
+      name: '\uAD11\uBA85\uC2DC\uBBFC\uCCB4\uC721\uAD00',
+      regionName: '\uAD11\uBA85'
+    }
+  };
   const yangjaeFlowerMarketCoords = { lat: 37.467715, lng: 127.039455 };
-  const yangjaeFlowerMarketName = '양재동 화훼공판장';
+  const yangjaeFlowerMarketName = '\uC591\uC7AC\uAF43\uC2DC\uC7A5';
   const yangjaeFlowerMarketInfo = {
     name: yangjaeFlowerMarketName,
-    address: '서울 서초구 강남대로 27 aT센터 화훼공판장',
+    address: '\uC11C\uC6B8 \uC11C\uCD08\uAD6C \uAC15\uB0A8\uB300\uB85C 27 aT\uC13C\uD130 \uD654\uD6FC\uACF5\uD310\uC7A5',
     access: [
-      '신분당선 양재시민의숲(매헌)역 4번 출구',
-      '버스 이용 시 AT센터 정류장 하차 후 도보 이동'
+      '\uC2E0\uBD84\uB2F9\uC120 \uC591\uC7AC\uC2DC\uBBFC\uC758\uC232\uC5ED 4\uBC88 \uCD9C\uAD6C\uC5D0\uC11C \uB3C4\uBCF4\uB85C \uC774\uB3D9\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4.',
+      'aT\uC13C\uD130 \uD654\uD6FC\uACF5\uD310\uC7A5 \uBC29\uD5A5\uC73C\uB85C \uC9C4\uC785\uD558\uBA74 \uB429\uB2C8\uB2E4.'
     ],
     hours: [
-      '부자재점(2층): 01:00~15:00',
-      '분화온실: 07:00~19:00',
-      '화환점포: 06:00~20:00',
-      '기타점포: 07:00~19:00'
+      '\uC808\uD654 \uB9E4\uC7A5: 01:00~15:00',
+      '\uB09C \uB9E4\uC7A5: 07:00~19:00',
+      '\uAD00\uC5FD \uB9E4\uC7A5: 06:00~20:00',
+      '\uC18C\uB9E4 \uB9E4\uC7A5: 07:00~19:00'
     ],
     phone: '02-579-3417',
     amenities: [
-      '점포/동별 운영 시간이 달라 방문 전 확인 권장',
-      '후문(남문) 개방시간: 01:00~20:00'
+      '\uB9E4\uC7A5\uBCC4 \uC6B4\uC601 \uC2DC\uAC04\uC774 \uC870\uAE08\uC529 \uB2E4\uB97C \uC218 \uC788\uC2B5\uB2C8\uB2E4.',
+      '\uC77C\uBD80 \uC810\uD3EC\uB294 \uC0C8\uBCBD \uC2DC\uAC04\uB300\uC5D0 \uC6B4\uC601\uC744 \uC2DC\uC791\uD569\uB2C8\uB2E4.'
     ]
   };
 
-  // 초기 위치 로딩 최적화 상태
+  // 珥덇린 ?꾩튂 濡쒕뵫 理쒖쟻???곹깭
   const [isLocationLoaded, setIsLocationLoaded] = useState(false);
   const [initialCenter, setInitialCenter] = useState({ lat: 37.5665, lng: 126.9780 });
+  const [hasIntroElapsed, setHasIntroElapsed] = useState(false);
+  const [isIntroVisible, setIsIntroVisible] = useState(true);
+  const [isIntroExiting, setIsIntroExiting] = useState(false);
 
   const [loading, error] = useKakaoLoader({
     appkey: import.meta.env.VITE_KAKAO_MAPS_API_KEY,
     libraries: ['services', 'clusterer', 'drawing'],
   });
 
-  // 루트 메모 리스트 (터진 바블 30분 유지)
+  // 猷⑦듃 硫붾え 由ъ뒪??(?곗쭊 諛붾툝 30遺??좎?)
   const rootMemos = useMemo(() => {
     const now = new Date();
     return memos.filter(m => {
@@ -133,7 +203,7 @@ const Main = () => {
     });
   }, [memos]);
 
-  // 부드러운 오프셋 센터링을 위한 헬퍼 함수
+  // 遺?쒕윭???ㅽ봽???쇳꽣留곸쓣 ?꾪븳 ?ы띁 ?⑥닔
   const panToWithOffset = (lat, lng) => {
     if (!map) return;
     const latlng = new window.kakao.maps.LatLng(lat, lng);
@@ -160,6 +230,15 @@ const Main = () => {
     }, 180);
   };
 
+  const focusBusStopAtDefaultZoom = (stopConfig) => {
+    if (!map) return;
+
+    map.setLevel(4);
+    window.setTimeout(() => {
+      panToWithOffset(stopConfig.coords.lat, stopConfig.coords.lng);
+    }, 180);
+  };
+
   const openYangjaeFlowerMarketDirections = () => {
     const encodedName = encodeURIComponent(yangjaeFlowerMarketName);
     const tmapUrl = `tmap://search?name=${encodedName}`;
@@ -168,7 +247,7 @@ const Main = () => {
     const isIOS = /iPhone|iPad|iPod/i.test(userAgent);
 
     if (!isAndroid && !isIOS) {
-      alert('모바일 기기에서 티맵 길찾기를 열 수 있습니다.');
+      alert('紐⑤컮??湲곌린?먯꽌 ?곕㏊ 湲몄갼湲곕? ?????덉뒿?덈떎.');
       return;
     }
 
@@ -187,22 +266,162 @@ const Main = () => {
     window.location.href = tmapUrl;
   };
 
+  const reverseGeocodeLocation = async (coords) => {
+    if (!window.kakao?.maps?.services?.Geocoder || !coords) {
+      return {
+        primary: '\uD604\uC7AC \uC704\uCE58',
+        secondary: '\uC8FC\uC18C \uC815\uBCF4\uB97C \uD655\uC778\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4.'
+      };
+    }
+
+    return new Promise((resolve) => {
+      const geocoder = new window.kakao.maps.services.Geocoder();
+      geocoder.coord2Address(coords.lng, coords.lat, (result, status) => {
+        if (status !== window.kakao.maps.services.Status.OK || !result?.[0]) {
+          resolve({
+            primary: '\uD604\uC7AC \uC704\uCE58',
+            secondary: '\uC8FC\uC18C \uC815\uBCF4\uB97C \uD655\uC778\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4.'
+          });
+          return;
+        }
+
+        const roadAddress = result[0].road_address?.address_name || '';
+        const jibunAddress = result[0].address?.address_name || '';
+
+        resolve({
+          primary: roadAddress || jibunAddress || '\uD604\uC7AC \uC704\uCE58',
+          secondary:
+            roadAddress && jibunAddress && roadAddress !== jibunAddress
+              ? jibunAddress
+              : roadAddress
+                ? '\uC9C0\uBC88 \uC8FC\uC18C'
+                : '\uC8FC\uC18C \uC815\uBCF4\uB97C \uD655\uC778 \uC911'
+        });
+      });
+    });
+  };
+
+  const openCurrentLocationInfo = async () => {
+    if (!myLocation) return;
+
+    const requestId = ++currentLocationRequestIdRef.current;
+    const nearbyRadiusMeters = 1200;
+    const fallbackAddress = {
+      primary: '\uD604\uC7AC \uC704\uCE58',
+      secondary: '\uC8FC\uC18C \uC815\uBCF4\uB97C \uBD88\uB7EC\uC624\uB294 \uC911'
+    };
+
+    setSelectedMemoId(null);
+    setSelectedStarbucksId(null);
+    setSelectedSubwayArrivals(null);
+    setSelectedBusStop(null);
+    setIsYangjaeFlowerMarketSelected(false);
+    setIsFlowerMarketSheetOpen(false);
+
+    panToWithOffset(myLocation.lat, myLocation.lng);
+
+    setSelectedCurrentLocationInfo({
+      title: '\uB0B4 \uC8FC\uBCC0 \uC815\uBCF4',
+      coords: myLocation,
+      fetchedAt: formatDateTime(new Date().toISOString()),
+      addressPrimary: fallbackAddress.primary,
+      addressSecondary: fallbackAddress.secondary,
+      nearbyRadiusMeters,
+      nearbyMemoCount: 0,
+      nearestMemo: null,
+      nearestStarbucks: null,
+      nearestBusStop: null,
+      nearbyPlaces: [],
+      nearbyPlacesError: null,
+      loading: true
+    });
+
+    const memoEntries = rootMemos
+      .map((item) => ({
+        id: item.id,
+        nickname: item.nickname,
+        text: item.text,
+        distanceMeters: calculateDistanceMeters(myLocation, { lat: item.lat, lng: item.lng })
+      }))
+      .filter((item) => Number.isFinite(item.distanceMeters))
+      .sort((a, b) => a.distanceMeters - b.distanceMeters);
+
+    const starbucksEntries = starbucksPlaces
+      .map((place) => ({
+        id: place.id,
+        name: place.name,
+        address: place.address,
+        distanceMeters: calculateDistanceMeters(myLocation, { lat: place.lat, lng: place.lng })
+      }))
+      .filter((item) => Number.isFinite(item.distanceMeters))
+      .sort((a, b) => a.distanceMeters - b.distanceMeters);
+
+    const busStopEntries = [
+      { id: 'gyeonggi-bus-stop', name: '\uD558\uC548\uC8FC\uACF52.9\uB2E8\uC9C0\uC55E', mobileNo: '14156', coords: gyeonggiBusStop.coords },
+      { id: 'gyeonggi-bus-stop-citizen-gym', name: '\uAD11\uBA85\uC2DC\uBBFC\uCCB4\uC721\uAD00', mobileNo: '14141', coords: citizenGymBusStop.coords },
+      { id: 'seoul-bus-stop', name: '\uB3C5\uC0B0\uC5ED2\uBC88\uCD9C\uAD6C', mobileNo: '18-643', coords: seoulBusStop.coords }
+    ]
+      .map((item) => ({
+        ...item,
+        distanceMeters: calculateDistanceMeters(myLocation, item.coords)
+      }))
+      .sort((a, b) => a.distanceMeters - b.distanceMeters);
+
+    let nearbyPlaces = [];
+    let nearbyPlacesError = null;
+
+    try {
+      const nearbyResponse = await fetch(
+        "/api/nearby?lat=" + encodeURIComponent(myLocation.lat) +
+        "&lng=" + encodeURIComponent(myLocation.lng) +
+        "&radius=" + nearbyRadiusMeters +
+        "&size=5"
+      );
+      const nearbyPayload = await nearbyResponse.text();
+      const nearbyData = JSON.parse(nearbyPayload);
+
+      if (!nearbyResponse.ok || nearbyData.error) throw new Error(nearbyData.message || nearbyData.error || 'Failed to load nearby places');
+
+      nearbyPlaces = Array.isArray(nearbyData.places) ? nearbyData.places : [];
+    } catch (error) {
+      nearbyPlacesError = error.message || '\uC8FC\uBCC0 \uBA85\uC18C \uC815\uBCF4\uB97C \uBD88\uB7EC\uC624\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4.';
+    }
+
+    const address = await reverseGeocodeLocation(myLocation);
+
+    if (requestId !== currentLocationRequestIdRef.current) return;
+
+    setSelectedCurrentLocationInfo({
+      title: '\uB0B4 \uC8FC\uBCC0 \uC815\uBCF4',
+      coords: myLocation,
+      fetchedAt: formatDateTime(new Date().toISOString()),
+      addressPrimary: address.primary,
+      addressSecondary: address.secondary,
+      nearbyRadiusMeters,
+      nearbyMemoCount: memoEntries.filter((item) => item.distanceMeters <= nearbyRadiusMeters).length,
+      nearestMemo: memoEntries[0] || null,
+      nearestStarbucks: starbucksEntries[0] || null,
+      nearestBusStop: busStopEntries[0] || null,
+      nearbyPlaces,
+      nearbyPlacesError,
+      loading: false
+    });
+  };
   const fetchBusStopArrival = async (force = false, stopConfig = activeBusStopConfig || gyeonggiBusStop) => {
+    const requestId = ++busRequestIdRef.current;
     setActiveBusStopConfig(stopConfig);
-    setSelectedBusStop((prev) => ({
-      ...(prev || {
-        station: {
-          ...stopConfig.fallbackStation,
-          x: stopConfig.coords.lng,
-          y: stopConfig.coords.lat,
-          provider: stopConfig.provider
-        },
-        arrivals: []
-      }),
+    setSelectedBusStop({
+      station: {
+        ...stopConfig.fallbackStation,
+        x: stopConfig.coords.lng,
+        y: stopConfig.coords.lat,
+        provider: stopConfig.provider
+      },
+      arrivals: [],
       loading: true,
       error: null,
       message: null
-    }));
+    });
 
     try {
       const response = await fetch(
@@ -210,27 +429,36 @@ const Main = () => {
           force ? '&force=1' : ''
         }`
       );
-      const data = await response.json();
+      const payload = await response.text();
+      let data;
+
+      try {
+        data = JSON.parse(payload);
+      } catch {
+        throw new Error(payload || 'Invalid bus API response');
+      }
+
+      if (requestId !== busRequestIdRef.current) return;
 
       setSelectedBusStop({
         ...data,
         loading: false
       });
     } catch (error) {
-      setSelectedBusStop((prev) => ({
-        ...(prev || {
-          station: {
-            ...stopConfig.fallbackStation,
-            x: stopConfig.coords.lng,
-            y: stopConfig.coords.lat,
-            provider: stopConfig.provider
-          },
-          arrivals: []
-        }),
+      if (requestId !== busRequestIdRef.current) return;
+
+      setSelectedBusStop({
+        station: {
+          ...stopConfig.fallbackStation,
+          x: stopConfig.coords.lng,
+          y: stopConfig.coords.lat,
+          provider: stopConfig.provider
+        },
+        arrivals: [],
         loading: false,
-        error: '버스 API 오류',
+        error: '踰꾩뒪 API ?ㅻ쪟',
         message: error.message
-      }));
+      });
     }
   };
 
@@ -257,6 +485,14 @@ const Main = () => {
       { enableHighAccuracy: true, timeout: 10000 }
     );
   };
+
+  useEffect(() => {
+    const introTimer = window.setTimeout(() => {
+      setHasIntroElapsed(true);
+    }, 2000);
+
+    return () => window.clearTimeout(introTimer);
+  }, []);
 
   useEffect(() => {
     if (navigator.geolocation) {
@@ -304,12 +540,32 @@ const Main = () => {
     if (map) fetchMemos();
   }, [map]);
 
-  // 지능형 줌 대응: 6레벨 이상일 때 지하철 바블 자동 닫기 (v40.2)
+  // 吏?ν삎 以???? 6?덈꺼 ?댁긽????吏?섏쿋 諛붾툝 ?먮룞 ?リ린 (v40.2)
   useEffect(() => {
     if (mapLevel >= 6 && selectedSubwayArrivals) {
       setSelectedSubwayArrivals(null);
     }
   }, [mapLevel, selectedSubwayArrivals]);
+
+  useEffect(() => {
+    if (!hasIntroElapsed || loading || !isLocationLoaded || isIntroExiting || !isIntroVisible) {
+      return;
+    }
+
+    setIsIntroExiting(true);
+  }, [hasIntroElapsed, loading, isLocationLoaded, isIntroExiting, isIntroVisible]);
+
+  useEffect(() => {
+    if (!isIntroExiting) {
+      return;
+    }
+
+    const exitTimer = window.setTimeout(() => {
+      setIsIntroVisible(false);
+    }, 600);
+
+    return () => window.clearTimeout(exitTimer);
+  }, [isIntroExiting]);
 
   const handleMyLocationBtn = (e) => {
     if (e) { e.preventDefault(); e.stopPropagation(); }
@@ -320,7 +576,7 @@ const Main = () => {
     if (!replyText.trim()) return;
     const parentMemo = memos.find(m => m.id === parentId);
     if (!parentMemo) return;
-    const neighborhood = parentMemo.nickname?.split(' ')[0] || "어딘가";
+    const neighborhood = parentMemo.nickname?.split(' ')[0] || '\uC5B4\uB518\uAC00';
     const p = PERSONALITIES[Math.floor(Math.random() * PERSONALITIES.length)];
     const s = SUFFIXES[Math.floor(Math.random() * SUFFIXES.length)];
     const nickname = `${neighborhood} ${p} ${s}`;
@@ -336,22 +592,22 @@ const Main = () => {
   };
 
   const triggerAIResponse = async (parentMemo) => {
-    // 1-3개의 답글 랜덤 결정
+    // 1-3媛쒖쓽 ?듦? ?쒕뜡 寃곗젙
     const replyCount = Math.floor(Math.random() * 3) + 1;
     
-    // 0-60초 사이의 랜덤 지연 시간들 생성
+    // 0-60珥??ъ씠???쒕뜡 吏???쒓컙???앹꽦
     for (let i = 0; i < replyCount; i++) {
       const delay = Math.floor(Math.random() * 60000);
       
       setTimeout(async () => {
-        // 1. 컨텍스트 분석 (시간대)
+        // 1. 而⑦뀓?ㅽ듃 遺꾩꽍 (?쒓컙?)
         const hour = new Date().getHours();
         let timeKey = 'night';
         if (hour >= 6 && hour < 11) timeKey = 'morning';
         else if (hour >= 11 && hour < 17) timeKey = 'afternoon';
         else if (hour >= 17 && hour < 22) timeKey = 'evening';
 
-        // 2. 컨텍스트 분석 (날씨) - Open-Meteo API 요청 (v38.1)
+        // 2. 而⑦뀓?ㅽ듃 遺꾩꽍 (?좎뵪) - Open-Meteo API ?붿껌 (v38.1)
         let weatherKey = 'sunny';
         try {
           const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${parentMemo.lat}&longitude=${parentMemo.lng}&current_weather=true`);
@@ -362,10 +618,10 @@ const Main = () => {
           else if ([1, 2, 3, 45, 48].includes(code)) weatherKey = 'cloudy';
         } catch (e) { console.warn('Weather fetch for AI failed:', e); }
 
-        // 3. 적절한 페르소나 선택
+        // 3. ?곸젅???섎Ⅴ?뚮굹 ?좏깮
         const persona = AI_PERSONAS[Math.floor(Math.random() * AI_PERSONAS.length)];
         
-        // 4. 스마트 답글 로직 (우선순위: 키워드 > 날씨 > 시간대 > 기본 스타일)
+        // 4. ?ㅻ쭏???듦? 濡쒖쭅 (?곗꽑?쒖쐞: ?ㅼ썙??> ?좎뵪 > ?쒓컙? > 湲곕낯 ?ㅽ???
         let replyContent = "";
         const userText = parentMemo.text || "";
         const matchedKeyword = Object.keys(persona.keywordMapper).find(key => userText.includes(key));
@@ -380,8 +636,8 @@ const Main = () => {
           replyContent = persona.styles[Math.floor(Math.random() * persona.styles.length)];
         }
 
-        // 5. 닉네임 생성
-        const neighborhood = parentMemo.nickname?.split(' ')[0] || "어딘가";
+        // 5. ?됰꽕???앹꽦
+        const neighborhood = parentMemo.nickname?.split(' ')[0] || '\uC5B4\uB518\uAC00';
         const nickname = `${neighborhood} ${persona.name} ${persona.emoji}`.trim();
         
         const newReply = { 
@@ -409,12 +665,12 @@ const Main = () => {
       lng: mouseEvent.latLng.getLng()
     });
   };
-  // [v45.7] 서울역 공식 시간표 데이터 가져오기 (백업 로직 완전 제거)
+  // [v45.7] ?쒖슱??怨듭떇 ?쒓컙???곗씠??媛?몄삤湲?(諛깆뾽 濡쒖쭅 ?꾩쟾 ?쒓굅)
   const fetchSubwayTimetable = async (dayType = "1", force = false) => {
     const CACHE_KEY = `subway_timetable_${dayType}`;
     const CACHE_DURATION = 30 * 24 * 60 * 60 * 1000; 
     
-    // 1. 캐시 확인
+    // 1. 罹먯떆 ?뺤씤
     if (!force) {
       const cached = localStorage.getItem(CACHE_KEY);
       if (cached) {
@@ -429,7 +685,7 @@ const Main = () => {
       }
     }
 
-    // 2. 오직 실시간 API 요청 (백업 데이터 없음)
+    // 2. ?ㅼ쭅 ?ㅼ떆媛?API ?붿껌 (諛깆뾽 ?곗씠???놁쓬)
     setSelectedSubwayArrivals((prev) => ({
       ...(prev || {}),
       type: prev?.type || 'timetable',
@@ -443,7 +699,7 @@ const Main = () => {
     }));
     
     try {
-      // 상행(1)과 하행(2) 데이터를 순차적으로 정확히 수집
+      // ?곹뻾(1)怨??섑뻾(2) ?곗씠?곕? ?쒖감?곸쑝濡??뺥솗???섏쭛
       const [upRes, downRes] = await Promise.all([
         fetch(`/api/subway?type=timetable&dayType=${dayType}&bound=1`),
         fetch(`/api/subway?type=timetable&dayType=${dayType}&bound=2`)
@@ -452,7 +708,7 @@ const Main = () => {
       const upData = await upRes.json();
       const downData = await downRes.json();
       
-      // API 응답 오류 체크 (v45.7)
+      // API ?묐떟 ?ㅻ쪟 泥댄겕 (v45.7)
       if (upData.error || downData.error) {
         setSelectedSubwayArrivals({ 
           error: upData.error || downData.error, 
@@ -466,11 +722,11 @@ const Main = () => {
       const upList = upData.SearchSTNTimeTableByIDService?.row || [];
       const downList = downData.SearchSTNTimeTableByIDService?.row || [];
 
-      // 데이터가 아예 없는 경우 에러 표시
+      // ?곗씠?곌? ?꾩삁 ?녿뒗 寃쎌슦 ?먮윭 ?쒖떆
       if (upList.length === 0 && downList.length === 0) {
         setSelectedSubwayArrivals({ 
-          error: "데이터 없음", 
-          message: "현재 서버로부터 수신된 시간표 정보가 없습니다. (인증 키 활성화 대기 중일 수 있습니다.)", 
+          error: "?곗씠???놁쓬", 
+          message: "?꾩옱 ?쒕쾭濡쒕????섏떊???쒓컙???뺣낫媛 ?놁뒿?덈떎. (?몄쬆 ???쒖꽦???湲?以묒씪 ???덉뒿?덈떎.)", 
           loading: false 
         });
         return;
@@ -488,53 +744,87 @@ const Main = () => {
       setSelectedSubwayArrivals({ ...timetableData, loading: false });
     } catch (e) {
       setSelectedSubwayArrivals({ 
-        error: "네트워크 오류", 
-        message: `서버 통신에 실패했습니다: ${e.message}`, 
+        error: "?ㅽ듃?뚰겕 ?ㅻ쪟", 
+        message: `?쒕쾭 ?듭떊???ㅽ뙣?덉뒿?덈떎: ${e.message}`, 
         loading: false 
       });
     }
   };
 
   const submitNewMemo = async () => {
-    if (!newMemoText.trim() || !writingMemoCoords) return;
-    
-    const geocoder = new window.kakao.maps.services.Geocoder();
-    geocoder.coord2RegionCode(writingMemoCoords.lng, writingMemoCoords.lat, async (result, status) => {
-      let neighborhood = "어딘가";
-      if (status === window.kakao.maps.services.Status.OK) {
-        const region = result.find(r => r.region_type === 'H') || result[0];
-        neighborhood = region ? region.region_3depth_name : "어딘가";
+    if (!newMemoText.trim() || !writingMemoCoords || isSubmittingMemo) return;
+
+    setIsSubmittingMemo(true);
+
+    const pendingText = newMemoText.trim();
+    const pendingCoords = writingMemoCoords;
+    const tempId = `temp-${Date.now()}`;
+    const fallbackNeighborhood = '\uC774 \uB3D9\uB124';
+    const fallbackNickname = `${fallbackNeighborhood} \uBC14\uBE14`;
+
+    setMemos((prev) => [
+      ...prev,
+      {
+        id: tempId,
+        lat: pendingCoords.lat,
+        lng: pendingCoords.lng,
+        text: pendingText,
+        nickname: fallbackNickname,
+        created_at: new Date().toISOString(),
+        popped_at: null,
+        parent_id: null,
+        is_new: true,
+        is_pending: true
       }
+    ]);
+
+    panToWithOffset(pendingCoords.lat, pendingCoords.lng);
+    setWritingMemoCoords(null);
+    setNewMemoText('');
+    setIsMemoMode(false);
+
+    const geocoder = new window.kakao.maps.services.Geocoder();
+    geocoder.coord2RegionCode(pendingCoords.lng, pendingCoords.lat, async (result, status) => {
+      let neighborhood = fallbackNeighborhood;
+      if (status === window.kakao.maps.services.Status.OK) {
+        const region = result.find((r) => r.region_type === 'H') || result[0];
+        neighborhood = region ? region.region_3depth_name : fallbackNeighborhood;
+      }
+
       const p = PERSONALITIES[Math.floor(Math.random() * PERSONALITIES.length)];
       const s = SUFFIXES[Math.floor(Math.random() * SUFFIXES.length)];
-      const nickname = `${neighborhood} ${p} ${s}`;
-      const newMemo = { lat: writingMemoCoords.lat, lng: writingMemoCoords.lng, text: newMemoText.trim(), nickname };
-      
+      const nickname = `${neighborhood} ${p}${s}`;
+      const newMemo = {
+        lat: pendingCoords.lat,
+        lng: pendingCoords.lng,
+        text: pendingText,
+        nickname
+      };
+
       try {
         const { data, error } = await supabase.from('memos').insert([newMemo]).select();
-        if (!error && data) {
+
+        if (!error && data?.[0]) {
           const createdMemo = { ...data[0], is_new: true };
-          setMemos(prev => [...prev, createdMemo]);
-          
-          // 새 바블 위치로 지도 중심 이동 (v38.6)
-          panToWithOffset(data[0].lat, data[0].lng);
-          
-          setWritingMemoCoords(null);
-          setNewMemoText('');
-          setIsMemoMode(false);
+          setMemos((prev) => prev.map((memo) => (memo.id === tempId ? createdMemo : memo)));
           triggerAIResponse(data[0]);
-          
-          // 2초 후 is_new 플래그 제거하여 애니메이션 종료
+
           setTimeout(() => {
-            setMemos(prev => prev.map(m => m.id === data[0].id ? { ...m, is_new: false } : m));
+            setMemos((prev) => prev.map((memo) => (memo.id === data[0].id ? { ...memo, is_new: false } : memo)));
           }, 2000);
+        } else {
+          setMemos((prev) => prev.filter((memo) => memo.id !== tempId));
         }
-      } catch (err) { console.error('Insert error:', err); }
+      } catch (err) {
+        setMemos((prev) => prev.filter((memo) => memo.id !== tempId));
+        console.error('Insert error:', err);
+      } finally {
+        setIsSubmittingMemo(false);
+      }
     });
   };
-
   const handleDeleteMemo = async (id) => {
-    if (confirm('이 메모를 삭제하시겠습니까?')) {
+    if (confirm('??硫붾え瑜???젣?섏떆寃좎뒿?덇퉴?')) {
       const { error } = await supabase.from('memos').delete().eq('id', id);
       if (!error) setMemos(prev => prev.filter(m => m.id !== id && m.parent_id !== id));
     }
@@ -591,10 +881,36 @@ const Main = () => {
     }, 1000);
   };
 
-  if (loading || !isLocationLoaded) {
+  const isMapReady = !loading && isLocationLoaded;
+  const introOverlay = isIntroVisible ? (
+    <motion.div
+      initial={{ opacity: 1 }}
+      animate={{ opacity: isIntroExiting ? 0 : 1 }}
+      transition={{ duration: 0.6, ease: 'easeOut' }}
+      className="pointer-events-none absolute inset-0 z-[2000] flex items-center justify-center bg-[#FF4D00]"
+    >
+      <motion.div
+        initial={{ scale: 1, y: 0, rotate: 0, opacity: 1, filter: 'blur(0px)' }}
+        animate={isIntroExiting
+          ? { scale: 1.9, y: 0, rotate: 0, opacity: 0, filter: 'blur(8px)' }
+          : { scale: 1, y: 0, rotate: 0, opacity: 1, filter: 'blur(0px)' }}
+        transition={isIntroExiting
+          ? { duration: 0.45, ease: [0.22, 1, 0.36, 1] }
+          : { duration: 0.2 }}
+        className="relative flex items-center justify-center"
+      >
+        <span className="logo-font relative text-[29px] leading-none tracking-[0] text-white md:text-[38px]">
+          BABBLE
+        </span>
+      </motion.div>
+    </motion.div>
+  ) : null;
+
+  if (!isMapReady) {
     return (
-      <div className="w-full h-[100dvh] bg-[#F3EDE1] flex flex-col items-center justify-center pb-[20vh]">
-        <div className="flex flex-col items-center gap-5">
+      <div className="fixed inset-0 overflow-hidden bg-white">
+        {introOverlay}
+        {false && (<div className="flex flex-col items-center gap-5">
           <div className="relative">
             <div className="absolute inset-0 rounded-full bg-white/40 blur-xl scale-125" />
             <div className="relative flex h-16 w-16 items-center justify-center rounded-full border border-white/60 bg-white/45 shadow-[0_12px_40px_rgba(104,86,58,0.12)] backdrop-blur-sm">
@@ -606,20 +922,25 @@ const Main = () => {
             </div>
           </div>
           <div className="flex flex-col items-center gap-2">
-            <span className="text-[#7D7467] text-[15px] font-semibold tracking-tight">지도를 준비하는 중입니다</span>
+            <span className="text-[#7D7467] text-[15px] font-semibold tracking-tight">吏?꾨? 以鍮꾪븯??以묒엯?덈떎</span>
             <div className="flex items-center gap-1.5">
               <span className="h-1.5 w-1.5 rounded-full bg-[#B8AA93] animate-bounce [animation-delay:-0.2s]" />
               <span className="h-1.5 w-1.5 rounded-full bg-[#B8AA93] animate-bounce [animation-delay:-0.1s]" />
               <span className="h-1.5 w-1.5 rounded-full bg-[#B8AA93] animate-bounce" />
             </div>
           </div>
-        </div>
+        </div>)}
       </div>
     );
   }
 
   return (
-    <div className="fixed inset-0 w-full h-full overflow-visible font-sans antialiased bg-transparent z-0">
+    <div
+      className="fixed inset-0 w-full h-full overflow-visible font-sans antialiased z-0"
+      style={{
+        backgroundColor: '#FFFFFF'
+      }}
+    >
       <Map
         center={initialCenter}
         level={4}
@@ -629,8 +950,13 @@ const Main = () => {
         style={{ width: '100%', height: '100%' }}
       >
         {myLocation && (
-          <CustomOverlayMap position={myLocation} zIndex={999} xAnchor={0.5} yAnchor={0.5}>
-            <div className="relative flex items-center justify-center">
+          <CustomOverlayMap position={myLocation} zIndex={999} xAnchor={0.5} yAnchor={0.5} clickable={true}>
+            <div
+              className="relative flex cursor-pointer items-center justify-center"
+              onClick={() => {
+                openCurrentLocationInfo();
+              }}
+            >
               <div className="absolute w-8 h-8 bg-[#FF4D00] rounded-full animate-ping opacity-30" />
               <div className="relative w-[24px] h-[24px] bg-[#FF4D00] border-2 border-white rounded-full flex items-center justify-center shadow-lg">
                 <div className="w-[6px] h-[6px] bg-white rounded-full" />
@@ -639,19 +965,20 @@ const Main = () => {
           </CustomOverlayMap>
         )}
 
-        {/* 1호선 서울역 특별 마커 (v41.0 - LNB 통합) */}
+        {/* 1?몄꽑 ?쒖슱???밸퀎 留덉빱 (v41.0 - LNB ?듯빀) */}
         <MapMarker 
           position={seoulStationCoords}
           image={{ 
-            src: 'data:image/svg+xml;base64,' + btoa(`<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="16" cy="16" r="14" fill="#3D53B3" stroke="white" stroke-width="2.5"/><path d="M10 12C10 10.8954 10.8954 10 12 10H20C21.1046 10 22 10.8954 22 12V20C22 21.1046 21.1046 22 20 22H12C10.8954 22 10 21.1046 10 20V12Z" fill="white"/><path d="M13 13H19V17H13V13Z" fill="#3D53B3"/><circle cx="13" cy="20" r="1.2" fill="#3D53B3"/><circle cx="19" cy="20" r="1.2" fill="#3D53B3"/></svg>`), 
-            size: { width: 32, height: 32 },
-            offset: { x: 16, y: 16 }
+            src: 'data:image/svg+xml;base64,' + btoa(`<svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="14" cy="14" r="12" fill="#3D53B3" stroke="white" stroke-width="2.5"/><text x="50%" y="50%" text-anchor="middle" dominant-baseline="central" font-family="Pretendard, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="12" font-weight="700" fill="white">S</text></svg>`), 
+            size: { width: 28, height: 28 },
+            offset: { x: 14, y: 14 }
           }}
           onClick={() => {
             setSelectedStarbucksId(null);
             setSelectedMemoId(null);
             setSelectedSubwayArrivals(null);
             setSelectedBusStop(null);
+            setSelectedCurrentLocationInfo(null);
 
             if (mapLevel >= 6) {
               focusSeoulStationAtDefaultZoom();
@@ -676,6 +1003,7 @@ const Main = () => {
             setSelectedMemoId(null);
             setSelectedSubwayArrivals(null);
             setSelectedBusStop(null);
+            setSelectedCurrentLocationInfo(null);
             setIsYangjaeFlowerMarketSelected(false);
             setIsFlowerMarketSheetOpen(true);
             panToWithOffset(yangjaeFlowerMarketCoords.lat, yangjaeFlowerMarketCoords.lng);
@@ -689,7 +1017,7 @@ const Main = () => {
             src:
               'data:image/svg+xml;base64,' +
               btoa(
-                `<svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="14" cy="14" r="12" fill="#F97316" stroke="white" stroke-width="2.5"/><path d="M9.5 10.5C9.5 9.11929 10.6193 8 12 8H16C17.3807 8 18.5 9.11929 18.5 10.5V17.5C18.5 18.8807 17.3807 20 16 20H12C10.6193 20 9.5 18.8807 9.5 17.5V10.5Z" fill="white"/><path d="M11.5 11.5H16.5V14.5H11.5V11.5Z" fill="#F97316"/><circle cx="12.25" cy="18.2" r="1" fill="#F97316"/><circle cx="15.75" cy="18.2" r="1" fill="#F97316"/></svg>`
+                `<svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="14" cy="14" r="12" fill="#299738" stroke="white" stroke-width="2.5"/><text x="50%" y="50%" text-anchor="middle" dominant-baseline="central" font-family="Pretendard, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="12" font-weight="700" fill="white">B</text></svg>`
               ),
             size: { width: 28, height: 28 },
             offset: { x: 14, y: 14 }
@@ -698,9 +1026,47 @@ const Main = () => {
             setSelectedStarbucksId(null);
             setSelectedMemoId(null);
             setSelectedSubwayArrivals(null);
+            setSelectedCurrentLocationInfo(null);
             setIsFlowerMarketSheetOpen(false);
+
+            if (mapLevel >= 6) {
+              setSelectedBusStop(null);
+              focusBusStopAtDefaultZoom(gyeonggiBusStop);
+              return;
+            }
+
             panToWithOffset(haanBusStopCoords.lat, haanBusStopCoords.lng);
             fetchBusStopArrival(false, gyeonggiBusStop);
+          }}
+          zIndex={100}
+        />
+
+        <MapMarker
+          position={citizenGymBusStop.coords}
+          image={{
+            src:
+              'data:image/svg+xml;base64,' +
+              btoa(
+                `<svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="14" cy="14" r="12" fill="#299738" stroke="white" stroke-width="2.5"/><text x="50%" y="50%" text-anchor="middle" dominant-baseline="central" font-family="Pretendard, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="12" font-weight="700" fill="white">B</text></svg>`
+              ),
+            size: { width: 28, height: 28 },
+            offset: { x: 14, y: 14 }
+          }}
+          onClick={() => {
+            setSelectedStarbucksId(null);
+            setSelectedMemoId(null);
+            setSelectedSubwayArrivals(null);
+            setSelectedCurrentLocationInfo(null);
+            setIsFlowerMarketSheetOpen(false);
+
+            if (mapLevel >= 6) {
+              setSelectedBusStop(null);
+              focusBusStopAtDefaultZoom(citizenGymBusStop);
+              return;
+            }
+
+            panToWithOffset(citizenGymBusStop.coords.lat, citizenGymBusStop.coords.lng);
+            fetchBusStopArrival(false, citizenGymBusStop);
           }}
           zIndex={100}
         />
@@ -711,7 +1077,7 @@ const Main = () => {
             src:
               'data:image/svg+xml;base64,' +
               btoa(
-                `<svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="14" cy="14" r="12" fill="#F97316" stroke="white" stroke-width="2.5"/><path d="M9.5 10.5C9.5 9.11929 10.6193 8 12 8H16C17.3807 8 18.5 9.11929 18.5 10.5V17.5C18.5 18.8807 17.3807 20 16 20H12C10.6193 20 9.5 18.8807 9.5 17.5V10.5Z" fill="white"/><path d="M11.5 11.5H16.5V14.5H11.5V11.5Z" fill="#F97316"/><circle cx="12.25" cy="18.2" r="1" fill="#F97316"/><circle cx="15.75" cy="18.2" r="1" fill="#F97316"/></svg>`
+                `<svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="14" cy="14" r="12" fill="#299738" stroke="white" stroke-width="2.5"/><text x="50%" y="50%" text-anchor="middle" dominant-baseline="central" font-family="Pretendard, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="12" font-weight="700" fill="white">B</text></svg>`
               ),
             size: { width: 28, height: 28 },
             offset: { x: 14, y: 14 }
@@ -720,7 +1086,15 @@ const Main = () => {
             setSelectedStarbucksId(null);
             setSelectedMemoId(null);
             setSelectedSubwayArrivals(null);
+            setSelectedCurrentLocationInfo(null);
             setIsFlowerMarketSheetOpen(false);
+
+            if (mapLevel >= 6) {
+              setSelectedBusStop(null);
+              focusBusStopAtDefaultZoom(seoulBusStop);
+              return;
+            }
+
             panToWithOffset(seoulBusStop.coords.lat, seoulBusStop.coords.lng);
             fetchBusStopArrival(false, seoulBusStop);
           }}
@@ -735,6 +1109,7 @@ const Main = () => {
                 panToWithOffset(place.lat, place.lng);
                 setSelectedSubwayArrivals(null);
                 setSelectedBusStop(null);
+                setSelectedCurrentLocationInfo(null);
                 setIsYangjaeFlowerMarketSelected(false);
                 setIsFlowerMarketSheetOpen(false);
                 setSelectedStarbucksId(selectedStarbucksId === place.id ? null : place.id); 
@@ -795,8 +1170,9 @@ const Main = () => {
                       setSelectedStarbucksId(null); 
                       setIsYangjaeFlowerMarketSelected(false);
                       setIsFlowerMarketSheetOpen(false);
-                      setSelectedSubwayArrivals(null); // 지하철 LNB 닫기
+                      setSelectedSubwayArrivals(null); // 吏?섏쿋 LNB ?リ린
                       setSelectedBusStop(null);
+                      setSelectedCurrentLocationInfo(null);
                       setSelectedMemoId(memo.id); 
                       setExpandedGroupIds([memo.id]); 
                       setShowReplyIds([memo.id]); 
@@ -822,47 +1198,58 @@ const Main = () => {
         )}
       </Map>
 
-      {/* 통합 메모 작성 폼 (v36.7 복구 버전) */}
       <AnimatePresence>
         {writingMemoCoords && (
-          <div className="fixed inset-0 z-[10001] flex items-start justify-center p-6 pt-[12vh] pointer-events-none">
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+          <div className="fixed inset-0 z-[70] flex items-center justify-center px-4 pointer-events-none">
+            <motion.div
+              initial={{ opacity: 0, y: 24, scale: 0.94 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="w-full max-w-[400px] bg-white/80 backdrop-blur-xl rounded-[32px] p-8 shadow-[0_30px_60px_rgba(255,77,0,0.15)] pointer-events-auto border border-white"
+              className="w-full max-w-[400px] bg-white rounded-[32px] p-8 shadow-[0_30px_60px_rgba(255,77,0,0.15)] pointer-events-auto border border-white"
             >
-              <div className="flex justify-between items-center mb-6">
-                <h3 className="text-[18px] font-black text-gray-900 tracking-tight">여기에 바블하기</h3>
-                <button 
-                  onClick={() => { setWritingMemoCoords(null); setNewMemoText(''); setIsMemoMode(false); }}
-                  className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 hover:bg-gray-200"
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-[18px] font-black text-gray-900 tracking-tight">여기에 바블 남기기</h3>
+                <button
+                  onClick={() => {
+                    if (isSubmittingMemo) return;
+                    setWritingMemoCoords(null);
+                    setNewMemoText('');
+                    setIsMemoMode(false);
+                  }}
+                  disabled={isSubmittingMemo}
+                  className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 hover:bg-gray-200 disabled:opacity-50"
                 >
                   <X size={18} />
                 </button>
               </div>
-              
+
               <textarea
                 autoFocus
                 value={newMemoText}
                 onChange={(e) => setNewMemoText(e.target.value)}
-                placeholder="어떤 이야기를 남길까요?"
-                className="w-full h-24 bg-white/50 rounded-2xl p-4 text-[15px] font-medium border border-gray-100 focus:border-[#FF4D00] focus:ring-4 focus:ring-[#FF4D00]/10 focus:outline-none transition-all resize-none mb-6 placeholder:text-gray-400"
+                placeholder="어떤 이야기를 남기고 싶나요?"
+                className="w-full h-24 bg-white rounded-2xl p-4 text-[15px] font-medium border border-gray-100 focus:border-[#FF4D00] focus:ring-4 focus:ring-[#FF4D00]/10 focus:outline-none transition-all resize-none mb-6 placeholder:text-gray-400"
               />
 
               <div className="flex gap-3">
-                <button 
-                  onClick={() => { setWritingMemoCoords(null); setNewMemoText(''); setIsMemoMode(false); }}
-                  className="flex-1 py-4 rounded-2xl bg-gray-100 text-gray-600 font-bold text-[15px]"
+                <button
+                  onClick={() => {
+                    if (isSubmittingMemo) return;
+                    setWritingMemoCoords(null);
+                    setNewMemoText('');
+                    setIsMemoMode(false);
+                  }}
+                  disabled={isSubmittingMemo}
+                  className="flex-1 py-4 rounded-2xl bg-gray-100 text-gray-600 font-bold text-[15px] disabled:opacity-50"
                 >
                   취소
                 </button>
-                <button 
+                <button
                   onClick={submitNewMemo}
-                  disabled={!newMemoText.trim()}
+                  disabled={!newMemoText.trim() || isSubmittingMemo}
                   className="flex-[2] py-4 rounded-2xl bg-[#FF4D00] text-white font-bold text-[15px] shadow-[0_10px_20px_rgba(255,77,0,0.2)] disabled:opacity-50"
                 >
-                  바블 남기기
+                  {isSubmittingMemo ? '남기는 중...' : '바블 남기기'}
                 </button>
               </div>
             </motion.div>
@@ -878,7 +1265,7 @@ const Main = () => {
       <Sidebar 
         memo={memos.find(m => m.id === selectedMemoId)} 
         replies={memos.filter(m => m.parent_id === selectedMemoId)} 
-        onClose={() => { setSelectedMemoId(null); setSelectedSubwayArrivals(null); setSelectedBusStop(null); setSelectedStarbucksId(null); setIsYangjaeFlowerMarketSelected(false); setIsFlowerMarketSheetOpen(false); }} 
+        onClose={() => { setSelectedMemoId(null); setSelectedSubwayArrivals(null); setSelectedBusStop(null); setSelectedCurrentLocationInfo(null); setSelectedStarbucksId(null); setIsYangjaeFlowerMarketSelected(false); setIsFlowerMarketSheetOpen(false); }} 
         onDelete={handleDeleteMemo} 
         onReplySubmit={handleReplySubmit} 
         onPop={handlePopBubble} 
@@ -889,6 +1276,7 @@ const Main = () => {
         subwayFetchTime={subwayFetchTime}
         onTimetableTabChange={fetchSubwayTimetable}
         busStop={selectedBusStop}
+        currentLocationInfo={selectedCurrentLocationInfo}
         onBusRefresh={fetchBusStopArrival}
         starbucks={null}
       />
@@ -904,6 +1292,7 @@ const Main = () => {
         <Footer />
       </div>
 
+      {!isIntroVisible && (
       <div className="fixed bottom-10 right-8 z-[9999] pointer-events-none">
         <div className="flex flex-col items-end gap-2 pointer-events-auto">
           <AnimatePresence>
@@ -915,7 +1304,7 @@ const Main = () => {
                 transition={{ type: 'spring', damping: 25, stiffness: 400 }}
                 className="bg-[#FF4D00] text-white text-[13px] font-black px-4 py-2.5 rounded-2xl mb-1 mr-0 border border-[#FF4D00]"
               >
-                메모 위치를 눌러주세요
+                {'\uBA54\uBAA8 \uC704\uCE58\uB97C \uB20C\uB7EC\uC8FC\uC138\uC694'}
               </motion.div>
             )}
           </AnimatePresence>
@@ -952,6 +1341,9 @@ const Main = () => {
           </div>
         </div>
       </div>
+      )}
+
+      {introOverlay}
 
       <style>{`
         @keyframes bubble-spawn { 

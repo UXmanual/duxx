@@ -32,7 +32,7 @@ html, body, #root {
   margin: 0;
   padding: 0;
   overflow: hidden;
-  background-color: transparent !important;
+  background-color: #FFFFFF !important;
   overscroll-behavior: none;
   -webkit-overflow-scrolling: touch;
   
@@ -46,9 +46,7 @@ html, body, #root {
 }
 
 #root {
-  background:
-    radial-gradient(circle at top, rgba(255, 255, 255, 0.22), transparent 32%),
-    var(--app-page-bg) !important;
+  background: #FFFFFF !important;
 }
 
 /* 입력창에서만 텍스트 선택 및 커서 허용 */

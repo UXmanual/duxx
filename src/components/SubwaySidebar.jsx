@@ -99,9 +99,9 @@ const SubwaySidebar = ({
   const SubwayHeaderInfo = () => (
     <div className="flex flex-col gap-1">
       <h2 className="text-xl font-black text-gray-900">1호선 서울역</h2>
-      <p className="text-[11px] font-bold text-[#3D53B3] flex items-center gap-1.5 py-1 px-3 bg-[#3D53B3]/10 rounded-full w-max">
+      <p className="text-[13px] font-bold text-[#3D53B3] flex items-center gap-1.5 py-1 px-3 bg-[#3D53B3]/10 rounded-full w-max">
         <div className="w-1.5 h-1.5 bg-[#3D53B3] rounded-full animate-pulse" />
-        실시간 도착 정보 {subwayData.fetchTime && `(${subwayData.fetchTime})`}
+        수도권 지하철
       </p>
     </div>
   );
@@ -163,7 +163,7 @@ const SubwaySidebar = ({
           {subwayData.loading ? (
             <div className="h-40 flex flex-col gap-4 items-center justify-center bg-gray-50 rounded-2xl animate-pulse">
               <Clock size={24} className="text-gray-300 animate-spin" />
-              <span className="text-xs font-bold text-gray-400">지하철 실시간 정보를 가져오고 있습니다...</span>
+              <span className="text-[13px] font-bold text-gray-400">지하철 실시간 정보를 가져오고 있습니다...</span>
             </div>
           ) : (
             <div className="flex flex-col gap-6 mb-2">
@@ -174,7 +174,7 @@ const SubwaySidebar = ({
                 {subwayData.up?.length > 0 && (
                   <div className="flex flex-col gap-3">
                     <div className="flex items-center gap-2">
-                      <span className="px-2 py-0.5 bg-gray-100 text-[10px] font-black text-gray-500 rounded">상행</span>
+                      <span className="px-2 py-0.5 bg-gray-100 text-[13px] font-black text-gray-500 rounded">상행</span>
                       <div className="flex-1 h-[1px] bg-gray-100" />
                     </div>
                     <div className="grid gap-3">
@@ -182,14 +182,14 @@ const SubwaySidebar = ({
                         <div key={`side-up-${idx}`} className="p-4 bg-gray-50/50 rounded-2xl border border-gray-100 flex flex-col gap-1.5 hover:border-[#3D53B3]/30 transition-colors relative overflow-hidden group">
                           <div className={`absolute top-0 left-0 w-1 h-full ${arrival.arrivalType === '이번열차' ? 'bg-[#3D53B3]' : 'bg-gray-300'}`} />
                           <div className="flex items-center justify-between">
-                            <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-sm ${arrival.arrivalType === '이번열차' ? 'bg-[#3D53B3] text-white' : 'bg-gray-200 text-gray-600'}`}>
+                            <span className={`text-[13px] font-black px-1.5 py-0.5 rounded-sm ${arrival.arrivalType === '이번열차' ? 'bg-[#3D53B3] text-white' : 'bg-gray-200 text-gray-600'}`}>
                               {arrival.arrivalType}
                             </span>
-                            <span className="text-[11px] font-medium text-gray-400">{arrival.time}</span>
+                            <span className="text-[13px] font-medium text-gray-400">{arrival.time}</span>
                           </div>
                           <div className="flex items-center gap-2 pt-0.5">
                             <span className="text-sm font-black text-gray-900">{arrival.dest}</span>
-                            <span className="text-xs font-bold text-gray-400">{arrival.direction}</span>
+                            <span className="text-[13px] font-bold text-gray-400">{arrival.direction}</span>
                           </div>
                           <div className="flex items-center justify-between">
                             <span className="text-[13px] font-bold text-[#3D53B3]">{arrival.status}</span>
@@ -203,7 +203,7 @@ const SubwaySidebar = ({
                 {subwayData.down?.length > 0 && (
                   <div className="flex flex-col gap-3">
                     <div className="flex items-center gap-2">
-                      <span className="px-2 py-0.5 bg-gray-100 text-[10px] font-black text-gray-500 rounded">하행</span>
+                      <span className="px-2 py-0.5 bg-gray-100 text-[13px] font-black text-gray-500 rounded">하행</span>
                       <div className="flex-1 h-[1px] bg-gray-100" />
                     </div>
                     <div className="grid gap-3">
@@ -211,14 +211,14 @@ const SubwaySidebar = ({
                         <div key={`side-down-${idx}`} className="p-4 bg-gray-50/50 rounded-2xl border border-gray-100 flex flex-col gap-1.5 hover:border-[#3D53B3]/30 transition-colors relative overflow-hidden group">
                           <div className={`absolute top-0 left-0 w-1 h-full ${arrival.arrivalType === '이번열차' ? 'bg-[#3D53B3]' : 'bg-gray-300'}`} />
                           <div className="flex items-center justify-between">
-                            <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-sm ${arrival.arrivalType === '이번열차' ? 'bg-[#3D53B3] text-white' : 'bg-gray-200 text-gray-600'}`}>
+                            <span className={`text-[13px] font-black px-1.5 py-0.5 rounded-sm ${arrival.arrivalType === '이번열차' ? 'bg-[#3D53B3] text-white' : 'bg-gray-200 text-gray-600'}`}>
                               {arrival.arrivalType}
                             </span>
-                            <span className="text-[11px] font-medium text-gray-400">{arrival.time}</span>
+                            <span className="text-[13px] font-medium text-gray-400">{arrival.time}</span>
                           </div>
                           <div className="flex items-center gap-2 pt-0.5">
                             <span className="text-sm font-black text-gray-900">{arrival.dest}</span>
-                            <span className="text-xs font-bold text-gray-400">{arrival.direction}</span>
+                            <span className="text-[13px] font-bold text-gray-400">{arrival.direction}</span>
                           </div>
                           <div className="flex items-center justify-between">
                             <span className="text-[13px] font-bold text-[#3D53B3]">{arrival.status}</span>
@@ -229,7 +229,7 @@ const SubwaySidebar = ({
                   </div>
                 )}
               </div>
-              {subwayData.error && <p className="text-red-500 text-xs font-bold text-center py-4">{subwayData.error}</p>}
+              {subwayData.error && <p className="text-red-500 text-[13px] font-bold text-center py-4">{subwayData.error}</p>}
             </div>
           )}
           <div className="h-20" />

@@ -164,7 +164,7 @@ const Header = () => {
   return (
     <header style={{ display: 'contents' }}>
       <div 
-        className="absolute left-0 px-10 h-24 flex items-center z-[10] pointer-events-none text-[#FF4D00]"
+        className="absolute left-0 px-10 h-24 hidden items-center z-[10] pointer-events-none text-[#FF4D00]"
         style={{ top: 'env(safe-area-inset-top, 0px)' }}
       >
         <span className="logo-font text-[24px] tracking-[0] uppercase select-none pointer-events-auto">

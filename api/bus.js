@@ -12,13 +12,19 @@ function extractXmlItems(xml, tagName = 'itemList') {
   return [...xml.matchAll(pattern)].map((match) => match[1]);
 }
 
+function ensureArray(value) {
+  if (Array.isArray(value)) return value;
+  if (value === null || value === undefined || value === '') return [];
+  return [value];
+}
+
 function coerceNumber(value) {
   const numeric = Number(String(value || '').replace(/[^0-9.-]/g, ''));
   return Number.isFinite(numeric) ? numeric : null;
 }
 
 function inferLocationNo(message) {
-  const match = String(message || '').match(/(\d+)\s*(번째|정거장)/);
+  const match = String(message || '').match(/(\d+)\s*번째/);
   return match ? Number(match[1]) : null;
 }
 
@@ -39,19 +45,29 @@ function inferProvider(stationNumber, provider) {
   return String(stationNumber || '').includes('-') ? 'seoul' : 'gyeonggi';
 }
 
+async function fetchJson(url, failureMessage) {
+  const response = await fetch(url);
+  if (!response.ok) {
+    return { error: `HTTP_${response.status}`, message: failureMessage };
+  }
+
+  try {
+    return { data: await response.json() };
+  } catch (error) {
+    return { error: 'INVALID_JSON', message: error.message || failureMessage };
+  }
+}
+
 async function fetchGyeonggiStation(apiKey, stationNumber) {
   const url = `https://apis.data.go.kr/6410000/busstationservice/v2/getBusStationListv2?serviceKey=${apiKey}&keyword=${encodeURIComponent(
     stationNumber
   )}&format=json`;
 
-  const response = await fetch(url);
-  if (!response.ok) {
-    return { error: `HTTP_${response.status}`, message: 'Failed to fetch Gyeonggi bus station list.' };
-  }
+  const result = await fetchJson(url, 'Failed to fetch Gyeonggi bus station list.');
+  if (result.error) return result;
 
-  const data = await response.json();
-  const header = data?.response?.msgHeader;
-  const stations = data?.response?.msgBody?.busStationList || [];
+  const header = result.data?.response?.msgHeader;
+  const stations = ensureArray(result.data?.response?.msgBody?.busStationList);
 
   if (header?.resultCode !== 0) {
     return {
@@ -78,14 +94,11 @@ async function fetchGyeonggiStation(apiKey, stationNumber) {
 async function fetchGyeonggiArrivalList(apiKey, stationId) {
   const url = `https://apis.data.go.kr/6410000/busarrivalservice/v2/getBusArrivalListv2?serviceKey=${apiKey}&stationId=${stationId}&format=json`;
 
-  const response = await fetch(url);
-  if (!response.ok) {
-    return { error: `HTTP_${response.status}`, message: 'Failed to fetch Gyeonggi bus arrival list.' };
-  }
+  const result = await fetchJson(url, 'Failed to fetch Gyeonggi bus arrival list.');
+  if (result.error) return result;
 
-  const data = await response.json();
-  const header = data?.response?.msgHeader;
-  const arrivals = data?.response?.msgBody?.busArrivalList || [];
+  const header = result.data?.response?.msgHeader;
+  const arrivals = ensureArray(result.data?.response?.msgBody?.busArrivalList);
 
   if (header?.resultCode !== 0) {
     return {
@@ -166,8 +179,8 @@ async function fetchSeoulStationAndArrivals(apiKey, stationNumber) {
       locationNo2: inferLocationNo(extractXmlValue(item, 'arrmsg2')),
       lowPlate1: extractXmlValue(item, 'busType1') === '1',
       lowPlate2: extractXmlValue(item, 'busType2') === '1',
-      crowded1: mapSeoulCongestion(extractXmlValue(item, 'congetion1')),
-      crowded2: mapSeoulCongestion(extractXmlValue(item, 'congetion2')),
+      crowded1: mapSeoulCongestion(extractXmlValue(item, 'congestion1') || extractXmlValue(item, 'congetion1')),
+      crowded2: mapSeoulCongestion(extractXmlValue(item, 'congestion2') || extractXmlValue(item, 'congetion2')),
       arrivalText1: extractXmlValue(item, 'arrmsg1'),
       arrivalText2: extractXmlValue(item, 'arrmsg2')
     };
@@ -176,7 +189,7 @@ async function fetchSeoulStationAndArrivals(apiKey, stationNumber) {
   return {
     station,
     arrivals,
-    queryTime: extractXmlValue(xml, 'tmX') || null
+    queryTime: null
   };
 }
 
@@ -202,30 +215,37 @@ async function handleGyeonggi(apiKey, stationNumber) {
 }
 
 export default async function handler(req, res) {
-  const requestedStation = String(req.query.station || DEFAULT_GYEONGGI_STATION).trim();
-  const provider = inferProvider(requestedStation, String(req.query.provider || '').trim());
+  try {
+    const requestedStation = String(req.query.station || DEFAULT_GYEONGGI_STATION).trim();
+    const provider = inferProvider(requestedStation, String(req.query.provider || '').trim());
 
-  if (provider === 'seoul') {
-    const apiKey = process.env.SEOUL_BUS_API_KEY;
-    if (!apiKey) {
-      res.status(500).json({
-        error: 'MISSING_SEOUL_BUS_API_KEY',
-        message: 'Set SEOUL_BUS_API_KEY to enable Seoul bus arrivals.'
-      });
+    if (provider === 'seoul') {
+      const apiKey = process.env.SEOUL_BUS_API_KEY;
+      if (!apiKey) {
+        res.status(500).json({
+          error: 'MISSING_SEOUL_BUS_API_KEY',
+          message: 'Set SEOUL_BUS_API_KEY to enable Seoul bus arrivals.'
+        });
+        return;
+      }
+
+      const result = await fetchSeoulStationAndArrivals(apiKey, requestedStation);
+      res.status(200).json(result);
       return;
     }
 
-    const result = await fetchSeoulStationAndArrivals(apiKey, requestedStation);
-    res.status(result.error ? 200 : 200).json(result);
-    return;
-  }
+    const apiKey = process.env.BUS_API_KEY;
+    if (!apiKey) {
+      res.status(500).json({ error: 'MISSING_API_KEY' });
+      return;
+    }
 
-  const apiKey = process.env.BUS_API_KEY;
-  if (!apiKey) {
-    res.status(500).json({ error: 'MISSING_API_KEY' });
-    return;
+    const result = await handleGyeonggi(apiKey, requestedStation);
+    res.status(200).json(result);
+  } catch (error) {
+    res.status(200).json({
+      error: 'BUS_HANDLER_FAILED',
+      message: error?.message || 'Bus handler failed.'
+    });
   }
-
-  const result = await handleGyeonggi(apiKey, requestedStation);
-  res.status(result.error ? 200 : 200).json(result);
 }

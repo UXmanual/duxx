@@ -174,7 +174,7 @@ const FlowerMarketSheet = ({ market, onClose, onDirections }) => {
                   <FlowerPetalIcon size={18} color="#FFFFFF" />
                 </div>
                 <div>
-                  <p className="text-[11px] font-black text-[#FF2FA3]">FLOWER MARKET</p>
+                  <p className="text-[13px] font-black text-[#FF2FA3]">FLOWER MARKET</p>
                   <h2 className="text-[20px] font-black text-gray-900 leading-tight">{market.name}</h2>
                 </div>
               </div>
@@ -186,7 +186,7 @@ const FlowerMarketSheet = ({ market, onClose, onDirections }) => {
                   <FlowerPetalIcon size={17} color="#FFFFFF" />
                 </div>
                 <div>
-                  <p className="text-[10px] font-black text-[#FF2FA3]">FLOWER MARKET</p>
+                  <p className="text-[13px] font-black text-[#FF2FA3]">FLOWER MARKET</p>
                   <h2 className="text-[18px] font-black text-gray-900">{market.name}</h2>
                 </div>
               </div>
@@ -202,10 +202,10 @@ const FlowerMarketSheet = ({ market, onClose, onDirections }) => {
             <div className="p-5 rounded-[28px] bg-gradient-to-br from-[#FFF1F8] to-[#FFE3F2] border border-[#FFD0E8]">
               <div className="flex items-center gap-2 mb-3">
                 <FlowerPetalIcon size={16} color="#FF2FA3" />
-                <span className="text-[12px] font-black text-[#FF2FA3]">꽃 도매/소매 복합 시장</span>
+                <span className="text-[13px] font-black text-[#FF2FA3]">{'\uAF43 \uB3C4\uB9E4/\uC18C\uB9E4 \uBCF5\uD569 \uC2DC\uC7A5'}</span>
               </div>
               <p className="text-[15px] font-bold text-gray-900 leading-relaxed">
-                절화, 난, 관엽, 화분류를 한 번에 볼 수 있는 양재동 대표 화훼 시장입니다.
+                {'\uC808\uD654, \uB09C, \uAD00\uC5FD, \uD654\uBD84\uB958\uB97C \uD55C \uBC88\uC5D0 \uBCFC \uC218 \uC788\uB294 \uC591\uC7AC\uB3D9 \uB300\uD45C \uD654\uD6FC \uC2DC\uC7A5\uC785\uB2C8\uB2E4.'}
               </p>
             </div>
 
@@ -219,7 +219,7 @@ const FlowerMarketSheet = ({ market, onClose, onDirections }) => {
                     <div className="flex items-start gap-3">
                       <SectionIcon size={18} className="text-[#FF2FA3] mt-0.5 flex-shrink-0" />
                       <div className="min-w-0">
-                        <p className="text-[11px] font-black text-gray-400 mb-2">{section.label}</p>
+                        <p className="text-[13px] font-black text-gray-400 mb-2">{section.label}</p>
                         {isList ? (
                           <div className="space-y-1.5">
                             {section.content.map((item) => (
@@ -254,7 +254,7 @@ const FlowerMarketSheet = ({ market, onClose, onDirections }) => {
             <div className="hidden md:flex items-center gap-3 p-4 rounded-[22px] border border-[#FFD0E8] bg-[#FFF8FC]">
               <Navigation size={18} className="text-[#FF2FA3]" />
               <p className="text-[13px] font-bold text-gray-700">
-                길찾기 버튼은 모바일 바텀시트에서만 표시됩니다.
+                {'\uAE38\uCC3E\uAE30 \uBC84\uD2BC\uC740 \uBAA8\uBC14\uC77C \uBC14\uD140\uC2DC\uD2B8\uC5D0\uC11C\uB9CC \uD45C\uC2DC\uB429\uB2C8\uB2E4.'}
               </p>
             </div>
           </div>
@@ -267,7 +267,7 @@ const FlowerMarketSheet = ({ market, onClose, onDirections }) => {
               className="w-full py-4 rounded-[22px] bg-[#FF2FA3] text-white font-black text-[15px] flex items-center justify-center gap-2 shadow-[0_14px_28px_rgba(255,47,163,0.24)]"
             >
               <Navigation size={18} strokeWidth={2.5} />
-              TMAP 길찾기
+              {'TMAP \uAE38\uCC3E\uAE30'}
             </button>
             <div style={{ height: 'env(safe-area-inset-bottom, 12px)' }} />
           </div>

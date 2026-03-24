@@ -1,7 +1,7 @@
 {
   "name": "babble-project",
   "private": true,
-  "version": "51.5",
+  "version": "57.5",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -41,3 +41,6 @@
     "vite-tsconfig-paths": "^6.1.1"
   }
 }
+
+
+
