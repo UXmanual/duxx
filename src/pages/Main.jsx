@@ -7,6 +7,7 @@ import { supabase } from '../lib/supabaseClient';
 import { starbucksReserveStores } from '../data/starbucksReserve';
 import { AI_PERSONAS } from '../data/aiPersonas';
 import { SEOUL_STATION_TIMETABLE_STATIC } from '../data/subwayTimetable';
+import { SUBWAY_STATIONS, SUBWAY_STATION_LIST } from '../data/subwayStations';
 import Sidebar from '../components/Sidebar';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
@@ -121,7 +122,7 @@ const Main = () => {
   const [subwayFetchTime, setSubwayFetchTime] = useState(null);
   const busRequestIdRef = useRef(0);
   const currentLocationRequestIdRef = useRef(0);
-  const seoulStationCoords = { lat: 37.554648, lng: 126.972559 };
+  const seoulStationCoords = SUBWAY_STATIONS.seoul.coords;
   const gyeonggiBusStop = {
     provider: 'gyeonggi',
     stationNumber: '14156',
@@ -184,6 +185,7 @@ const Main = () => {
   const [hasIntroElapsed, setHasIntroElapsed] = useState(false);
   const [isIntroVisible, setIsIntroVisible] = useState(true);
   const [isIntroExiting, setIsIntroExiting] = useState(false);
+  const [introProgress, setIntroProgress] = useState(0);
 
   const [loading, error] = useKakaoLoader({
     appkey: import.meta.env.VITE_KAKAO_MAPS_API_KEY,
@@ -204,6 +206,21 @@ const Main = () => {
     });
   }, [memos]);
 
+  const orderedRootMemos = useMemo(() => {
+    return [...rootMemos].sort((a, b) => {
+      const aPopped = Boolean(a.popped_at);
+      const bPopped = Boolean(b.popped_at);
+
+      if (aPopped !== bPopped) {
+        return aPopped ? 1 : -1;
+      }
+
+      const aCreated = new Date(a.created_at || 0).getTime();
+      const bCreated = new Date(b.created_at || 0).getTime();
+      return aCreated - bCreated;
+    });
+  }, [rootMemos]);
+
   // 遺?쒕윭???ㅽ봽???쇳꽣留곸쓣 ?꾪븳 ?ы띁 ?⑥닔
   const panToWithOffset = (lat, lng) => {
     if (!map) return;
@@ -222,14 +239,42 @@ const Main = () => {
     }
   };
 
-  const focusSeoulStationAtDefaultZoom = () => {
+  const focusSubwayStationAtDefaultZoom = (coords) => {
     if (!map) return;
 
     map.setLevel(4);
     window.setTimeout(() => {
-      panToWithOffset(seoulStationCoords.lat, seoulStationCoords.lng);
+      panToWithOffset(coords.lat, coords.lng);
     }, 180);
   };
+
+  const openSubwayStation = (stationKey) => {
+    const station = SUBWAY_STATIONS[stationKey] || SUBWAY_STATIONS.seoul;
+
+    setSelectedStarbucksId(null);
+    setSelectedMemoId(null);
+    setSelectedSubwayArrivals(null);
+    setSelectedBusStop(null);
+    setSelectedCurrentLocationInfo(null);
+
+    if (mapLevel >= 6) {
+      focusSubwayStationAtDefaultZoom(station.coords);
+      return;
+    }
+
+    panToWithOffset(station.coords.lat, station.coords.lng);
+    fetchSubwayTimetable('1', false, station.key);
+  };
+
+  const buildSubwayMarkerImage = (label, color = '#3D53B3') => ({
+    src:
+      'data:image/svg+xml;base64,' +
+      btoa(
+        `<svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="14" cy="14" r="12" fill="${color}" stroke="white" stroke-width="2.5"/><text x="50%" y="50%" text-anchor="middle" dominant-baseline="central" font-family="Pretendard, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="12" font-weight="700" fill="white">${label}</text></svg>`
+      ),
+    size: { width: 28, height: 28 },
+    offset: { x: 14, y: 14 }
+  });
 
   const focusBusStopAtDefaultZoom = (stopConfig) => {
     if (!map) return;
@@ -496,6 +541,29 @@ const Main = () => {
   }, []);
 
   useEffect(() => {
+    if (!isIntroVisible || isIntroExiting) {
+      setIntroProgress(100);
+      return;
+    }
+
+    if (!loading && isLocationLoaded) {
+      setIntroProgress(100);
+      return;
+    }
+
+    const progressTimer = window.setInterval(() => {
+      setIntroProgress((prev) => {
+        if (prev >= 92) return prev;
+        const remaining = 92 - prev;
+        const step = Math.max(1, remaining * 0.12);
+        return Math.min(92, prev + step);
+      });
+    }, 120);
+
+    return () => window.clearInterval(progressTimer);
+  }, [loading, isLocationLoaded, isIntroVisible, isIntroExiting]);
+
+  useEffect(() => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
@@ -699,8 +767,13 @@ const Main = () => {
     });
   };
   // [v45.7] ?쒖슱??怨듭떇 ?쒓컙???곗씠??媛?몄삤湲?(諛깆뾽 濡쒖쭅 ?꾩쟾 ?쒓굅)
-  const fetchSubwayTimetable = async (dayType = "1", force = false) => {
-    const CACHE_KEY = `subway_timetable_${dayType}`;
+  const fetchSubwayTimetable = async (
+    dayType = "1",
+    force = false,
+    stationKey = selectedSubwayArrivals?.station?.key || 'seoul'
+  ) => {
+    const station = SUBWAY_STATIONS[stationKey] || SUBWAY_STATIONS.seoul;
+    const CACHE_KEY = `subway_timetable_${station.key}_${dayType}`;
     const CACHE_DURATION = 30 * 24 * 60 * 60 * 1000; 
     
     // 1. 罹먯떆 ?뺤씤
@@ -723,6 +796,7 @@ const Main = () => {
       ...(prev || {}),
       type: prev?.type || 'timetable',
       dayType,
+      station: prev?.station || station,
       up: prev?.up || [],
       down: prev?.down || [],
       loading: true,
@@ -734,8 +808,8 @@ const Main = () => {
     try {
       // ?곹뻾(1)怨??섑뻾(2) ?곗씠?곕? ?쒖감?곸쑝濡??뺥솗???섏쭛
       const [upRes, downRes] = await Promise.all([
-        fetch(`/api/subway?type=timetable&dayType=${dayType}&bound=1`),
-        fetch(`/api/subway?type=timetable&dayType=${dayType}&bound=2`)
+        fetch(`/api/subway?type=timetable&station=${station.key}&dayType=${dayType}&bound=1`),
+        fetch(`/api/subway?type=timetable&station=${station.key}&dayType=${dayType}&bound=2`)
       ]);
       
       const upData = await upRes.json();
@@ -747,7 +821,8 @@ const Main = () => {
           error: upData.error || downData.error, 
           message: upData.message || downData.message, 
           loading: false,
-          isFallback: false 
+          isFallback: false,
+          station
         });
         return;
       }
@@ -760,7 +835,8 @@ const Main = () => {
         setSelectedSubwayArrivals({ 
           error: "?곗씠???놁쓬", 
           message: "?꾩옱 ?쒕쾭濡쒕????섏떊???쒓컙???뺣낫媛 ?놁뒿?덈떎. (?몄쬆 ???쒖꽦???湲?以묒씪 ???덉뒿?덈떎.)", 
-          loading: false 
+          loading: false,
+          station 
         });
         return;
       }
@@ -768,6 +844,7 @@ const Main = () => {
       const timetableData = {
         type: 'timetable',
         dayType,
+        station: upData.station || downData.station || station,
         up: upList,
         down: downList,
         isFallback: false
@@ -779,7 +856,8 @@ const Main = () => {
       setSelectedSubwayArrivals({ 
         error: "?ㅽ듃?뚰겕 ?ㅻ쪟", 
         message: `?쒕쾭 ?듭떊???ㅽ뙣?덉뒿?덈떎: ${e.message}`, 
-        loading: false 
+        loading: false,
+        station 
       });
     }
   };
@@ -920,22 +998,50 @@ const Main = () => {
       initial={{ opacity: 1 }}
       animate={{ opacity: isIntroExiting ? 0 : 1 }}
       transition={{ duration: 0.6, ease: 'easeOut' }}
-      className="pointer-events-none absolute inset-0 z-[2000] flex items-center justify-center bg-[#FF4D00]"
+      className="pointer-events-none fixed inset-0 z-[2000] bg-white"
     >
-      <motion.div
-        initial={{ scale: 1, y: 0, rotate: 0, opacity: 1, filter: 'blur(0px)' }}
-        animate={isIntroExiting
-          ? { scale: 1.9, y: 0, rotate: 0, opacity: 0, filter: 'blur(8px)' }
-          : { scale: 1, y: 0, rotate: 0, opacity: 1, filter: 'blur(0px)' }}
-        transition={isIntroExiting
-          ? { duration: 0.45, ease: [0.22, 1, 0.36, 1] }
-          : { duration: 0.2 }}
-        className="relative flex items-center justify-center"
+      <div
+        className="absolute flex items-center justify-center"
+        style={{
+          background: 'linear-gradient(180deg, #FF4D00 0%, #FF2B00 100%)',
+          top: 'env(safe-area-inset-top, 0px)',
+          right: 'env(safe-area-inset-right, 0px)',
+          bottom: 'env(safe-area-inset-bottom, 0px)',
+          left: 'env(safe-area-inset-left, 0px)',
+        }}
       >
-        <span className="logo-font relative text-[29px] leading-none tracking-[0] text-white md:text-[38px]">
-          BABBLE
-        </span>
-      </motion.div>
+        <div className="absolute left-0 right-0 top-0 h-[2px] overflow-hidden bg-[#FF4D00]">
+          <motion.div
+            className="h-full bg-white"
+            initial={{ width: '0%' }}
+            animate={{ width: `${introProgress}%` }}
+            transition={{ duration: isIntroExiting ? 0.18 : 0.24, ease: 'easeOut' }}
+          />
+        </div>
+        <motion.div
+          initial={{ scale: 1, y: 0, rotate: 0, opacity: 1, filter: 'blur(0px)' }}
+          animate={isIntroExiting
+            ? { scale: 1.9, y: 0, rotate: 0, opacity: 0, filter: 'blur(8px)' }
+            : { scale: 1, y: 0, rotate: 0, opacity: 1, filter: 'blur(0px)' }}
+          transition={isIntroExiting
+            ? { duration: 0.45, ease: [0.22, 1, 0.36, 1] }
+            : { duration: 0.2 }}
+          className="relative flex items-center justify-center"
+        >
+          <span
+            className="relative flex items-center text-[29px] leading-none tracking-[0] text-white md:text-[38px]"
+            style={{ fontFamily: 'Pretendard, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' }}
+            aria-label="BABBLE"
+          >
+            <span style={{ fontWeight: 700 }}>B</span>
+            <span style={{ fontWeight: 600 }}>A</span>
+            <span style={{ fontWeight: 400 }}>B</span>
+            <span style={{ fontWeight: 300 }}>B</span>
+            <span style={{ fontWeight: 200 }}>L</span>
+            <span style={{ fontWeight: 100 }}>E</span>
+          </span>
+        </motion.div>
+      </div>
     </motion.div>
   ) : null;
 
@@ -999,31 +1105,15 @@ const Main = () => {
         )}
 
         {/* 1?몄꽑 ?쒖슱???밸퀎 留덉빱 (v41.0 - LNB ?듯빀) */}
-        <MapMarker 
-          position={seoulStationCoords}
-          image={{ 
-            src: 'data:image/svg+xml;base64,' + btoa(`<svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="14" cy="14" r="12" fill="#3D53B3" stroke="white" stroke-width="2.5"/><text x="50%" y="50%" text-anchor="middle" dominant-baseline="central" font-family="Pretendard, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="12" font-weight="700" fill="white">S</text></svg>`), 
-            size: { width: 28, height: 28 },
-            offset: { x: 14, y: 14 }
-          }}
-          onClick={() => {
-            setSelectedStarbucksId(null);
-            setSelectedMemoId(null);
-            setSelectedSubwayArrivals(null);
-            setSelectedBusStop(null);
-            setSelectedCurrentLocationInfo(null);
-
-            if (mapLevel >= 6) {
-              focusSeoulStationAtDefaultZoom();
-              return;
-            }
-
-            panToWithOffset(seoulStationCoords.lat, seoulStationCoords.lng);
-            fetchSubwayTimetable("1");
-          }}
-          zIndex={100}
-        />
-
+        {SUBWAY_STATION_LIST.map((station) => (
+          <MapMarker
+            key={`subway-${station.key}`}
+            position={station.coords}
+            image={buildSubwayMarkerImage(station.markerLabel || 'S', station.lineColor || '#3D53B3')}
+            onClick={() => openSubwayStation(station.key)}
+            zIndex={100}
+          />
+        ))}
         <MapMarker
           position={yangjaeFlowerMarketCoords}
           image={{
@@ -1174,11 +1264,16 @@ const Main = () => {
 
         {mapLevel >= 6 ? (
           <MarkerClusterer averageCenter={true} minLevel={6} minClusterSize={1} styles={[{ width: '32px', height: '32px', background: '#FF4D00', color: '#fff', textAlign: 'center', fontWeight: 'bold', lineHeight: '28px', borderRadius: '50%', border: '2px solid white', boxShadow: '0 2px 8px rgba(0,0,0,0.3)', fontSize: '14px' }]}>
-            {rootMemos.filter(m => !m.popped_at).map(memo => <MapMarker key={memo.id} position={{ lat: memo.lat, lng: memo.lng }} />)}
+            {orderedRootMemos.filter(m => !m.popped_at).map(memo => <MapMarker key={memo.id} position={{ lat: memo.lat, lng: memo.lng }} />)}
           </MarkerClusterer>
         ) : (
-          rootMemos.map(memo => (
-            <CustomOverlayMap key={`memo-${memo.id}`} position={{ lat: memo.lat, lng: memo.lng }} xAnchor={0} yAnchor={0} zIndex={replyTargetId === memo.id ? 999 : (memo.popped_at ? 1 : 10)}>
+          orderedRootMemos.map((memo, index) => {
+            const isPopped = Boolean(memo.popped_at);
+            const baseZIndex = isPopped ? 1 : 40;
+            const memoZIndex = Math.min(baseZIndex + index, 89);
+
+            return (
+            <CustomOverlayMap key={`memo-${memo.id}`} position={{ lat: memo.lat, lng: memo.lng }} xAnchor={0} yAnchor={0} zIndex={memoZIndex}>
               <motion.div 
                 initial={{ opacity: 0, scale: 0, y: 30 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -1227,7 +1322,7 @@ const Main = () => {
                 </div>
               </motion.div>
             </CustomOverlayMap>
-          ))
+          )})
         )}
       </Map>
 

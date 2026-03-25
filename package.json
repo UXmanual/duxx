@@ -1,13 +1,17 @@
 {
   "name": "babble-project",
   "private": true,
-  "version": "57.6",
+  "version": "59.9",
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "prebuild": "node scripts/ensure-version-bump.mjs && node scripts/sync-public-version.mjs",
     "build": "vite build",
     "lint": "eslint . --report-unused-disable-directives --max-warnings 0",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "release:prod": "node scripts/bump-version.mjs && npm run build && npx vercel --prod --yes",
+    "subway:add": "node scripts/manage-subway-station.mjs add",
+    "subway:remove": "node scripts/manage-subway-station.mjs remove"
   },
   "dependencies": {
     "@react-google-maps/api": "^2.20.8",
@@ -41,5 +45,3 @@
     "vite-tsconfig-paths": "^6.1.1"
   }
 }
-
-

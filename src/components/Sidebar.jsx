@@ -1,6 +1,6 @@
 ﻿import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
 import { motion, AnimatePresence, useMotionValue, animate } from 'framer-motion';
-import { X, MessageSquare, Send, Coffee, MapPin, ChevronRight, Info, RefreshCw, Copy, Check, Crosshair } from 'lucide-react';
+import { X, MessageSquare, Send, Coffee, MapPin, ChevronRight, Info, Copy, Check, Crosshair } from 'lucide-react';
 
 const Sidebar = ({
   memo,
@@ -236,30 +236,17 @@ const Sidebar = ({
   };
 
   const SubwaySection = () => {
-    const initialHour = new Date().getHours();
-    const [selectedHour, setSelectedHour] = useState(initialHour);
-    const hourScrollRef = useRef(null);
-    const listScrollRef = useRef(null);
-    const isHourMouseDownRef = useRef(false);
-    const isHourDraggingRef = useRef(false);
-    const dragStartXRef = useRef(0);
-    const dragStartScrollLeftRef = useRef(0);
-    const dragDistanceRef = useRef(0);
-    const dragVelocityRef = useRef(0);
-    const lastPointerXRef = useRef(0);
-    const lastPointerTimeRef = useRef(0);
-    const momentumFrameRef = useRef(null);
-    const hasInitialScrollPositionRef = useRef(false);
-
     if (!subwayArrivals) return null;
 
     const currentDayType = subwayArrivals.dayType || '1';
-    const dayNames = { '1': '평일', '2': '토요일', '3': '휴일' };
-    const hourRows = Array.from({ length: 20 }, (_, i) => i + 5);
-
-    useEffect(() => {
-      setSelectedHour(initialHour);
-    }, [initialHour, subwayArrivals.dayType]);
+    const station = subwayArrivals.station || {};
+    const stationKey = station.key || 'seoul';
+    const lineColor = station.lineColor || '#3D53B3';
+    const stationBasicInfo = {
+      placeName: station.name || '서울역',
+      address: station.address || '서울특별시 용산구 한강대로 405',
+      phone: station.phone || '1544-7788'
+    };
 
     const getStationEventRawTime = (train) => {
       if (train.LEFTTIME && train.LEFTTIME !== '00:00:00') return train.LEFTTIME;
@@ -293,365 +280,112 @@ const Sidebar = ({
       return target.getTime() - now.getTime();
     };
 
-    const getNextTrain = (trains) =>
-      (trains || []).reduce((bestTrain, train) => {
-        const diff = getMillisecondsUntilTrain(train);
-        if (diff === Number.POSITIVE_INFINITY) return bestTrain;
-        if (!bestTrain) return train;
-        return diff < getMillisecondsUntilTrain(bestTrain) ? train : bestTrain;
-      }, null);
+    const getUpcomingTrains = (trains, limit = 3) =>
+      (trains || [])
+        .map((train) => ({ train, diff: getMillisecondsUntilTrain(train) }))
+        .filter(({ diff }) => Number.isFinite(diff) && diff >= 0)
+        .sort((a, b) => a.diff - b.diff)
+        .slice(0, limit)
+        .map(({ train }) => train);
 
-    const scrollToHour = (hour, behavior = 'smooth') => {
-      const listContainer = listScrollRef.current;
-      const target = document.getElementById(`hour-${hour}`);
-      if (!listContainer || !target) return;
-
-      const headerOffset = 56;
-      const currentHour = new Date().getHours();
-      const containerRect = listContainer.getBoundingClientRect();
-      const targetRect = target.getBoundingClientRect();
-      const hourSectionTop =
-        targetRect.top - containerRect.top + listContainer.scrollTop - headerOffset;
-
-      if (hour !== currentHour) {
-        listContainer.scrollTo({
-          top: Math.max(0, hourSectionTop),
-          behavior
-        });
-        return;
-      }
-
-      const nextTrainTarget = target.querySelector('[data-next-train="true"]');
-      if (!nextTrainTarget) {
-        listContainer.scrollTo({
-          top: Math.max(0, hourSectionTop),
-          behavior
-        });
-        return;
-      }
-
-      const nextTrainRect = nextTrainTarget.getBoundingClientRect();
-      const nextTrainTop =
-        nextTrainRect.top - containerRect.top + listContainer.scrollTop - headerOffset;
-
-      listContainer.scrollTo({
-        top: Math.max(0, nextTrainTop),
-        behavior
-      });
+    const formatMinutesOnly = (train) => {
+      const diff = getMillisecondsUntilTrain(train);
+      if (!Number.isFinite(diff)) return '-';
+      if (diff <= 0) return '도착';
+      if (diff <= 60000) return '곧 도착';
+      const minutes = Math.ceil(diff / 60000);
+      return `${minutes}분`;
     };
 
-    const scrollHourTabToCenter = (hour, behavior = 'smooth') => {
-      const container = hourScrollRef.current;
-      const button = document.getElementById(`btn-hour-${hour}`);
-      if (!container || !button) return;
+    const isExpressTrain = (train) => train?.EXPRESS_YN === 'D';
 
-      const centeredLeft =
-        button.offsetLeft - (container.clientWidth - button.clientWidth) / 2;
-      const maxScrollLeft = container.scrollWidth - container.clientWidth;
-
-      container.scrollTo({
-        behavior,
-        left: Math.max(0, Math.min(centeredLeft, maxScrollLeft))
-      });
-    };
-
-    const handleHourClick = (hour) => {
-      if (isHourDraggingRef.current) return;
-
-      setSelectedHour(hour);
-      requestAnimationFrame(() => {
-        scrollHourTabToCenter(hour, 'smooth');
-        scrollToHour(hour, 'smooth');
-      });
-    };
-
-    useEffect(() => {
-      hasInitialScrollPositionRef.current = false;
-    }, [subwayArrivals.dayType, subwayArrivals.loading]);
-
-    useLayoutEffect(() => {
-      if (subwayArrivals.loading || hasInitialScrollPositionRef.current) return;
-
-      scrollHourTabToCenter(selectedHour, 'auto');
-      scrollToHour(selectedHour, 'auto');
-      hasInitialScrollPositionRef.current = true;
-    }, [selectedHour, subwayArrivals.loading]);
-
-    const handleHourMouseDown = (event) => {
-      if (isMobile) return;
-
-      const container = hourScrollRef.current;
-      if (!container) return;
-
-      if (momentumFrameRef.current) {
-        cancelAnimationFrame(momentumFrameRef.current);
-        momentumFrameRef.current = null;
-      }
-
-      isHourMouseDownRef.current = true;
-      isHourDraggingRef.current = false;
-      dragStartXRef.current = event.pageX;
-      dragStartScrollLeftRef.current = container.scrollLeft;
-      dragDistanceRef.current = 0;
-      dragVelocityRef.current = 0;
-      lastPointerXRef.current = event.pageX;
-      lastPointerTimeRef.current = performance.now();
-      container.classList.add('cursor-grabbing');
-    };
-
-    const handleHourMouseMove = (event) => {
-      if (isMobile || !isHourMouseDownRef.current) return;
-
-      const container = hourScrollRef.current;
-      if (!container) return;
-
-      const deltaX = event.pageX - dragStartXRef.current;
-      dragDistanceRef.current = Math.abs(deltaX);
-
-      if (!isHourDraggingRef.current && dragDistanceRef.current < 6) {
-        return;
-      }
-
-      event.preventDefault();
-      isHourDraggingRef.current = true;
-      container.scrollLeft = dragStartScrollLeftRef.current - deltaX;
-
-      const now = performance.now();
-      const elapsed = Math.max(now - lastPointerTimeRef.current, 1);
-      dragVelocityRef.current = (lastPointerXRef.current - event.pageX) / elapsed;
-      lastPointerXRef.current = event.pageX;
-      lastPointerTimeRef.current = now;
-    };
-
-    const startHourMomentum = () => {
-      const container = hourScrollRef.current;
-      if (!container) return;
-
-      let velocity = dragVelocityRef.current * 18;
-      if (Math.abs(velocity) < 0.8) return;
-
-      const step = () => {
-        velocity *= 0.92;
-
-        if (Math.abs(velocity) < 0.2) {
-          momentumFrameRef.current = null;
-          return;
-        }
-
-        container.scrollLeft += velocity;
-        momentumFrameRef.current = requestAnimationFrame(step);
-      };
-
-      momentumFrameRef.current = requestAnimationFrame(step);
-    };
-
-    const resetHourDrag = () => {
-      const container = hourScrollRef.current;
-      const shouldStartMomentum = isHourDraggingRef.current && Math.abs(dragVelocityRef.current) > 0.01;
-
-      isHourMouseDownRef.current = false;
-      container?.classList.remove('cursor-grabbing');
-
-      if (shouldStartMomentum) {
-        startHourMomentum();
-      }
-
-      window.setTimeout(() => {
-        isHourDraggingRef.current = false;
-        dragDistanceRef.current = 0;
-        dragVelocityRef.current = 0;
-      }, 0);
-    };
-
-    useEffect(() => {
-      if (isMobile) return undefined;
-
-      const handleMouseUp = () => {
-        if (!isHourMouseDownRef.current) return;
-        resetHourDrag();
-      };
-
-      window.addEventListener('mouseup', handleMouseUp);
-      return () => window.removeEventListener('mouseup', handleMouseUp);
-    }, [isMobile]);
-
-    useEffect(() => () => {
-      if (momentumFrameRef.current) {
-        cancelAnimationFrame(momentumFrameRef.current);
-      }
-    }, []);
-
-    const nextUpTrain = getNextTrain(subwayArrivals.up);
-    const nextDownTrain = getNextTrain(subwayArrivals.down);
-
-    const TimetableRow = ({ hour }) => {
-      const hourPrefix = hour.toString().padStart(2, '0');
-      const matchesHour = (train) => getStationEventRawTime(train).startsWith(hourPrefix);
-      const ups = subwayArrivals.up?.filter(matchesHour) || [];
-      const downs = subwayArrivals.down?.filter(matchesHour) || [];
-      const now = new Date();
-      const isCurrentHour = now.getHours() === hour;
-
-      const getUpcomingDiff = (train) => {
-        const diff = getMillisecondsUntilTrain(train);
-        return diff === Number.POSITIVE_INFINITY ? Number.POSITIVE_INFINITY : diff;
-      };
-
-      const upcomingCandidates = isCurrentHour
-        ? [...ups, ...downs]
-            .map((train) => ({ train, diff: getUpcomingDiff(train) }))
-            .filter(({ diff }) => diff >= 0)
-            .sort((a, b) => a.diff - b.diff)
-        : [];
-
-      const currentHourAnchorTrain = upcomingCandidates[0]?.train || null;
-
-      if (ups.length === 0 && downs.length === 0) return null;
+    const upUpcomingTrains = getUpcomingTrains(subwayArrivals.up);
+    const downUpcomingTrains = getUpcomingTrains(subwayArrivals.down);
+    const stationCode =
+      subwayArrivals.up?.[0]?.STATION_CD ||
+      subwayArrivals.down?.[0]?.STATION_CD ||
+      subwayArrivals.up?.[0]?.FR_CODE ||
+      subwayArrivals.down?.[0]?.FR_CODE ||
+      station.stationCd ||
+      '0150';
+    const DirectionCard = ({ label, direction, trains = [], accent, badgeClass, timeClass }) => {
+      const firstTrain = trains[0] || null;
+      const secondTrain = trains[1] || null;
+      const thirdTrain = trains[2] || null;
 
       return (
-        <div id={`hour-${hour}`} className="flex border-b border-gray-50 group hover:bg-gray-50/50 transition-colors">
-          <div className="flex-1 p-4 border-r border-gray-100 space-y-3">
-            {ups.map((train, index) => (
-              <div
-                key={`up-${hour}-${index}`}
-                className={`flex flex-col rounded-2xl px-3 py-2 ${train === nextUpTrain ? 'bg-blue-50 ring-1 ring-blue-200 shadow-sm' : ''}`}
-                data-next-train={train === currentHourAnchorTrain}
-              >
-                <div className="flex items-center gap-1.5">
-                  <span className="text-[15px] font-[900] text-blue-600 tracking-tighter">{formatArrivalTime(train)}</span>
-                  {train.TRAIN_NO && (
-                    <span className="text-[8px] font-bold text-blue-300 border border-blue-100 px-1 rounded-sm">
-                      {train.TRAIN_NO}
-                    </span>
-                  )}
-                </div>
-                <span className="text-[13px] font-bold text-gray-400">{formatDestination(train)}</span>
-              </div>
-            ))}
+        <div className={`rounded-[28px] border p-5 ${accent}`}>
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <span className={`inline-flex rounded-full px-3 py-1 text-[12px] font-black ${badgeClass}`}>
+                {label}
+              </span>
+              <h3 className="mt-1 truncate whitespace-nowrap text-[20px] font-bold tracking-[-0.02em] text-gray-900">{direction}</h3>
+            </div>
+            <div className="shrink-0 text-right">
+              <p className="text-[12px] font-medium text-gray-400">
+                도착 예정 {firstTrain ? formatArrivalTime(firstTrain) : '--:--'}
+              </p>
+              <p className={`mt-1 whitespace-nowrap text-[20px] font-bold tracking-[-0.02em] ${timeClass}`}>
+                {firstTrain ? formatMinutesOnly(firstTrain) : '-'}
+              </p>
+            </div>
           </div>
 
-          <div className="flex-1 p-4 space-y-3 text-right">
-            {downs.map((train, index) => (
-              <div
-                key={`down-${hour}-${index}`}
-                className={`flex flex-col items-end rounded-2xl px-3 py-2 ${train === nextDownTrain ? 'bg-orange-50 ring-1 ring-orange-200 shadow-sm' : ''}`}
-                data-next-train={train === currentHourAnchorTrain}
-              >
-                <div className="flex items-center gap-1.5 justify-end">
-                  {train.TRAIN_NO && (
-                    <span className="text-[8px] font-bold text-gray-300 border border-gray-100 px-1 rounded-sm">
-                      {train.TRAIN_NO}
+          <div className="my-4 h-px bg-black/10" />
+
+          <div className="space-y-3">
+            {secondTrain ? (
+              <div className="flex items-center justify-between gap-4">
+                <div className="min-w-0 flex items-center gap-2">
+                  <span className="truncate whitespace-nowrap text-[14px] font-medium text-gray-900">{formatDestination(secondTrain)}</span>
+                  {isExpressTrain(secondTrain) && (
+                    <span className="shrink-0 whitespace-nowrap rounded-full bg-[#FF5A36]/10 px-2 py-1 text-[13px] font-medium leading-none text-[#FF5A36]">
+                      급
                     </span>
                   )}
-                  <span className="text-[15px] font-[900] text-gray-900 tracking-tighter">{formatArrivalTime(train)}</span>
+                  {secondTrain.TRAIN_NO && (
+                    <span className="shrink-0 whitespace-nowrap rounded-full border border-black/10 px-2 py-1 text-[13px] font-medium leading-none text-gray-400">
+                      {secondTrain.TRAIN_NO}
+                    </span>
+                  )}
                 </div>
-                <span className="text-[13px] font-bold text-gray-400">{formatDestination(train)}</span>
+                <span className={`shrink-0 whitespace-nowrap text-[14px] font-medium ${timeClass}`}>{formatMinutesOnly(secondTrain)}</span>
               </div>
-            ))}
+            ) : (
+              <div className="flex items-center justify-between gap-4">
+                <span className="truncate whitespace-nowrap text-[14px] font-medium text-gray-300">다음 열차 없음</span>
+                <span className="shrink-0 whitespace-nowrap text-[14px] font-medium text-gray-300">-</span>
+              </div>
+            )}
+
+            {thirdTrain ? (
+              <div className="flex items-center justify-between gap-4">
+                <div className="min-w-0 flex items-center gap-2">
+                  <span className="truncate whitespace-nowrap text-[14px] font-medium text-gray-500">{formatDestination(thirdTrain)}</span>
+                  {isExpressTrain(thirdTrain) && (
+                    <span className="shrink-0 whitespace-nowrap rounded-full bg-[#FF5A36]/10 px-2 py-1 text-[13px] font-medium leading-none text-[#FF5A36]">
+                      급
+                    </span>
+                  )}
+                  {thirdTrain.TRAIN_NO && (
+                    <span className="shrink-0 whitespace-nowrap rounded-full border border-black/10 px-2 py-1 text-[13px] font-medium leading-none text-gray-400">
+                      {thirdTrain.TRAIN_NO}
+                    </span>
+                  )}
+                </div>
+                <span className={`shrink-0 whitespace-nowrap text-[14px] font-medium ${timeClass}`}>{formatMinutesOnly(thirdTrain)}</span>
+              </div>
+            ) : (
+              <div className="flex items-center justify-between gap-4">
+                <span className="truncate whitespace-nowrap text-[14px] font-medium text-gray-300">다다음 열차 없음</span>
+                <span className="shrink-0 whitespace-nowrap text-[14px] font-medium text-gray-300">-</span>
+              </div>
+            )}
           </div>
         </div>
       );
     };
-
-    const TimetableSkeletonRow = ({ align = 'left', highlighted = false, withBadge = false }) => (
-      <div
-        className={`flex flex-col ${align === 'right' ? 'items-end' : ''} rounded-2xl px-3 py-2 ${
-          highlighted ? 'bg-blue-50/70 ring-1 ring-blue-100 shadow-sm' : ''
-        }`}
-      >
-        <div className={`flex items-center gap-1.5 ${align === 'right' ? 'justify-end' : ''}`}>
-          {withBadge && <div className="h-3.5 w-7 rounded-md bg-gray-200/90 animate-pulse" />}
-          <div className="h-5 w-14 rounded-full bg-gray-300 animate-pulse" />
-        </div>
-        <div className="mt-2 h-3.5 w-16 rounded-full bg-gray-200 animate-pulse" />
-      </div>
-    );
-
-    const TimetableSkeletonHourBlock = ({ emphasize = false }) => (
-      <div className="flex border-b border-gray-50">
-        <div className="flex-1 p-4 border-r border-gray-100 space-y-3">
-          <TimetableSkeletonRow highlighted={emphasize} withBadge />
-          <TimetableSkeletonRow />
-        </div>
-        <div className="flex-1 p-4 space-y-3">
-          <TimetableSkeletonRow align="right" highlighted={emphasize} withBadge />
-          <TimetableSkeletonRow align="right" />
-        </div>
-      </div>
-    );
-
-    if (subwayArrivals.loading) {
-      return (
-        <div className="category-subway animate-fade-in h-full flex flex-col">
-          <div className="sticky top-0 z-10 bg-white pb-4 space-y-4">
-            <div className="flex justify-between items-start gap-3 px-1">
-              <div className="min-w-0 flex items-start gap-3">
-                <div className="w-12 h-12 rounded-2xl bg-[#3D53B3]/10 border border-blue-100 flex flex-col items-center justify-center leading-none">
-                  <div className="h-2.5 w-6 rounded-full bg-[#3D53B3]/30 animate-pulse" />
-                  <div className="mt-1.5 h-2 w-5 rounded-full bg-[#3D53B3]/20 animate-pulse" />
-                </div>
-                <div className="min-w-0 space-y-2 pt-0.5">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <div className="h-6 w-24 rounded-full bg-gray-300 animate-pulse" />
-                    <div className="h-5 w-12 rounded-full bg-blue-100 animate-pulse" />
-                  </div>
-                  <div className="h-3.5 w-32 rounded-full bg-gray-200 animate-pulse" />
-                </div>
-              </div>
-              <div className="w-9 h-9 rounded-full bg-gray-100 animate-pulse" />
-            </div>
-
-            <div className="flex gap-1 bg-gray-100 p-1 rounded-2xl">
-              {[0, 1, 2].map((item) => (
-                <div
-                  key={item}
-                  className={`flex-1 rounded-[14px] py-2.5 ${
-                    item === 0 ? 'bg-white shadow-sm' : 'bg-transparent'
-                  }`}
-                >
-                  <div className="mx-auto h-4 w-12 rounded-full bg-gray-200 animate-pulse" />
-                </div>
-              ))}
-            </div>
-
-            <div className="flex gap-2.5 overflow-hidden pt-2 pb-4 no-scrollbar border-b border-gray-100 px-1">
-              {hourRows.slice(0, isMobile ? 5 : 8).map((hour, index) => (
-                <div
-                  key={`skeleton-hour-${hour}`}
-                  className={`flex-shrink-0 w-12 h-12 rounded-[20px] flex items-center justify-center ${
-                    index === 1 ? 'bg-blue-600 shadow-lg shadow-blue-100' : 'bg-gray-50'
-                  }`}
-                >
-                  <div
-                    className={`h-4 w-5 rounded-full animate-pulse ${
-                      index === 1 ? 'bg-white/80' : 'bg-gray-200'
-                    }`}
-                  />
-                </div>
-              ))}
-            </div>
-
-            <p className="mt-4 text-[13px] font-bold tracking-tight text-gray-400">
-              서울역 시간표 데이터를 새로 불러오는 중입니다.
-            </p>
-          </div>
-
-          <div className="flex items-center justify-between text-[13px] font-black text-gray-500 px-4 py-2 bg-gray-50/80 rounded-xl mb-2">
-            <div className="h-3.5 w-10 rounded-full bg-gray-200 animate-pulse" />
-            <div className="h-3.5 w-10 rounded-full bg-gray-200 animate-pulse" />
-          </div>
-
-          <div className="flex-1 min-h-0 overflow-hidden">
-            {hourRows.slice(0, isMobile ? 3 : 4).map((hour, index) => (
-              <TimetableSkeletonHourBlock
-                key={`skeleton-block-${hour}`}
-                emphasize={index === 0}
-              />
-            ))}
-          </div>
-        </div>
-      );
-    }
 
     if (subwayArrivals.error) {
       return (
@@ -664,7 +398,7 @@ const Sidebar = ({
             {subwayArrivals.message || 'API 인증키 문제이거나 일시적인 통신 장애일 수 있습니다.'}
           </p>
           <button
-            onClick={() => onTimetableTabChange(currentDayType)}
+            onClick={() => onTimetableTabChange(currentDayType, true, stationKey)}
             className="mt-2 px-6 py-2.5 bg-white border border-red-200 text-red-600 rounded-xl font-bold text-[13px] hover:bg-red-100 transition-colors"
           >
             다시 시도
@@ -674,84 +408,110 @@ const Sidebar = ({
     }
 
     return (
-      <div className="category-subway animate-fade-in h-full flex flex-col">
-        <div className="sticky top-0 z-10 bg-white pb-4 space-y-4">
+      <div className="category-subway animate-fade-in space-y-4">
+        <div className="sticky top-0 z-10 bg-white pb-4">
           <div className="flex justify-between items-start gap-3 px-1">
             <div className="min-w-0 flex items-start gap-3">
-              <div className="w-12 h-12 rounded-2xl bg-[#3D53B3] text-white shadow-lg shadow-[#3D53B3]/20 flex flex-col items-center justify-center leading-none">
-                <span className="text-[13px] font-black tracking-tight">1호선</span>
-                <span className="mt-1 text-[8px] font-bold text-blue-100">LINE</span>
+              <div
+                className="flex h-12 w-12 flex-col items-center justify-center rounded-2xl text-white leading-none shadow-lg"
+                style={{ backgroundColor: lineColor, boxShadow: `0 10px 24px ${lineColor}33` }}
+              >
+                <span className="text-[13px] font-black tracking-tight">{station.line || '1호선'}</span>
+                <span className="mt-1 text-[8px] font-bold text-white/75">LINE</span>
               </div>
               <div className="min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <h2 className="text-[20px] font-black text-gray-900 leading-tight">서울역</h2>
-                </div>
-                <span className="text-[13px] font-bold text-gray-400">수도권 지하철</span>
+                <h2 className="text-[20px] font-black text-gray-900 leading-tight">
+                  {station.name || '서울역'} <span style={{ color: lineColor }}>{station.line || '1호선'}</span>
+                </h2>
+                <span className="text-[13px] font-medium text-gray-400">수도권 지하철 {stationCode}</span>
               </div>
             </div>
             <button
-              onClick={() => onTimetableTabChange(currentDayType, true)}
+              onClick={() => onTimetableTabChange(currentDayType, true, stationKey)}
               className="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-400 hover:text-gray-900"
               title="새로고침"
             >
-              <RefreshCw size={18} className={subwayArrivals.loading ? 'animate-spin' : ''} />
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+                className={subwayArrivals.loading ? 'animate-spin' : ''}
+                aria-hidden="true"
+              >
+                <path
+                  d="M20 5V10H15"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+                <path
+                  d="M20 10C18.9 6.8 15.8 4.5 12.2 4.5C7.7 4.5 4 8.2 4 12.7C4 17.2 7.7 20.9 12.2 20.9C15.8 20.9 18.8 18.6 19.9 15.5"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
             </button>
           </div>
-
-          <div className="flex gap-1 bg-gray-100 p-1 rounded-2xl">
-            {Object.entries(dayNames).map(([value, name]) => (
-              <button
-                key={value}
-                onClick={() => onTimetableTabChange(value)}
-                className={`flex-1 py-2.5 text-[13px] font-black rounded-[14px] transition-all ${
-                  currentDayType === value ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-400'
-                }`}
-              >
-                {name}
-              </button>
-            ))}
-          </div>
-
-          <div
-            ref={hourScrollRef}
-            className={`flex gap-2.5 overflow-x-auto pt-2 pb-4 no-scrollbar border-b border-gray-100 px-1 ${isMobile ? '' : 'cursor-grab active:cursor-grabbing select-none'}`}
-            onMouseDown={handleHourMouseDown}
-            onMouseMove={handleHourMouseMove}
-            onMouseUp={resetHourDrag}
-            onMouseLeave={resetHourDrag}
-            onDragStart={(event) => event.preventDefault()}
-          >
-            {hourRows.map((hour) => (
-              <button
-                id={`btn-hour-${hour}`}
-                key={hour}
-                onMouseDown={(event) => {
-                  if (isHourDraggingRef.current || dragDistanceRef.current >= 6) {
-                    event.preventDefault();
-                  }
-                }}
-                onClick={() => handleHourClick(hour)}
-                className={`flex-shrink-0 w-12 h-12 flex items-center justify-center rounded-[20px] font-black text-[14px] transition-all ${
-                  selectedHour === hour
-                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-200 scale-105'
-                    : 'bg-gray-50 text-gray-400 hover:bg-gray-100'
-                }`}
-              >
-                {hour}
-              </button>
-            ))}
-          </div>
         </div>
 
-        <div className="flex items-center justify-between text-[13px] font-black text-gray-500 px-4 py-2 bg-gray-50/80 rounded-xl mb-2">
-          <span>상행</span>
-          <span>하행</span>
-        </div>
+        <div className="space-y-4">
+          {subwayArrivals.loading ? (
+            <>
+              {[0, 1].map((item) => (
+                <div key={`subway-skeleton-${item}`} className="rounded-[24px] border border-gray-100 bg-gray-50/70 p-5">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="space-y-2">
+                      <div className="h-3.5 w-14 rounded-full bg-gray-200 animate-pulse" />
+                      <div className="h-8 w-32 rounded-full bg-gray-300 animate-pulse" />
+                    </div>
+                    <div className="h-4 w-16 rounded-full bg-gray-200 animate-pulse" />
+                  </div>
+                  <div className="mt-4 h-px w-full bg-gray-200" />
+                  <div className="mt-4 h-6 w-40 rounded-full bg-gray-300 animate-pulse" />
+                  <div className="mt-3 h-6 w-32 rounded-full bg-gray-200 animate-pulse" />
+                </div>
+              ))}
+            </>
+          ) : (
+            <>
+              <DirectionCard
+                label="상행"
+                direction={upUpcomingTrains[0] ? `${formatDestination(upUpcomingTrains[0])} 방면` : '상행 방면'}
+                trains={upUpcomingTrains}
+                accent="bg-gray-50/90 border-gray-200"
+                badgeClass="bg-[#EEF3FF] text-[#3D53B3]"
+                timeClass="text-[#3D53B3]"
+              />
+              <DirectionCard
+                label="하행"
+                direction={downUpcomingTrains[0] ? `${formatDestination(downUpcomingTrains[0])} 방면` : '하행 방면'}
+                trains={downUpcomingTrains}
+                accent="bg-gray-50/90 border-gray-200"
+                badgeClass="bg-[#FFF0E8] text-[#FF4D00]"
+                timeClass="text-[#FF4D00]"
+              />
 
-        <div ref={listScrollRef} className="flex-1 min-h-0 overflow-y-auto custom-scrollbar pb-0">
-          {hourRows.map((hour) => (
-            <TimetableRow key={hour} hour={hour} />
-          ))}
+              <div className="space-y-3 px-1 pt-1">
+                <div className="flex items-start justify-between gap-4">
+                  <span className="shrink-0 text-[13px] font-bold text-gray-400">장소명</span>
+                  <span className="text-right text-[14px] font-medium text-gray-900">{stationBasicInfo.placeName}</span>
+                </div>
+                <div className="flex items-start justify-between gap-4">
+                  <span className="shrink-0 text-[13px] font-bold text-gray-400">주소</span>
+                  <span className="text-right text-[14px] font-medium leading-snug text-gray-900">{stationBasicInfo.address}</span>
+                </div>
+                <div className="flex items-start justify-between gap-4">
+                  <span className="shrink-0 text-[13px] font-bold text-gray-400">전화번호</span>
+                  <span className="text-right text-[14px] font-medium text-gray-900">{stationBasicInfo.phone}</span>
+                </div>
+              </div>
+            </>
+          )}
         </div>
       </div>
     );
@@ -1104,7 +864,7 @@ const Sidebar = ({
             <div
               ref={contentRef}
               className={`flex-1 px-6 custom-scrollbar scroll-smooth ${
-                isSubwayOnlyView ? 'overflow-hidden pb-0' : 'overflow-y-auto pb-20'
+                isSubwayOnlyView ? 'overflow-y-auto pb-20' : 'overflow-y-auto pb-20'
               }`}
             >
               <MemoSection />
@@ -1144,9 +904,3 @@ const Sidebar = ({
 };
 
 export default Sidebar;
-
-
-
-
-
-
