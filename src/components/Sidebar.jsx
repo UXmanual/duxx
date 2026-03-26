@@ -320,17 +320,39 @@ const Sidebar = ({
               <span className={`inline-flex rounded-full px-3 py-1 text-[12px] font-black ${badgeClass}`}>
                 {label}
               </span>
-              <h3 className="mt-1 truncate whitespace-nowrap text-[20px] font-bold tracking-[-0.02em] text-gray-900">{direction}</h3>
             </div>
             <div className="shrink-0 text-right">
               <p className="text-[12px] font-medium text-gray-400">
                 도착 예정 {firstTrain ? formatArrivalTime(firstTrain) : '--:--'}
               </p>
-              <p className={`mt-1 whitespace-nowrap text-[20px] font-bold tracking-[-0.02em] ${timeClass}`}>
-                {firstTrain ? formatMinutesOnly(firstTrain) : '-'}
-              </p>
             </div>
           </div>
+
+          {firstTrain ? (
+            <div className="mt-3 flex items-center justify-between gap-4">
+              <div className="min-w-0 flex items-center gap-2">
+                <span className="truncate whitespace-nowrap text-[20px] font-bold tracking-[-0.02em] text-gray-900">{formatDestination(firstTrain)}</span>
+                {isExpressTrain(firstTrain) && (
+                  <span className="shrink-0 whitespace-nowrap rounded-full bg-[#FF5A36]/10 px-2 py-1 text-[13px] font-medium leading-none text-[#FF5A36]">
+                    급
+                  </span>
+                )}
+                {firstTrain.TRAIN_NO && (
+                  <span className="shrink-0 whitespace-nowrap rounded-full border border-black/10 px-2 py-1 text-[13px] font-medium leading-none text-gray-400">
+                    {firstTrain.TRAIN_NO}
+                  </span>
+                )}
+              </div>
+              <p className={`shrink-0 whitespace-nowrap text-[20px] font-bold tracking-[-0.02em] ${timeClass}`}>
+                {formatMinutesOnly(firstTrain)}
+              </p>
+            </div>
+          ) : (
+            <div className="mt-3 flex items-center justify-between gap-4">
+              <span className="truncate whitespace-nowrap text-[20px] font-bold tracking-[-0.02em] text-gray-300">{direction}</span>
+              <span className="shrink-0 whitespace-nowrap text-[20px] font-bold tracking-[-0.02em] text-gray-300">-</span>
+            </div>
+          )}
 
           <div className="my-4 h-px bg-black/10" />
 

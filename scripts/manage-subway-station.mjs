@@ -94,7 +94,17 @@ function escapeNonAscii(value) {
 
 function writeStationModule(stations) {
   const moduleSource =
-    `export const SUBWAY_STATIONS = ${escapeNonAscii(JSON.stringify(stations, null, 2))};\n\n` +
+    `import { getSubwayLineColor } from './subwayLineMeta.js';\n\n` +
+    `const RAW_SUBWAY_STATIONS = ${escapeNonAscii(JSON.stringify(stations, null, 2))};\n\n` +
+    'export const SUBWAY_STATIONS = Object.fromEntries(\n' +
+    '  Object.entries(RAW_SUBWAY_STATIONS).map(([key, station]) => [\n' +
+    '    key,\n' +
+    '    {\n' +
+    '      ...station,\n' +
+    '      lineColor: getSubwayLineColor(station.lineApiName || station.line)\n' +
+    '    }\n' +
+    '  ])\n' +
+    ');\n\n' +
     'export const SUBWAY_STATION_LIST = Object.values(SUBWAY_STATIONS);\n';
 
   fs.writeFileSync(stationFilePath, moduleSource, 'utf8');

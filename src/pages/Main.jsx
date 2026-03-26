@@ -248,17 +248,34 @@ const Main = () => {
     }, 180);
   };
 
+  const primeSubwaySidebar = (station, dayType = '1') => {
+    setSelectedSubwayArrivals({
+      type: 'timetable',
+      dayType,
+      station,
+      up: [],
+      down: [],
+      loading: true,
+      error: null,
+      message: null,
+      isFallback: false
+    });
+  };
+
   const openSubwayStation = (stationKey) => {
     const station = SUBWAY_STATIONS[stationKey] || SUBWAY_STATIONS.seoul;
 
     setSelectedStarbucksId(null);
     setSelectedMemoId(null);
-    setSelectedSubwayArrivals(null);
     setSelectedBusStop(null);
     setSelectedCurrentLocationInfo(null);
+    primeSubwaySidebar(station);
 
     if (mapLevel >= 6) {
       focusSubwayStationAtDefaultZoom(station.coords);
+      window.setTimeout(() => {
+        fetchSubwayTimetable('1', false, station.key);
+      }, 220);
       return;
     }
 
@@ -1010,14 +1027,6 @@ const Main = () => {
           left: 'env(safe-area-inset-left, 0px)',
         }}
       >
-        <div className="absolute left-0 right-0 top-0 h-[2px] overflow-hidden bg-[#FF4D00]">
-          <motion.div
-            className="h-full bg-white"
-            initial={{ width: '0%' }}
-            animate={{ width: `${introProgress}%` }}
-            transition={{ duration: isIntroExiting ? 0.18 : 0.24, ease: 'easeOut' }}
-          />
-        </div>
         <motion.div
           initial={{ scale: 1, y: 0, rotate: 0, opacity: 1, filter: 'blur(0px)' }}
           animate={isIntroExiting
@@ -1026,10 +1035,10 @@ const Main = () => {
           transition={isIntroExiting
             ? { duration: 0.45, ease: [0.22, 1, 0.36, 1] }
             : { duration: 0.2 }}
-          className="relative flex items-center justify-center"
+          className="relative inline-flex flex-col items-stretch justify-center -translate-y-[6px]"
         >
           <span
-            className="relative flex items-center text-[29px] leading-none tracking-[0] text-white md:text-[38px]"
+            className="relative flex items-center self-center text-[29px] leading-none tracking-[0] text-white md:text-[38px]"
             style={{ fontFamily: 'Pretendard, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' }}
             aria-label="BABBLE"
           >
@@ -1040,6 +1049,14 @@ const Main = () => {
             <span style={{ fontWeight: 200 }}>L</span>
             <span style={{ fontWeight: 100 }}>E</span>
           </span>
+          <div className="mt-4 w-full min-w-full overflow-hidden rounded-[999px] bg-[#FFB08D]/55" style={{ height: '2px' }}>
+            <motion.div
+              className="h-full rounded-[999px] bg-white"
+              initial={{ width: '0%' }}
+              animate={{ width: `${introProgress}%` }}
+              transition={{ duration: isIntroExiting ? 0.18 : 0.24, ease: 'easeOut' }}
+            />
+          </div>
         </motion.div>
       </div>
     </motion.div>
