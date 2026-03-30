@@ -1,15 +1,15 @@
 {
   "name": "babble-project",
   "private": true,
-  "version": "62.3",
+  "version": "64.7",
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "prebuild": "node scripts/ensure-version-bump.mjs && node scripts/sync-public-version.mjs",
+    "prebuild": "node scripts/sync-public-version.mjs",
     "build": "vite build",
     "lint": "eslint . --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
-    "release:prod": "node scripts/bump-version.mjs && npm run build && npx vercel --prod --yes",
+    "release:prod": "node scripts/bump-version.mjs && node scripts/ensure-version-bump.mjs --require-bump && npm run build && npx vercel --prod --yes",
     "subway:add": "node scripts/manage-subway-station.mjs add",
     "subway:remove": "node scripts/manage-subway-station.mjs remove"
   },

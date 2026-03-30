@@ -10,9 +10,8 @@ const currentVersion = String(packageJson.version || '').trim();
 
 const args = new Set(process.argv.slice(2));
 const isExplicitCheck = args.has('--require-bump');
-const isVercelProduction = process.env.VERCEL === '1' && process.env.VERCEL_ENV === 'production';
 
-if (!isExplicitCheck && !isVercelProduction) {
+if (!isExplicitCheck) {
   process.exit(0);
 }
 

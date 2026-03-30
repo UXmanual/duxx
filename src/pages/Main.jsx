@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Map, CustomOverlayMap, MapMarker, MarkerClusterer, useKakaoLoader } from 'react-kakao-maps-sdk';
 import { useTheme } from '../context/ThemeContext';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Crosshair, MessageSquare, X, Coffee, ChevronDown, ChevronUp } from 'lucide-react';
+import { Crosshair, MessageSquare, X, Coffee, ChevronDown, ChevronUp, Search, ArrowUpRight } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import { starbucksReserveStores } from '../data/starbucksReserve';
 import { AI_PERSONAS } from '../data/aiPersonas';
@@ -43,6 +43,52 @@ const calculateDistanceMeters = (from, to) => {
 
   return Math.round(earthRadius * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
 };
+
+const normalizeSearchText = (value) =>
+  String(value || '')
+    .toLowerCase()
+    .replace(/\s+/g, '');
+
+const MARKER_CLICK_TABLE = 'marker_click_events';
+const MARKER_POPULARITY_VIEW = 'marker_popularity';
+const MARKER_CLICK_SOURCE = 'map-marker';
+const MARKER_SESSION_STORAGE_KEY = 'babble_marker_session_id';
+
+const createBrowserSessionId = () => {
+  if (typeof window === 'undefined') return 'server-session';
+
+  try {
+    const existingSessionId = window.localStorage.getItem(MARKER_SESSION_STORAGE_KEY);
+    if (existingSessionId) return existingSessionId;
+
+    const nextSessionId =
+      window.crypto?.randomUUID?.() ||
+      `session-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+
+    window.localStorage.setItem(MARKER_SESSION_STORAGE_KEY, nextSessionId);
+    return nextSessionId;
+  } catch {
+    return `session-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+  }
+};
+
+const buildMarkerPopularityKey = (itemType, itemId) => `${itemType}:${itemId}`;
+
+const getMemoPopularityItemId = (memo) => {
+  if (!memo) return null;
+  return `memo-${memo.parent_id || memo.id}`;
+};
+
+const SEARCH_FILTER_OPTIONS = [
+  { id: 'all', label: '전체' },
+  { id: '버블', label: '버블' },
+  { id: '답글', label: '답글' },
+  { id: '지하철', label: '지하철' },
+  { id: '버스정류장', label: '버스정류장' },
+  { id: '버스노선', label: '버스노선' },
+  { id: '스타벅스R', label: '스타벅스R' },
+  { id: '장소', label: '장소' }
+];
 
 /**
  * [Page] 硫붿씤 ?섏씠吏 (吏??硫붾え 湲곕뒫 ?듯빀 踰꾩쟾)
@@ -120,8 +166,14 @@ const Main = () => {
   const [selectedCurrentLocationInfo, setSelectedCurrentLocationInfo] = useState(null);
   const [activeBusStopConfig, setActiveBusStopConfig] = useState(null);
   const [subwayFetchTime, setSubwayFetchTime] = useState(null);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchFilter, setSearchFilter] = useState('all');
+  const [busSearchCatalog, setBusSearchCatalog] = useState([]);
+  const [markerPopularityMap, setMarkerPopularityMap] = useState({});
   const busRequestIdRef = useRef(0);
   const currentLocationRequestIdRef = useRef(0);
+  const searchInputRef = useRef(null);
   const seoulStationCoords = SUBWAY_STATIONS.seoul.coords;
   const gyeonggiBusStop = {
     provider: 'gyeonggi',
@@ -178,6 +230,14 @@ const Main = () => {
       '\uC77C\uBD80 \uC810\uD3EC\uB294 \uC0C8\uBCBD \uC2DC\uAC04\uB300\uC5D0 \uC6B4\uC601\uC744 \uC2DC\uC791\uD569\uB2C8\uB2E4.'
     ]
   };
+  const busStopConfigs = useMemo(
+    () => [
+      { id: 'gyeonggi-bus-stop', config: gyeonggiBusStop },
+      { id: 'gyeonggi-bus-stop-citizen-gym', config: citizenGymBusStop },
+      { id: 'seoul-bus-stop', config: seoulBusStop }
+    ],
+    []
+  );
 
   // 珥덇린 ?꾩튂 濡쒕뵫 理쒖쟻???곹깭
   const [isLocationLoaded, setIsLocationLoaded] = useState(false);
@@ -221,7 +281,87 @@ const Main = () => {
     });
   }, [rootMemos]);
 
+  /*
+
+  const searchEntries = useMemo(() => {
+    const memoEntries = memos.map((memo) => ({
+      id: `memo-${memo.id}`,
+      type: memo.parent_id ? '답글' : '버블',
+      title: memo.text,
+      subtitle: memo.parent_id ? '답글 버블로 이동' : '버블 위치로 이동',
+      keywords: [memo.text, memo.nickname, memo.parent_id ? '답글' : '버블'],
+      action: () => openMemoBySearch(memo.id)
+    }));
+
+    const subwayEntries = SUBWAY_STATION_LIST.map((station) => ({
+      id: `subway-${station.key}`,
+      type: '지하철',
+      title: station.name,
+      subtitle: `${station.line} 시간표 보기`,
+      keywords: [station.name, station.searchName, station.line, station.address],
+      action: () => openSubwayStation(station.key)
+    }));
+
+    const busStopEntries = busStopConfigs.map(({ id, config }) => ({
+      id,
+      type: '버스정류장',
+      title: config.fallbackStation.name,
+      subtitle: `정류장 ${config.stationNumber}`,
+      keywords: [
+        config.fallbackStation.name,
+        config.stationNumber,
+        config.fallbackStation.mobileNo,
+        '버스',
+        '정류장'
+      ],
+      action: () => openBusStop(config)
+    }));
+
+    const busRouteEntries = busSearchCatalog.map((route) => ({
+      id: `bus-route-${route.stopId}-${route.routeName}`,
+      type: '버스노선',
+      title: `${route.routeName}번`,
+      subtitle: `${route.stopName} · ${route.routeDestName || '버스 도착 정보'}`,
+      keywords: [route.routeName, route.routeDestName, route.stopName, route.stopNumber, '버스', '노선'],
+      action: () => openBusStop(route.stopConfig)
+    }));
+
+    const flowerEntry = {
+      id: 'flower-market',
+      type: '장소',
+      title: yangjaeFlowerMarketName,
+      subtitle: '양재 꽃시장으로 이동',
+      keywords: [yangjaeFlowerMarketName, '양재', '꽃시장', '화훼공판장'],
+      action: () => {
+        setSelectedStarbucksId(null);
+        setSelectedMemoId(null);
+        setSelectedSubwayArrivals(null);
+        setSelectedBusStop(null);
+        setSelectedCurrentLocationInfo(null);
+        setIsYangjaeFlowerMarketSelected(false);
+        setIsFlowerMarketSheetOpen(true);
+        panToWithOffset(yangjaeFlowerMarketCoords.lat, yangjaeFlowerMarketCoords.lng);
+      }
+    };
+
+    return [...memoEntries, ...subwayEntries, ...busStopEntries, ...busRouteEntries, flowerEntry];
+  }, [memos, busSearchCatalog, busStopConfigs, openMemoBySearch, openSubwayStation, openBusStop, panToWithOffset]);
+
+  const filteredSearchResults = useMemo(() => {
+    const normalizedQuery = normalizeSearchText(searchQuery);
+    const baseEntries = searchEntries.filter((entry) => {
+      const haystack = normalizeSearchText([entry.title, entry.subtitle, ...(entry.keywords || [])].join(' '));
+      return normalizedQuery ? haystack.includes(normalizedQuery) : true;
+    });
+
+    const typeFilteredEntries =
+      searchFilter === 'all' ? baseEntries : baseEntries.filter((entry) => entry.type === searchFilter);
+
+    return normalizedQuery ? typeFilteredEntries : typeFilteredEntries.slice(0, 6);
+  }, [searchEntries, searchQuery, searchFilter]);
+
   // 遺?쒕윭???ㅽ봽???쇳꽣留곸쓣 ?꾪븳 ?ы띁 ?⑥닔
+  */
   const panToWithOffset = (lat, lng) => {
     if (!map) return;
     const latlng = new window.kakao.maps.LatLng(lat, lng);
@@ -262,8 +402,73 @@ const Main = () => {
     });
   };
 
-  const openSubwayStation = (stationKey) => {
+  const updateMarkerPopularity = (itemType, itemId) => {
+    if (!itemType || !itemId) return;
+
+    const popularityKey = buildMarkerPopularityKey(itemType, itemId);
+    setMarkerPopularityMap((prev) => ({
+      ...prev,
+      [popularityKey]: (prev[popularityKey] || 0) + 1
+    }));
+  };
+
+  const rollbackMarkerPopularity = (itemType, itemId) => {
+    if (!itemType || !itemId) return;
+
+    const popularityKey = buildMarkerPopularityKey(itemType, itemId);
+    setMarkerPopularityMap((prev) => ({
+      ...prev,
+      [popularityKey]: Math.max((prev[popularityKey] || 1) - 1, 0)
+    }));
+  };
+
+  const trackMarkerClick = async ({ itemType, itemId, itemTitle, meta = {} }) => {
+    if (!supabase || !itemType || !itemId) return;
+
+    updateMarkerPopularity(itemType, itemId);
+
+    try {
+      const sessionId = createBrowserSessionId();
+      const { error } = await supabase.from(MARKER_CLICK_TABLE).insert([
+        {
+          item_type: itemType,
+          item_id: itemId,
+          item_title: itemTitle || null,
+          session_id: sessionId,
+          source: MARKER_CLICK_SOURCE,
+          meta
+        }
+      ]);
+
+      if (error) {
+        console.error('Failed to track marker click:', error);
+        rollbackMarkerPopularity(itemType, itemId);
+      }
+    } catch (error) {
+      console.error('Failed to track marker click:', error);
+      rollbackMarkerPopularity(itemType, itemId);
+    }
+  };
+
+  const getEntryPopularity = (itemType, itemId) =>
+    markerPopularityMap[buildMarkerPopularityKey(itemType, itemId)] || 0;
+
+  const openSubwayStation = (stationKey, options = {}) => {
+    const { trackClick = false } = options;
     const station = SUBWAY_STATIONS[stationKey] || SUBWAY_STATIONS.seoul;
+
+    if (trackClick) {
+      trackMarkerClick({
+        itemType: '지하철',
+        itemId: `subway-${station.key}`,
+        itemTitle: station.name,
+        meta: {
+          line: station.line,
+          lat: station.coords?.lat,
+          lng: station.coords?.lng
+        }
+      });
+    }
 
     setSelectedStarbucksId(null);
     setSelectedMemoId(null);
@@ -283,6 +488,251 @@ const Main = () => {
     fetchSubwayTimetable('1', false, station.key);
   };
 
+  const openBusStop = (stopConfig, options = {}) => {
+    const { trackClick = false } = options;
+    if (!stopConfig) return;
+
+    if (trackClick) {
+      trackMarkerClick({
+        itemType: '버스정류장',
+        itemId: `bus-stop-${stopConfig.stationNumber}`,
+        itemTitle: stopConfig.fallbackStation?.name,
+        meta: {
+          stationNumber: stopConfig.stationNumber,
+          provider: stopConfig.provider,
+          lat: stopConfig.coords?.lat,
+          lng: stopConfig.coords?.lng
+        }
+      });
+    }
+
+    setSelectedStarbucksId(null);
+    setSelectedMemoId(null);
+    setSelectedSubwayArrivals(null);
+    setSelectedCurrentLocationInfo(null);
+    setIsYangjaeFlowerMarketSelected(false);
+    setIsFlowerMarketSheetOpen(false);
+
+    if (mapLevel >= 6) {
+      setSelectedBusStop(null);
+      focusBusStopAtDefaultZoom(stopConfig);
+      return;
+    }
+
+    panToWithOffset(stopConfig.coords.lat, stopConfig.coords.lng);
+    fetchBusStopArrival(false, stopConfig);
+  };
+
+  const openMemoBySearch = (memoId, options = {}) => {
+    const { trackClick = false } = options;
+    const memo = memos.find((item) => item.id === memoId);
+    if (!memo) return;
+
+    if (trackClick) {
+      trackMarkerClick({
+        itemType: memo.parent_id ? '답글' : '버블',
+        itemId: getMemoPopularityItemId(memo),
+        itemTitle: memo.text,
+        meta: {
+          lat: memo.lat,
+          lng: memo.lng,
+          rootMemoId: memo.parent_id || memo.id
+        }
+      });
+    }
+
+    panToWithOffset(memo.lat, memo.lng);
+    setSelectedStarbucksId(null);
+    setIsYangjaeFlowerMarketSelected(false);
+    setIsFlowerMarketSheetOpen(false);
+    setSelectedSubwayArrivals(null);
+    setSelectedBusStop(null);
+    setSelectedCurrentLocationInfo(null);
+    setSelectedMemoId(memo.id);
+    setExpandedGroupIds([memo.parent_id || memo.id]);
+    setShowReplyIds([memo.parent_id || memo.id]);
+    setReplyTargetId(memo.parent_id || memo.id);
+  };
+
+  const openStarbucksPlace = (place, options = {}) => {
+    const { trackClick = false } = options;
+    if (!place) return;
+
+    if (trackClick) {
+      trackMarkerClick({
+        itemType: '스타벅스R',
+        itemId: `starbucks-${place.id}`,
+        itemTitle: place.name,
+        meta: {
+          address: place.address,
+          lat: place.lat,
+          lng: place.lng
+        }
+      });
+    }
+
+    panToWithOffset(place.lat, place.lng);
+    setSelectedSubwayArrivals(null);
+    setSelectedBusStop(null);
+    setSelectedCurrentLocationInfo(null);
+    setIsYangjaeFlowerMarketSelected(false);
+    setIsFlowerMarketSheetOpen(false);
+    setSelectedStarbucksId(place.id);
+    setExpandedGroupIds([]);
+    setSelectedMemoId(null);
+  };
+
+  const openFlowerMarket = (options = {}) => {
+    const { trackClick = false } = options;
+
+    if (trackClick) {
+      trackMarkerClick({
+        itemType: '장소',
+        itemId: 'place-flower-market',
+        itemTitle: yangjaeFlowerMarketName,
+        meta: {
+          lat: yangjaeFlowerMarketCoords.lat,
+          lng: yangjaeFlowerMarketCoords.lng
+        }
+      });
+    }
+
+    setSelectedStarbucksId(null);
+    setSelectedMemoId(null);
+    setSelectedSubwayArrivals(null);
+    setSelectedBusStop(null);
+    setSelectedCurrentLocationInfo(null);
+    setIsYangjaeFlowerMarketSelected(false);
+    setIsFlowerMarketSheetOpen(true);
+    panToWithOffset(yangjaeFlowerMarketCoords.lat, yangjaeFlowerMarketCoords.lng);
+  };
+
+  useEffect(() => {
+    if (!supabase) return undefined;
+
+    let isCancelled = false;
+
+    const fetchMarkerPopularity = async () => {
+      const { data, error } = await supabase
+        .from(MARKER_POPULARITY_VIEW)
+        .select('item_type, item_id, click_count');
+
+      if (error) {
+        console.error('Failed to load marker popularity:', error);
+        return;
+      }
+
+      if (isCancelled || !Array.isArray(data)) return;
+
+      const nextPopularityMap = data.reduce((acc, item) => {
+        const itemType = item.item_type;
+        const itemId = item.item_id;
+        const clickCount = Number(item.click_count) || 0;
+
+        if (!itemType || !itemId) return acc;
+
+        acc[buildMarkerPopularityKey(itemType, itemId)] = clickCount;
+        return acc;
+      }, {});
+
+      setMarkerPopularityMap(nextPopularityMap);
+    };
+
+    fetchMarkerPopularity();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, []);
+  const searchEntries = useMemo(() => {
+    const memoEntries = memos.map((memo) => {
+      const memoType = memo.parent_id ? '답글' : '버블';
+      const popularityItemId = getMemoPopularityItemId(memo);
+
+      return {
+        id: `memo-${memo.id}`,
+        type: memoType,
+        title: memo.text,
+        subtitle: memo.parent_id ? '답글 버블로 이동' : '버블 위치로 이동',
+        keywords: [memo.text, memo.nickname, memoType],
+        popularity: getEntryPopularity(memoType, popularityItemId),
+        action: () => openMemoBySearch(memo.id)
+      };
+    });
+
+    const subwayEntries = SUBWAY_STATION_LIST.map((station) => ({
+      id: `subway-${station.key}`,
+      type: '지하철',
+      title: station.name,
+      subtitle: `${station.line} 시간표 보기`,
+      keywords: [station.name, station.searchName, station.line, station.address],
+      popularity: getEntryPopularity('지하철', `subway-${station.key}`),
+      action: () => openSubwayStation(station.key)
+    }));
+
+    const busStopEntries = busStopConfigs.map(({ id, config }) => ({
+      id,
+      type: '버스정류장',
+      title: config.fallbackStation.name,
+      subtitle: `정류장 ${config.stationNumber}`,
+      keywords: [config.fallbackStation.name, config.stationNumber, config.fallbackStation.mobileNo, '버스', '정류장'],
+      popularity: getEntryPopularity('버스정류장', `bus-stop-${config.stationNumber}`),
+      action: () => openBusStop(config)
+    }));
+
+    const busRouteEntries = busSearchCatalog.map((route) => ({
+      id: `bus-route-${route.stopId}-${route.routeName}`,
+      type: '버스노선',
+      title: `${route.routeName}번`,
+      subtitle: `${route.stopName} · ${route.routeDestName || '버스 도착 정보'}`,
+      keywords: [route.routeName, route.routeDestName, route.stopName, route.stopNumber, '버스', '노선'],
+      action: () => openBusStop(route.stopConfig)
+    }));
+
+    const starbucksReserveEntries = starbucksPlaces.map((place) => ({
+      id: `starbucks-${place.id}`,
+      type: '스타벅스R',
+      title: place.name,
+      subtitle: place.address || '스타벅스 리저브 매장으로 이동',
+      keywords: [place.name, place.address, '스타벅스', '리저브', 'reserve', 'starbucks'],
+      popularity: getEntryPopularity('스타벅스R', `starbucks-${place.id}`),
+      action: () => openStarbucksPlace(place)
+    }));
+
+    const flowerEntry = {
+      id: 'flower-market',
+      type: '장소',
+      title: yangjaeFlowerMarketName,
+      subtitle: '양재 꽃시장으로 이동',
+      keywords: [yangjaeFlowerMarketName, '양재', '꽃시장', '화훼공판장'],
+      popularity: getEntryPopularity('장소', 'place-flower-market'),
+      action: () => openFlowerMarket()
+    };
+
+    return [...memoEntries, ...subwayEntries, ...busStopEntries, ...busRouteEntries, ...starbucksReserveEntries, flowerEntry];
+  }, [memos, busSearchCatalog, busStopConfigs, markerPopularityMap, starbucksPlaces]);
+
+  const filteredSearchResults = useMemo(() => {
+    const normalizedQuery = normalizeSearchText(searchQuery);
+    const baseEntries = searchEntries.filter((entry) => {
+      const haystack = normalizeSearchText([entry.title, entry.subtitle, ...(entry.keywords || [])].join(' '));
+      return normalizedQuery ? haystack.includes(normalizedQuery) : true;
+    });
+
+    const typeFilteredEntries =
+      searchFilter === 'all' ? baseEntries : baseEntries.filter((entry) => entry.type === searchFilter);
+
+    const sortedEntries = [...typeFilteredEntries].sort((a, b) => {
+      const popularityDiff = (b.popularity || 0) - (a.popularity || 0);
+      if (popularityDiff !== 0) return popularityDiff;
+      return String(a.title || '').localeCompare(String(b.title || ''), 'ko');
+    });
+
+    if (normalizedQuery) return sortedEntries;
+    if (searchFilter !== 'all') return sortedEntries.slice(0, 5);
+    return sortedEntries.slice(0, 6);
+  }, [searchEntries, searchQuery, searchFilter]);
+
   const buildSubwayMarkerImage = (label, color = '#3D53B3') => ({
     src:
       'data:image/svg+xml;base64,' +
@@ -292,7 +742,6 @@ const Main = () => {
     size: { width: 28, height: 28 },
     offset: { x: 14, y: 14 }
   });
-
   const focusBusStopAtDefaultZoom = (stopConfig) => {
     if (!map) return;
 
@@ -597,6 +1046,60 @@ const Main = () => {
     }
     fetchMemos();
   }, []);
+
+  useEffect(() => {
+    if (!isSearchOpen) return;
+
+    const focusTimer = window.setTimeout(() => {
+      searchInputRef.current?.focus();
+      searchInputRef.current?.select();
+    }, 140);
+
+    return () => window.clearTimeout(focusTimer);
+  }, [isSearchOpen]);
+
+  useEffect(() => {
+    if (!isSearchOpen || busSearchCatalog.length > 0) return;
+
+    let cancelled = false;
+
+    const loadBusRoutes = async () => {
+      try {
+        const responses = await Promise.all(
+          busStopConfigs.map(async ({ id, config }) => {
+            const response = await fetch(
+              `/api/bus?station=${encodeURIComponent(config.stationNumber)}&provider=${config.provider}`
+            );
+            const payload = await response.json();
+            const arrivals = Array.isArray(payload?.arrivals) ? payload.arrivals : [];
+
+            return arrivals.map((arrival) => ({
+              stopId: id,
+              stopName: config.fallbackStation.name,
+              stopNumber: config.stationNumber,
+              stopConfig: config,
+              routeName: arrival.routeName,
+              routeDestName: arrival.routeDestName
+            }));
+          })
+        );
+
+        if (!cancelled) {
+          setBusSearchCatalog(responses.flat().filter((item) => item.routeName));
+        }
+      } catch (loadError) {
+        if (!cancelled) {
+          console.warn('Failed to build bus search catalog:', loadError);
+        }
+      }
+    };
+
+    loadBusRoutes();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isSearchOpen, busSearchCatalog.length, busStopConfigs]);
 
   useEffect(() => {
     if (!writingMemoCoords) {
@@ -937,6 +1440,25 @@ const Main = () => {
           setMemos((prev) => prev.map((memo) => (memo.id === tempId ? createdMemo : memo)));
           triggerAIResponse(data[0]);
 
+          try {
+            const notifyResponse = await fetch('/api/memo-notify', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                memo: data[0]
+              })
+            });
+
+            if (!notifyResponse.ok) {
+              const notifyPayload = await notifyResponse.text();
+              console.error('Memo notify failed:', notifyPayload);
+            }
+          } catch (notifyError) {
+            console.error('Memo notify failed:', notifyError);
+          }
+
           setTimeout(() => {
             setMemos((prev) => prev.map((memo) => (memo.id === data[0].id ? { ...memo, is_new: false } : memo)));
           }, 2000);
@@ -1007,6 +1529,24 @@ const Main = () => {
     setTimeout(() => {
       setMemos(prev => prev.map(m => m.id === id ? { ...m, is_popping: false } : m));
     }, 1000);
+  };
+
+  const handleSearchToggle = () => {
+    setIsSearchOpen((prev) => {
+      const next = !prev;
+      if (!next) {
+        setSearchQuery('');
+        setSearchFilter('all');
+      }
+      return next;
+    });
+  };
+
+  const handleSearchResultSelect = (entry) => {
+    entry?.action?.();
+    setIsSearchOpen(false);
+    setSearchQuery('');
+    setSearchFilter('all');
   };
 
   const isMapReady = !loading && isLocationLoaded;
@@ -1127,7 +1667,7 @@ const Main = () => {
             key={`subway-${station.key}`}
             position={station.coords}
             image={buildSubwayMarkerImage(station.markerLabel || 'S', station.lineColor || '#3D53B3')}
-            onClick={() => openSubwayStation(station.key)}
+            onClick={() => openSubwayStation(station.key, { trackClick: true })}
             zIndex={100}
           />
         ))}
@@ -1138,16 +1678,7 @@ const Main = () => {
             size: { width: 24, height: 24 },
             offset: { x: 12, y: 12 }
           }}
-          onClick={() => {
-            setSelectedStarbucksId(null);
-            setSelectedMemoId(null);
-            setSelectedSubwayArrivals(null);
-            setSelectedBusStop(null);
-            setSelectedCurrentLocationInfo(null);
-            setIsYangjaeFlowerMarketSelected(false);
-            setIsFlowerMarketSheetOpen(true);
-            panToWithOffset(yangjaeFlowerMarketCoords.lat, yangjaeFlowerMarketCoords.lng);
-          }}
+          onClick={() => openFlowerMarket({ trackClick: true })}
           zIndex={100}
         />
 
@@ -1162,22 +1693,7 @@ const Main = () => {
             size: { width: 28, height: 28 },
             offset: { x: 14, y: 14 }
           }}
-          onClick={() => {
-            setSelectedStarbucksId(null);
-            setSelectedMemoId(null);
-            setSelectedSubwayArrivals(null);
-            setSelectedCurrentLocationInfo(null);
-            setIsFlowerMarketSheetOpen(false);
-
-            if (mapLevel >= 6) {
-              setSelectedBusStop(null);
-              focusBusStopAtDefaultZoom(gyeonggiBusStop);
-              return;
-            }
-
-            panToWithOffset(haanBusStopCoords.lat, haanBusStopCoords.lng);
-            fetchBusStopArrival(false, gyeonggiBusStop);
-          }}
+          onClick={() => openBusStop(gyeonggiBusStop, { trackClick: true })}
           zIndex={100}
         />
 
@@ -1192,22 +1708,7 @@ const Main = () => {
             size: { width: 28, height: 28 },
             offset: { x: 14, y: 14 }
           }}
-          onClick={() => {
-            setSelectedStarbucksId(null);
-            setSelectedMemoId(null);
-            setSelectedSubwayArrivals(null);
-            setSelectedCurrentLocationInfo(null);
-            setIsFlowerMarketSheetOpen(false);
-
-            if (mapLevel >= 6) {
-              setSelectedBusStop(null);
-              focusBusStopAtDefaultZoom(citizenGymBusStop);
-              return;
-            }
-
-            panToWithOffset(citizenGymBusStop.coords.lat, citizenGymBusStop.coords.lng);
-            fetchBusStopArrival(false, citizenGymBusStop);
-          }}
+          onClick={() => openBusStop(citizenGymBusStop, { trackClick: true })}
           zIndex={100}
         />
 
@@ -1222,22 +1723,7 @@ const Main = () => {
             size: { width: 28, height: 28 },
             offset: { x: 14, y: 14 }
           }}
-          onClick={() => {
-            setSelectedStarbucksId(null);
-            setSelectedMemoId(null);
-            setSelectedSubwayArrivals(null);
-            setSelectedCurrentLocationInfo(null);
-            setIsFlowerMarketSheetOpen(false);
-
-            if (mapLevel >= 6) {
-              setSelectedBusStop(null);
-              focusBusStopAtDefaultZoom(seoulBusStop);
-              return;
-            }
-
-            panToWithOffset(seoulBusStop.coords.lat, seoulBusStop.coords.lng);
-            fetchBusStopArrival(false, seoulBusStop);
-          }}
+          onClick={() => openBusStop(seoulBusStop, { trackClick: true })}
           zIndex={100}
         />
 
@@ -1245,15 +1731,13 @@ const Main = () => {
           <React.Fragment key={`sb-${place.id}`}>
             <MapMarker position={{ lat: place.lat, lng: place.lng }} 
               image={{ src: 'data:image/svg+xml;base64,' + btoa('<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="10" fill="#00704a" stroke="white" stroke-width="2"/><path d="M12 6.25L13.5 10.75H18L14.5 13.25L15.5 17.75L12 15.25L8.5 17.75L9.5 13.25L6 10.75H10.5L12 6.25Z" fill="white"/></svg>'), size: { width: 24, height: 24 } }}
-              onClick={() => { 
-                panToWithOffset(place.lat, place.lng);
-                setSelectedSubwayArrivals(null);
-                setSelectedBusStop(null);
-                setSelectedCurrentLocationInfo(null);
-                setIsYangjaeFlowerMarketSelected(false);
-                setIsFlowerMarketSheetOpen(false);
-                setSelectedStarbucksId(selectedStarbucksId === place.id ? null : place.id); 
-                if (selectedStarbucksId !== place.id) { setExpandedGroupIds([]); setSelectedMemoId(null); } 
+              onClick={() => {
+                if (selectedStarbucksId === place.id) {
+                  setSelectedStarbucksId(null);
+                  return;
+                }
+
+                openStarbucksPlace(place, { trackClick: true });
               }}
             />
             {selectedStarbucksId === place.id && (
@@ -1311,7 +1795,7 @@ const Main = () => {
                   <div className={`relative px-4 py-2 bg-white/90 backdrop-blur-md border-2 rounded-full flex items-center gap-2 min-w-[50px] max-w-[220px] cursor-pointer transition-all duration-300 ${memo.is_new ? 'animate-bubble-spawn shadow-[0_0_20px_rgba(255,77,0,0.5)]' : ''} ${memo.is_popping ? 'animate-bubble-pop' : ''} ${selectedMemoId === memo.id ? 'border-[#FF4D00] z-[50] scale-105 shadow-[0_15px_45px_rgba(255,77,0,0.25)]' : 'border-[#FF4D00] shadow-lg'}`}
                     onClick={(e) => { 
                       e.stopPropagation(); 
-                      panToWithOffset(memo.lat, memo.lng);
+                      openMemoBySearch(memo.id, { trackClick: true });
                       setSelectedStarbucksId(null); 
                       setIsYangjaeFlowerMarketSelected(false);
                       setIsFlowerMarketSheetOpen(false);
@@ -1359,7 +1843,7 @@ const Main = () => {
               className="w-full max-w-[400px] bg-white rounded-[32px] p-8 shadow-[0_30px_60px_rgba(255,77,0,0.15)] pointer-events-auto border border-white max-h-[calc(100dvh-2rem)] overflow-y-auto md:max-h-none"
             >
               <div className="flex items-center justify-between mb-6">
-                <h3 className="text-[18px] font-black text-gray-900 tracking-tight">여기에 바블 남기기</h3>
+                <h3 className="text-[18px] font-bold text-gray-900 tracking-tight">여기에 바블 남기기</h3>
                 <button
                   onClick={() => {
                     if (isSubmittingMemo) return;
@@ -1409,9 +1893,105 @@ const Main = () => {
       </AnimatePresence>
       {/* [Layer 2] UI Layer (Header & Footer) */}
       <div className="pointer-events-none fixed inset-0 z-40 overflow-visible">
-        <Header />
+        <Header isSearchOpen={isSearchOpen} onSearchToggle={handleSearchToggle} />
         <Footer />
       </div>
+
+      <AnimatePresence>
+        {isSearchOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.22, ease: 'easeOut' }}
+            className="fixed inset-0 z-[10020] bg-white"
+          >
+            <div className="mx-auto flex h-full w-full max-w-[760px] flex-col px-6 pb-10 pt-[calc(env(safe-area-inset-top,0px)+1.25rem)] md:px-10">
+              <div className="mb-4 flex items-start justify-end">
+                <button
+                  type="button"
+                  onClick={handleSearchToggle}
+                  aria-label="검색 닫기"
+                  className="flex h-11 w-11 items-center justify-center rounded-full text-zinc-500 transition hover:bg-zinc-100 hover:text-zinc-900"
+                >
+                  <X size={24} strokeWidth={2.2} />
+                </button>
+              </div>
+
+              <div className="flex items-center gap-3 border-b border-zinc-200 px-1 pb-4">
+                <div className="flex h-12 w-12 items-center justify-center text-zinc-500">
+                  <Search size={24} strokeWidth={2.2} />
+                </div>
+                <input
+                  ref={searchInputRef}
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search"
+                  className="h-14 flex-1 border-0 bg-transparent text-[24px] font-semibold tracking-tight text-zinc-900 outline-none placeholder:font-semibold placeholder:text-zinc-500 md:text-[28px]"
+                />
+              </div>
+
+              <div className="flex min-h-0 flex-1 flex-col pt-8">
+                <div className="pb-4 text-[13px] font-medium text-zinc-500">
+                  {searchQuery.trim() ? '검색 결과' : '빠른 검색'}
+                </div>
+
+                <div className="mb-5 flex flex-wrap gap-2">
+                  {SEARCH_FILTER_OPTIONS.map((option) => (
+                    <button
+                      key={option.id}
+                      type="button"
+                      onClick={() => setSearchFilter(option.id)}
+                      className={`rounded-full px-4 py-2 text-[13px] font-semibold transition ${
+                        searchFilter === option.id
+                          ? 'bg-zinc-900 text-white'
+                          : 'bg-zinc-100 text-zinc-600 hover:bg-zinc-200'
+                      }`}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="min-h-0 flex-1 overflow-y-auto">
+                  <div className="space-y-1">
+                    {filteredSearchResults.length > 0 ? (
+                      filteredSearchResults.map((entry) => (
+                        <button
+                          key={entry.id}
+                          type="button"
+                          onClick={() => handleSearchResultSelect(entry)}
+                          className="flex w-full items-center gap-3 rounded-[18px] px-3 py-3 text-left transition hover:bg-zinc-100"
+                        >
+                          <div className="flex h-9 w-9 items-center justify-center text-zinc-500">
+                            <ArrowUpRight size={18} strokeWidth={2.2} />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="truncate text-[16px] font-semibold tracking-tight text-zinc-900">
+                              {entry.title}
+                            </div>
+                            <div className="truncate text-[13px] font-medium text-zinc-500">
+                              {entry.subtitle}
+                            </div>
+                          </div>
+                          <div className="rounded-full bg-zinc-100 px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0] text-zinc-500">
+                            {entry.type}
+                          </div>
+                        </button>
+                      ))
+                    ) : (
+                      <div className="px-3 py-6 text-center text-[14px] font-medium text-zinc-500">
+                        검색 결과가 없어요. 다른 단어나 노선 번호로 다시 찾아보세요.
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <Sidebar 
         memo={memos.find(m => m.id === selectedMemoId)} 
@@ -1438,12 +2018,7 @@ const Main = () => {
         onDirections={openYangjaeFlowerMarketDirections}
       />
 
-      <div className="pointer-events-none fixed inset-0 z-40 overflow-visible">
-        <Header />
-        <Footer />
-      </div>
-
-      {!isIntroVisible && !writingMemoCoords && (
+      {!isIntroVisible && !writingMemoCoords && !isSearchOpen && (
       <div className="fixed bottom-10 right-8 z-[9999] pointer-events-none">
         <div className="flex flex-col items-end gap-2 pointer-events-auto">
           <AnimatePresence>

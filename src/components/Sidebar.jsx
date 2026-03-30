@@ -2,6 +2,46 @@
 import { motion, AnimatePresence, useMotionValue, animate } from 'framer-motion';
 import { X, MessageSquare, Send, Coffee, MapPin, ChevronRight, Info, Copy, Check, Crosshair } from 'lucide-react';
 
+const URL_PATTERN = /(https?:\/\/[^\s]+|www\.[^\s]+)/gi;
+
+const normalizeUrl = (url) => (url.startsWith('http://') || url.startsWith('https://') ? url : `https://${url}`);
+
+const renderTextWithLinks = (text, className) => {
+  if (!text) {
+    return <p className={className}>{text}</p>;
+  }
+
+  const parts = text.split(URL_PATTERN);
+
+  return (
+    <p className={className}>
+      {parts.map((part, index) => {
+        if (!part) {
+          return null;
+        }
+
+        const isUrl = part.match(URL_PATTERN);
+
+        if (isUrl) {
+          return (
+            <a
+              key={`${part}-${index}`}
+              href={normalizeUrl(part)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="break-all text-[#FF4D00] underline underline-offset-2 hover:text-[#E64500]"
+            >
+              {part}
+            </a>
+          );
+        }
+
+        return <React.Fragment key={`${part}-${index}`}>{part}</React.Fragment>;
+      })}
+    </p>
+  );
+};
+
 const Sidebar = ({
   memo,
   replies = [],
@@ -195,7 +235,7 @@ const Sidebar = ({
         </div>
 
         <div className="p-5 bg-gray-50 rounded-[24px] border border-gray-100">
-          <p className="text-gray-800 text-[15px] font-medium leading-relaxed whitespace-pre-wrap">{memo.text}</p>
+          {renderTextWithLinks(memo.text, 'text-gray-800 text-[15px] font-medium leading-relaxed whitespace-pre-wrap')}
         </div>
 
         <div className="flex items-center gap-4 text-[13px] font-bold px-1">
@@ -209,11 +249,11 @@ const Sidebar = ({
           <button
             type="button"
             onClick={handleCopyCoords}
-            className="ml-auto flex items-center gap-1.5 text-gray-400 hover:text-gray-700 transition-colors"
+            className="ml-auto flex max-w-[140px] items-center gap-1.5 text-gray-400 hover:text-gray-700 transition-colors"
             title="좌표 복사"
           >
             {copiedCoords ? <Check size={12} strokeWidth={2.5} /> : <Copy size={12} strokeWidth={2.5} />}
-            <span>{coordsText}</span>
+            <span className="block min-w-0 truncate whitespace-nowrap">{coordsText}</span>
           </button>
         </div>
 
@@ -226,7 +266,7 @@ const Sidebar = ({
                   <p className="font-bold text-[13px] text-gray-900">{reply.nickname}</p>
                   <span className="text-[13px] text-gray-400 font-medium">{formatDateTime(reply.created_at)}</span>
                 </div>
-                <p className="text-[13px] text-gray-700 leading-relaxed">{reply.text}</p>
+                {renderTextWithLinks(reply.text, 'text-[13px] text-gray-700 leading-relaxed whitespace-pre-wrap')}
               </div>
             ))}
           </div>

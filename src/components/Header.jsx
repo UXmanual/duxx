@@ -1,19 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Sun, Cloud, CloudRain, CloudSnow, CloudLightning, Wind } from 'lucide-react';
+import { Sun, Cloud, CloudRain, CloudSnow, Wind, Search } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-/**
- * [Component] 상단 헤더 (실시간 날씨 API 연동 버전)
- * @version 32.3
- * @author Antigravity
- */
-const Header = () => {
+const Header = ({ isSearchOpen = false, onSearchToggle = null }) => {
   const [weather, setWeather] = useState(null);
   const [temp, setTemp] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [locationName, setLocationName] = useState('위치 확인 중...');
 
-  // Weather Code Mapping (Open-Meteo 기준)
   const mapWeatherCode = (code) => {
     if (code === 0) return 'sunny';
     if ([1, 2, 3, 45, 48].includes(code)) return 'cloudy';
@@ -28,10 +21,10 @@ const Header = () => {
         `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current_weather=true`
       );
       const data = await response.json();
+
       if (data.current_weather) {
         setWeather(mapWeatherCode(data.current_weather.weathercode));
         setTemp(Math.round(data.current_weather.temperature));
-        setLocationName('실시간 날씨');
         setLoading(false);
       }
     } catch (error) {
@@ -40,28 +33,25 @@ const Header = () => {
   };
 
   useEffect(() => {
-    // 1. 사용자 위치 확인
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
           fetchWeather(position.coords.latitude, position.coords.longitude);
         },
         () => {
-          // 위치 권한 거부 시 서울 기준 (37.5665, 126.9780)
-          fetchWeather(37.5665, 126.9780);
-          setLocationName('서울');
+          fetchWeather(37.5665, 126.978);
         }
       );
     } else {
-      fetchWeather(37.5665, 126.9780);
-      setLocationName('서울');
+      fetchWeather(37.5665, 126.978);
     }
 
-    // 2. 30분마다 날씨 갱신
     const interval = setInterval(() => {
-      navigator.geolocation.getCurrentPosition((p) => fetchWeather(p.coords.latitude, p.coords.longitude));
+      navigator.geolocation.getCurrentPosition((position) => {
+        fetchWeather(position.coords.latitude, position.coords.longitude);
+      });
     }, 1800000);
-    
+
     return () => clearInterval(interval);
   }, []);
 
@@ -71,14 +61,14 @@ const Header = () => {
         return (
           <motion.div
             animate={{ rotate: 360 }}
-            transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
+            transition={{ duration: 15, repeat: Infinity, ease: 'linear' }}
             className="relative flex items-center justify-center"
           >
-            <Sun className="w-6 h-6 text-yellow-400" fill="currentColor" fillOpacity={0.4} />
+            <Sun className="h-6 w-6 text-yellow-400" fill="currentColor" fillOpacity={0.4} />
             <motion.div
               animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.6, 0.3] }}
-              transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-              className="absolute w-8 h-8 bg-yellow-400/20 rounded-full blur-md"
+              transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+              className="absolute h-8 w-8 rounded-full bg-yellow-400/20 blur-md"
             />
           </motion.div>
         );
@@ -86,33 +76,29 @@ const Header = () => {
         return (
           <motion.div
             animate={{ x: [-2, 2, -2], y: [-1, 1, -1] }}
-            transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+            transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
           >
-            <Cloud className="w-6 h-6 text-gray-400" fill="currentColor" fillOpacity={0.8} />
+            <Cloud className="h-6 w-6 text-gray-400" fill="currentColor" fillOpacity={0.8} />
           </motion.div>
         );
       case 'rainy':
         return (
           <div className="relative">
-            <motion.div
-              animate={{ y: [-1, 1, -1] }}
-              transition={{ duration: 2, repeat: Infinity }}
-            >
-              <CloudRain className="w-6 h-6 text-blue-400" />
+            <motion.div animate={{ y: [-1, 1, -1] }} transition={{ duration: 2, repeat: Infinity }}>
+              <CloudRain className="h-6 w-6 text-blue-400" />
             </motion.div>
-            {/* 빗방울 디테일 모션 */}
-            {[0, 1, 2].map((i) => (
+            {[0, 1, 2].map((index) => (
               <motion.div
-                key={i}
-                initial={{ opacity: 0, y: 0, x: i * 4 - 4 }}
-                animate={{ opacity: [0, 1, 0], y: [4, 12], x: i * 4 - 4 - 2 }}
-                transition={{ 
-                  duration: 0.8, 
-                  repeat: Infinity, 
-                  delay: i * 0.2,
-                  ease: "linear" 
+                key={index}
+                initial={{ opacity: 0, y: 0, x: index * 4 - 4 }}
+                animate={{ opacity: [0, 1, 0], y: [4, 12], x: index * 4 - 6 }}
+                transition={{
+                  duration: 0.8,
+                  repeat: Infinity,
+                  delay: index * 0.2,
+                  ease: 'linear'
                 }}
-                className="absolute top-4 left-1/2 w-[2px] h-[4px] bg-blue-300 rounded-full"
+                className="absolute left-1/2 top-4 h-[4px] w-[2px] rounded-full bg-blue-300"
               />
             ))}
           </div>
@@ -120,29 +106,25 @@ const Header = () => {
       case 'snowy':
         return (
           <div className="relative">
-            <motion.div
-              animate={{ scale: [0.95, 1.05, 0.95] }}
-              transition={{ duration: 3, repeat: Infinity }}
-            >
-              <CloudSnow className="w-6 h-6 text-blue-200" />
+            <motion.div animate={{ scale: [0.95, 1.05, 0.95] }} transition={{ duration: 3, repeat: Infinity }}>
+              <CloudSnow className="h-6 w-6 text-blue-200" />
             </motion.div>
-            {/* 눈송이 디테일 모션 */}
-            {[0, 1].map((i) => (
+            {[0, 1].map((index) => (
               <motion.div
-                key={i}
-                initial={{ opacity: 0, y: 0, x: i * 10 - 5 }}
-                animate={{ 
-                  opacity: [0, 1, 0], 
-                  y: [4, 14], 
-                  x: [i * 10 - 5, i * 10 - 8, i * 10 - 3] 
+                key={index}
+                initial={{ opacity: 0, y: 0, x: index * 10 - 5 }}
+                animate={{
+                  opacity: [0, 1, 0],
+                  y: [4, 14],
+                  x: [index * 10 - 5, index * 10 - 8, index * 10 - 3]
                 }}
-                transition={{ 
-                  duration: 2.5, 
-                  repeat: Infinity, 
-                  delay: i * 1,
-                  ease: "easeInOut" 
+                transition={{
+                  duration: 2.5,
+                  repeat: Infinity,
+                  delay: index,
+                  ease: 'easeInOut'
                 }}
-                className="absolute top-4 left-1/2 w-[3px] h-[3px] bg-white rounded-full shadow-[0_0_5px_#fff]"
+                className="absolute left-1/2 top-4 h-[3px] w-[3px] rounded-full bg-white shadow-[0_0_5px_#fff]"
               />
             ))}
           </div>
@@ -151,65 +133,75 @@ const Header = () => {
         return (
           <motion.div
             animate={{ x: [-3, 3, -3], skewX: [-10, 10, -10] }}
-            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+            transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
           >
-            <Wind className="w-6 h-6 text-teal-400" />
+            <Wind className="h-6 w-6 text-teal-400" />
           </motion.div>
         );
       default:
-        return <Sun className="w-6 h-6 text-yellow-400" />;
+        return <Sun className="h-6 w-6 text-yellow-400" />;
     }
   };
 
   return (
     <header style={{ display: 'contents' }}>
-      <div 
-        className="absolute left-0 px-10 h-24 hidden items-center z-[10] pointer-events-none text-[#FF4D00]"
+      <div
+        className="absolute left-0 hidden h-24 items-center px-10 text-[#FF4D00] pointer-events-none z-[10]"
         style={{ top: 'env(safe-area-inset-top, 0px)' }}
       >
-        <span className="logo-font text-[24px] tracking-[0] uppercase select-none pointer-events-auto">
+        <span className="logo-font pointer-events-auto select-none text-[24px] uppercase tracking-[0]">
           BABBLE
         </span>
       </div>
 
-      {/* [Weather Widget Layer] */}
-      <div 
-        className="absolute right-0 px-10 h-24 flex items-center z-[20] pointer-events-none"
+      <div
+        className="absolute right-0 flex h-24 items-center px-10 pointer-events-none z-[20]"
         style={{ top: 'env(safe-area-inset-top, 0px)' }}
       >
         <div className="flex flex-col items-end gap-1">
-          <div className="flex items-center gap-3 bg-white/80 backdrop-blur-md px-4 py-2 rounded-full pointer-events-auto cursor-default min-w-[90px] h-[40px] justify-center overflow-hidden">
-            <AnimatePresence mode="wait">
-              {loading ? (
-                /* 스켈레톤 로딩 바 (v32.3) */
-                <motion.div
-                  key="skeleton"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="flex items-center gap-2 w-full"
-                >
-                  <div className="w-6 h-6 bg-gray-200 rounded-full animate-pulse" />
-                  <div className="w-10 h-4 bg-gray-100 rounded-md animate-pulse" />
-                </motion.div>
-              ) : (
-                <motion.div
-                  key={weather}
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.8 }}
-                  transition={{ duration: 0.5 }}
-                  className="flex items-center gap-2"
-                >
-                  <div className="relative flex items-center justify-center w-8 h-8">
-                    {getWeatherIcon()}
-                  </div>
-                  <span className="text-[14px] font-bold text-zinc-800 tracking-tight">
-                    {temp}°C
-                  </span>
-                </motion.div>
-              )}
-            </AnimatePresence>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={onSearchToggle}
+              aria-label="검색 열기"
+              aria-expanded={isSearchOpen}
+              className="pointer-events-auto flex h-[40px] w-[40px] items-center justify-center rounded-full bg-white text-zinc-800 transition-all"
+            >
+              <Search size={18} strokeWidth={2.4} />
+            </button>
+
+            <div className="flex h-[40px] min-w-[90px] items-center justify-center gap-3 overflow-hidden rounded-full bg-white px-4 py-2 pointer-events-auto">
+              <AnimatePresence mode="wait">
+                {loading ? (
+                  <motion.div
+                    key="skeleton"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="flex w-full items-center gap-2"
+                  >
+                    <div className="h-6 w-6 animate-pulse rounded-full bg-gray-200" />
+                    <div className="h-4 w-10 animate-pulse rounded-md bg-gray-100" />
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    key={weather}
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.8 }}
+                    transition={{ duration: 0.5 }}
+                    className="flex items-center gap-2"
+                  >
+                    <div className="relative flex h-8 w-8 items-center justify-center">
+                      {getWeatherIcon()}
+                    </div>
+                    <span className="text-[14px] font-bold tracking-tight text-zinc-800">
+                      {temp}°C
+                    </span>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           </div>
         </div>
       </div>
