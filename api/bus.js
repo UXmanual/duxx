@@ -1,3 +1,6 @@
+import http from 'node:http';
+import https from 'node:https';
+
 const DEFAULT_GYEONGGI_STATION = '14156';
 const GYEONGGI_REGION_NAME = '광명';
 
@@ -43,6 +46,47 @@ function normalizeSeoulArsId(stationNumber) {
 function inferProvider(stationNumber, provider) {
   if (provider === 'seoul' || provider === 'gyeonggi') return provider;
   return String(stationNumber || '').includes('-') ? 'seoul' : 'gyeonggi';
+}
+
+function requestText(url, attempts = 2) {
+  const transport = url.startsWith('https://') ? https : http;
+
+  return new Promise((resolve, reject) => {
+    let lastError = null;
+
+    const run = (remainingAttempts) => {
+      const request = transport.get(url, (response) => {
+        const chunks = [];
+
+        response.on('data', (chunk) => {
+          chunks.push(chunk);
+        });
+
+        response.on('end', () => {
+          resolve({
+            ok: response.statusCode >= 200 && response.statusCode < 300,
+            status: response.statusCode || 500,
+            text: Buffer.concat(chunks).toString('utf8')
+          });
+        });
+      });
+
+      request.on('error', (error) => {
+        lastError = error;
+
+        if (remainingAttempts > 1) {
+          run(remainingAttempts - 1);
+          return;
+        }
+
+        reject(lastError || new Error('REQUEST_FAILED'));
+      });
+
+      request.end();
+    };
+
+    run(attempts);
+  });
 }
 
 async function fetchJson(url, failureMessage) {
@@ -126,12 +170,22 @@ async function fetchSeoulStationAndArrivals(apiKey, stationNumber) {
   const arsId = normalizeSeoulArsId(stationNumber);
   const url = `http://ws.bus.go.kr/api/rest/stationinfo/getStationByUid?serviceKey=${apiKey}&arsId=${encodeURIComponent(arsId)}`;
 
-  const response = await fetch(url);
+  let response;
+
+  try {
+    response = await requestText(url);
+  } catch (error) {
+    return {
+      error: 'SEOUL_FETCH_FAILED',
+      message: error?.message || 'Failed to fetch Seoul bus station arrival list.'
+    };
+  }
+
   if (!response.ok) {
     return { error: `HTTP_${response.status}`, message: 'Failed to fetch Seoul bus station arrival list.' };
   }
 
-  const xml = await response.text();
+  const xml = response.text;
   const headerCode = extractXmlValue(xml, 'headerCd');
   const headerMessage = extractXmlValue(xml, 'headerMsg');
   const items = extractXmlItems(xml, 'itemList');
